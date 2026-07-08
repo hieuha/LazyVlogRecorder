@@ -18,9 +18,19 @@ body,
 
 .stage {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100vw;
   height: 100vh;
   background: #05070a;
+}
+
+/* Video area: fills the space above the control bar; overlays anchor here. */
+.video-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .preview-canvas {
@@ -28,6 +38,19 @@ body,
   height: 100%;
   object-fit: contain;
   display: block;
+}
+
+/* Dedicated black strip below the video that holds all function buttons,
+   so nothing overlays the camera view. */
+.control-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 22px;
+  background: #000;
+  border-top: 1px solid rgba(126, 224, 233, 0.22);
 }
 
 .topbar {
@@ -88,16 +111,9 @@ body,
 }
 
 .controls {
-  position: absolute;
-  bottom: 18px;
-  right: 18px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  background: rgba(8, 12, 16, 0.82);
-  border: 1px solid rgba(126, 224, 233, 0.35);
-  border-radius: 4px;
 }
 
 .controls label {
@@ -313,14 +329,11 @@ body,
   letter-spacing: 0.14em;
 }
 
-/* Recording panel — bottom-left, opposite the device selectors */
+/* Recording panel — left side of the control bar, opposite the device selectors */
 .rec-panel {
-  position: absolute;
-  left: 22px;
-  bottom: 22px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   align-items: flex-start;
   font-size: 14px;
   letter-spacing: 0.14em;
@@ -330,19 +343,19 @@ body,
 .rec-toggle {
   position: relative;
   display: inline-flex;
-  background: rgba(8, 12, 16, 0.82);
-  border: 1.5px solid rgba(126, 224, 233, 0.5);
+  background: rgba(6, 10, 14, 0.9);
+  border: 1px solid rgba(126, 224, 233, 0.4);
   border-radius: 3px;
-  padding: 3px;
+  padding: 2px;
 }
 
 .rec-toggle::before {
   content: "";
   position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
-  width: calc(50% - 3px);
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
   border-radius: 2px;
   background: #7ee0e9;
   transition: transform 0.2s ease;
@@ -357,9 +370,9 @@ body,
   z-index: 1;
   background: transparent;
   border: none;
-  padding: 9px 24px;
+  padding: 6px 16px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.16em;
   color: #9fb6bd;
@@ -376,22 +389,23 @@ body,
   gap: 8px;
   color: #cfe6ea;
   font-weight: 600;
+  font-size: 12px;
 }
 
 .rec-duration input {
-  width: 60px;
-  background: rgba(8, 12, 16, 0.82);
+  width: 52px;
+  background: rgba(6, 10, 14, 0.9);
   color: #eaf7f9;
-  border: 1.5px solid rgba(126, 224, 233, 0.5);
+  border: 1px solid rgba(126, 224, 233, 0.4);
   border-radius: 3px;
-  padding: 9px 8px;
-  font-size: 14px;
+  padding: 6px 8px;
+  font-size: 12px;
 }
 
 .rec-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .rec-timer {
@@ -420,10 +434,10 @@ body,
 .rec-btn {
   border: none;
   border-radius: 3px;
-  padding: 12px 28px;
+  padding: 8px 18px;
   cursor: pointer;
   letter-spacing: 0.18em;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 700;
   color: #fff;
 }
@@ -439,7 +453,7 @@ body,
 .rec-btn.pause {
   background: rgba(6, 10, 14, 0.9);
   color: #e0c060;
-  border: 1.5px solid rgba(224, 192, 96, 0.5);
+  border: 1px solid rgba(224, 192, 96, 0.5);
 }
 .rec-btn.pause:hover {
   border-color: #e0c060;
@@ -521,15 +535,14 @@ body,
 }
 
 .rec-saved {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-  max-width: 60vw;
-  background: rgba(8, 12, 16, 0.82);
-  border: 1.5px solid rgba(126, 224, 233, 0.5);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 320px;
+  background: rgba(6, 10, 14, 0.9);
+  border: 1px solid rgba(126, 224, 233, 0.4);
   border-radius: 3px;
-  padding: 9px 16px;
+  padding: 6px 12px;
   cursor: pointer;
   text-align: left;
 }
@@ -539,17 +552,20 @@ body,
 }
 
 .rec-saved-label {
+  flex-shrink: 0;
   color: #7ee0e9;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
 }
 
-.rec-saved-path {
+.rec-saved-name {
   color: #cfe6ea;
   font-size: 12px;
   letter-spacing: 0.02em;
-  word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rec-error {

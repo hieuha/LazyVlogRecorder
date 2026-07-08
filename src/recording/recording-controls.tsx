@@ -74,21 +74,26 @@ export function RecordingControls(p: Props) {
             </button>
           </>
         )}
+
+        {p.savedFile && !p.recording && (
+          <button
+            className="rec-saved"
+            title={`${p.savedFile.path}\nReveal in folder`}
+            onClick={() => void revealItemInDir(p.savedFile!.path)}
+          >
+            <span className="rec-saved-label">SAVED ▸ {fmtSize(p.savedFile.size)}</span>
+            <span className="rec-saved-name">{basename(p.savedFile.path)}</span>
+          </button>
+        )}
       </div>
 
       {p.error && <div className="rec-error">{p.error}</div>}
-      {p.savedFile && !p.recording && (
-        <button
-          className="rec-saved"
-          title="Reveal in folder"
-          onClick={() => void revealItemInDir(p.savedFile!.path)}
-        >
-          <span className="rec-saved-label">SAVED ▸ {fmtSize(p.savedFile.size)}</span>
-          <span className="rec-saved-path">{p.savedFile.path}</span>
-        </button>
-      )}
     </div>
   );
+}
+
+function basename(path: string): string {
+  return path.split(/[/\\]/).pop() || path;
 }
 
 function fmtSize(bytes: number): string {

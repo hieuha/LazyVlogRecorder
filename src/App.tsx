@@ -337,7 +337,8 @@ export default function App() {
 
   return (
     <div className="stage">
-      <canvas ref={canvasRef} className="preview-canvas" />
+      <div className="video-area">
+        <canvas ref={canvasRef} className="preview-canvas" />
 
       <header className="topbar">
         <span className="brand">LAZY CAMERA HUD</span>
@@ -357,62 +358,63 @@ export default function App() {
           )
         )}
       </header>
+      </div>
 
       {status === "ready" && (
-        <RecordingControls
-          mode={rec.mode}
-          setMode={rec.setMode}
-          durationSec={rec.durationSec}
-          setDurationSec={rec.setDurationSec}
-          recording={rec.recording}
-          paused={rec.paused}
-          savedFile={rec.savedFile}
-          saving={rec.saving}
-          transcodeProgress={rec.transcodeProgress}
-          error={rec.error}
-          disabled={!capability?.ok}
-          onStart={rec.start}
-          onStop={() => void rec.stop()}
-          onPause={rec.pause}
-          onResume={rec.resume}
-        />
-      )}
+        <div className="control-bar">
+          <RecordingControls
+            mode={rec.mode}
+            setMode={rec.setMode}
+            durationSec={rec.durationSec}
+            setDurationSec={rec.setDurationSec}
+            recording={rec.recording}
+            paused={rec.paused}
+            savedFile={rec.savedFile}
+            saving={rec.saving}
+            transcodeProgress={rec.transcodeProgress}
+            error={rec.error}
+            disabled={!capability?.ok}
+            onStart={rec.start}
+            onStop={() => void rec.stop()}
+            onPause={rec.pause}
+            onResume={rec.resume}
+          />
 
-      {status === "ready" && (
-        <div className="controls">
-          <button className="icon-btn" onClick={() => setLibraryOpen(true)} title="Library">
-            ▤
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => setSettingsOpen(true)}
-            title="Settings"
-          >
-            ⚙
-          </button>
-          <HudSelect
-            title="Camera"
-            value={cameraId}
-            options={cameras.map((c, i) => ({ id: c.deviceId, label: c.label || `Camera ${i + 1}` }))}
-            onChange={(id) => void onCameraChange(id)}
-          />
-          <HudSelect
-            title={rec.recording ? "Mic can't be changed while recording" : "Microphone"}
-            value={micId}
-            disabled={rec.recording || !config.audioEnabled}
-            options={mics.map((m, i) => ({ id: m.deviceId, label: m.label || `Mic ${i + 1}` }))}
-            onChange={(id) => void onMicChange(id)}
-          />
-          <button
-            className="icon-btn"
-            onClick={() => {
-              setPinMode("enter");
-              setUnlocked(false);
-            }}
-            title="Lock"
-          >
-            ⏻
-          </button>
+          <div className="controls">
+            <button className="icon-btn" onClick={() => setLibraryOpen(true)} title="Library">
+              ▤
+            </button>
+            <button
+              className="icon-btn"
+              onClick={() => setSettingsOpen(true)}
+              title="Settings"
+            >
+              ⚙
+            </button>
+            <HudSelect
+              title="Camera"
+              value={cameraId}
+              options={cameras.map((c, i) => ({ id: c.deviceId, label: c.label || `Camera ${i + 1}` }))}
+              onChange={(id) => void onCameraChange(id)}
+            />
+            <HudSelect
+              title={rec.recording ? "Mic can't be changed while recording" : "Microphone"}
+              value={micId}
+              disabled={rec.recording || !config.audioEnabled}
+              options={mics.map((m, i) => ({ id: m.deviceId, label: m.label || `Mic ${i + 1}` }))}
+              onChange={(id) => void onMicChange(id)}
+            />
+            <button
+              className="icon-btn"
+              onClick={() => {
+                setPinMode("enter");
+                setUnlocked(false);
+              }}
+              title="Lock"
+            >
+              ⏻
+            </button>
+          </div>
         </div>
       )}
 
