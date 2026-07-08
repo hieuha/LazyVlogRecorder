@@ -30,9 +30,19 @@
 
 ```bash
 npm install
-./scripts/fetch-ffmpeg.sh   # fetch the bundled ffmpeg for your OS/arch
+./scripts/fetch-ffmpeg.sh   # macOS: fetch the bundled ffmpeg for your arch
 npm run tauri dev
 ```
+
+On **Windows**, fetch ffmpeg with the PowerShell script instead:
+
+```powershell
+npm install
+powershell -ExecutionPolicy Bypass -File scripts\fetch-ffmpeg.ps1
+npm run tauri dev
+```
+
+> Linux is deferred — WebKitGTK's `MediaRecorder`/`captureStream` support is inconsistent, so recording is unreliable there.
 
 ## Build
 

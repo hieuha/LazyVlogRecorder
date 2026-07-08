@@ -30,9 +30,19 @@
 
 ```bash
 npm install
-./scripts/fetch-ffmpeg.sh   # tải ffmpeg bundle theo OS/arch
+./scripts/fetch-ffmpeg.sh   # macOS: tải ffmpeg bundle theo arch
 npm run tauri dev
 ```
+
+Trên **Windows**, tải ffmpeg bằng script PowerShell:
+
+```powershell
+npm install
+powershell -ExecutionPolicy Bypass -File scripts\fetch-ffmpeg.ps1
+npm run tauri dev
+```
+
+> Linux tạm hoãn — WebKitGTK hỗ trợ `MediaRecorder`/`captureStream` không ổn định nên việc quay không đáng tin cậy.
 
 ## Build
 

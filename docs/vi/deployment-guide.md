@@ -13,12 +13,18 @@ Build + đóng gói **LazyCamHUD** (Tauri 2 + React). MVP nhắm **macOS + Windo
 Xuất MP4 dùng ffmpeg static bundle (git‑ignore). Tải cho máy hiện tại trước khi build:
 
 ```bash
-./scripts/fetch-ffmpeg.sh            # theo OS/arch hiện tại
+# macOS
+./scripts/fetch-ffmpeg.sh            # theo arch hiện tại
 ./scripts/fetch-ffmpeg.sh macos-arm64
 ./scripts/fetch-ffmpeg.sh macos-x64
 ```
 
-Binary vào `src-tauri/binaries/ffmpeg-<target-triple>`, được bundle qua `externalBin` trong `tauri.conf.json`. Với Windows, bỏ `ffmpeg.exe` static vào `src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe`.
+```powershell
+# Windows (tải static build từ gyan.dev)
+powershell -ExecutionPolicy Bypass -File scripts\fetch-ffmpeg.ps1
+```
+
+Binary vào `src-tauri/binaries/ffmpeg-<target-triple>` (Windows: `…-x86_64-pc-windows-msvc.exe`), được bundle qua `externalBin` trong `tauri.conf.json`. Lúc chạy, app tự tìm sidecar với đuôi `.exe` đúng theo OS (`src-tauri/src/commands/ffmpeg.rs`).
 
 ## 2. Build
 

@@ -101,18 +101,26 @@ pub async fn generate_thumbnail(
 }
 
 fn ffmpeg_path() -> Option<PathBuf> {
-    let name = format!("ffmpeg-{}", target_triple());
+    // Windows sidecars keep the .exe extension; std::process::Command with a full
+    // path does not append it, so include it in the candidate file names.
+    let bundled = format!("ffmpeg{EXE_SUFFIX}"); // next to the app exe (triple stripped)
+    let named = format!("ffmpeg-{}{}", target_triple(), EXE_SUFFIX); // with triple (dev)
     let mut candidates: Vec<PathBuf> = Vec::new();
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
-            candidates.push(dir.join("ffmpeg")); // bundled (triple stripped)
-            candidates.push(dir.join(&name)); // bundled (with triple)
+            candidates.push(dir.join(&bundled)); // bundled (triple stripped)
+            candidates.push(dir.join(&named)); // bundled (with triple)
         }
     }
     // Dev: binaries live under the crate directory.
-    candidates.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("binaries").join(&name));
+    candidates.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("binaries").join(&named));
     candidates.into_iter().find(|p| p.exists())
 }
+
+#[cfg(target_os = "windows")]
+const EXE_SUFFIX: &str = ".exe";
+#[cfg(not(target_os = "windows"))]
+const EXE_SUFFIX: &str = "";
 
 #[cfg(target_os = "macos")]
 fn target_triple() -> String {

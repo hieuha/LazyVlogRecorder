@@ -13,14 +13,20 @@ Build + package **LazyCamHUD** (Tauri 2 + React). MVP targets **macOS + Windows*
 The MP4 export uses a bundled static ffmpeg (gitignored). Fetch it for the current host before building:
 
 ```bash
-./scripts/fetch-ffmpeg.sh            # current OS/arch
+# macOS
+./scripts/fetch-ffmpeg.sh            # current arch
 ./scripts/fetch-ffmpeg.sh macos-arm64
 ./scripts/fetch-ffmpeg.sh macos-x64
 ```
 
-Binaries land in `src-tauri/binaries/ffmpeg-<target-triple>` and are bundled via
-`externalBin` in `tauri.conf.json`. For Windows, drop a static `ffmpeg.exe` at
-`src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe` (e.g. from gyan.dev).
+```powershell
+# Windows (fetches a static build from gyan.dev)
+powershell -ExecutionPolicy Bypass -File scripts\fetch-ffmpeg.ps1
+```
+
+Binaries land in `src-tauri/binaries/ffmpeg-<target-triple>` (Windows: `…-x86_64-pc-windows-msvc.exe`)
+and are bundled via `externalBin` in `tauri.conf.json`. At runtime the app resolves
+the sidecar with the correct `.exe` suffix per OS (`src-tauri/src/commands/ffmpeg.rs`).
 
 ## 2. Build
 
