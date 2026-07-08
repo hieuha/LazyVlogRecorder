@@ -2,7 +2,7 @@
 """Generate the LazyVlogRecorder app icon: a simple Martian record button —
 one teal ring + a red record dot on a dark graphite square. Rendered at 2x
 then downscaled for smooth edges."""
-from PIL import Image, ImageDraw, ImageFilter, ImageChops
+from PIL import Image, ImageDraw, ImageFilter, ImageChops, ImageFont
 
 S = 2048  # supersample size
 R = int(S * 0.225)  # corner radius
@@ -10,6 +10,20 @@ CX = CY = S / 2
 
 CYAN = (126, 224, 233)
 RED = (226, 78, 60)
+
+
+def load_font(size):
+    for p in [
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        "/Library/Fonts/Arial Bold.ttf",
+        "/System/Library/Fonts/HelveticaNeue.ttc",
+        "/System/Library/Fonts/Helvetica.ttc",
+    ]:
+        try:
+            return ImageFont.truetype(p, size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
 
 
 def rounded_mask():
@@ -59,17 +73,21 @@ def main():
     img.alpha_composite(glow)
     img.alpha_composite(ring)
 
-    # red record dot + soft glow + top highlight
+    # red record dot + soft glow, with "LAZY" set inside it
     dot = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    rr = S * 0.135
+    rr = S * 0.155
     ImageDraw.Draw(dot).ellipse([CX - rr, CY - rr, CX + rr, CY + rr], fill=RED + (255,))
     img.alpha_composite(dot.filter(ImageFilter.GaussianBlur(S * 0.03)))
     img.alpha_composite(dot)
-    hr = rr * 0.5
-    ImageDraw.Draw(img).ellipse(
-        [CX - hr, CY - hr - rr * 0.25, CX + hr, CY + hr - rr * 0.25],
-        fill=(255, 150, 130, 110),
-    )
+
+    # fit "LAZY" to ~1.35× the dot radius
+    text = "LAZY"
+    d = ImageDraw.Draw(img)
+    probe = load_font(400)
+    bb = d.textbbox((0, 0), text, font=probe)
+    size = int(400 * (rr * 1.35) / (bb[2] - bb[0]))
+    font = load_font(size)
+    d.text((CX, CY), text, font=font, fill=(255, 244, 240, 255), anchor="mm")
 
     # rounded corners
     img.putalpha(ImageChops.multiply(img.split()[3], mask))
