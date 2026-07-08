@@ -150,6 +150,7 @@ export function drawLocation(c: WidgetRenderContext): void {
   if (Math.floor(performance.now() / 500) % 2 === 0) {
     drawText(ctx, sep, origin.x + wLeft, origin.y, style);
   }
-  // Camera name: regular weight (not bold like the location).
-  drawText(ctx, right, origin.x + wLeft + wSep, origin.y, { ...style, weight: 400 });
+  // Camera name: thin weight and no glow, so it reads much lighter than the
+  // bold, glowing location.
+  drawText(ctx, right, origin.x + wLeft + wSep, origin.y, { ...style, weight: 300, glow: 0 });
 }
