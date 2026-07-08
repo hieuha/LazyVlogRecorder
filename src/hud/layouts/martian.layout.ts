@@ -29,12 +29,12 @@ export const martianLayout: LayoutConfig = {
     { type: "gauge-arc", anchor: "top-left", offset: { x: 4, y: 34 }, metric: "temp", label: "Temp" },
     { type: "environment", anchor: "top-left", offset: { x: 4, y: 43.5 } },
 
-    // Bottom-left location, pinned near the bottom edge so it stays visually
-    // separate from the gauge/environment column above it.
-    { type: "location", anchor: "bottom-left", offset: { x: 4, y: -4 } },
+    // Bottom-left location, lifted just enough to sit above the caption.
+    { type: "location", anchor: "bottom-left", offset: { x: 4, y: -5.5 } },
 
-    // Free-text caption (POST /text), centered above the location line.
-    { type: "caption", anchor: "bottom-center", offset: { x: 0, y: -10 } },
+    // Free-text caption (POST /text), left-aligned snugly below the location line
+    // (raised off the bottom bracket arm).
+    { type: "caption", anchor: "bottom-left", offset: { x: 4, y: -3.5 } },
 
     // Top-right clock (TIME + DATE) + log entry
     { type: "clock", anchor: "top-right", offset: { x: -4, y: 5 } },
