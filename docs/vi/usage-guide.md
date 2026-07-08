@@ -26,6 +26,7 @@ Tất cả nút nằm trong thanh đen dưới video (không đè lên camera). 
 
 - Tên log entry, số log (tự tăng), city override, thời lượng FIXED, **Record resolution** (720p = file nhỏ / 1080p = chất lượng cao), HUD layout (`Martian` / `Minimal`), thư mục lưu, **Record audio**, **Mirror camera**, **CRT effect**, và **Change PIN**.
 - Quay ở VP8/WebM theo độ phân giải 16:9 đã chọn, rồi transcode sang H.264 MP4 (CRF‑26). Muốn quay mượt hơn / file nhỏ hơn: chọn 720p hoặc tắt **CRT effect**.
+- **Sensor API** — bật endpoint HTTP nội bộ để đẩy dữ liệu cảm biến của bạn lên góc phải HUD (port, cho phép LAN, và token đều chỉnh được). Xem mục Sensor API trong README để biết định dạng request.
 
 ## Library (▤)
 

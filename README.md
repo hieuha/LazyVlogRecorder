@@ -52,6 +52,38 @@ npm run tauri build
 
 Outputs to `src-tauri/target/release/bundle/` (`.app` + `.dmg` on macOS). See [docs/deployment-guide.md](./docs/deployment-guide.md).
 
+## Sensor API
+
+Enable **Settings → Sensor API** to push your own sensor readings onto the right side of the HUD (burned into the video). The app runs a small HTTP endpoint:
+
+```bash
+curl -X POST http://<host>:1337/sensors \
+  -H "Authorization: Bearer <token>" \
+  -d '{"items":[{"label":"CO2","value":"812","unit":"ppm"},{"label":"HR","value":"78","unit":"bpm"}]}'
+```
+
+- Response: `200 {"ok":true,"count":N}` on success; `401` bad token, `400` bad JSON, `413` too large (each with a JSON `error`). Add `-i` to `curl` to see the status.
+- Port, LAN access, and the bearer token are all configurable in Settings.
+- LAN mode binds `0.0.0.0` and **requires** the token; otherwise it binds `127.0.0.1`.
+- Limits: ≤ 6 items; `label`/`value`/`unit` truncated to 12/10/6 chars; body ≤ 8 KB.
+- Rows dim after ~10 s without an update. Only display text is accepted — nothing is executed.
+
+### Time series (sparklines)
+
+`POST /series` with a single numeric point per call; the app buffers the last ~120 points per `label` and draws a mini line chart (auto-scaled, x = time, y = value):
+
+```bash
+curl -X POST http://<host>:1337/series \
+  -H "Authorization: Bearer <token>" \
+  -d '{"label":"ALT","value":12345,"unit":"m"}'
+```
+
+Try it with the bundled mock (simulates a weather-balloon flight — lat/lon, altitude, distance, battery):
+
+```bash
+node scripts/mock-sonde.mjs <token>            # → http://127.0.0.1:1337
+```
+
 ## Where things are stored (macOS)
 
 Under the bundle identifier `com.hatrunghieu.lazycamhud`:
@@ -70,6 +102,7 @@ The PIN is a **UX lock**, not encryption — recordings are stored **unencrypted
 - [System architecture](./docs/system-architecture.md)
 - [Codebase summary](./docs/codebase-summary.md)
 - [Usage guide](./docs/usage-guide.md)
+- [Sensor API](./docs/sensor-api.md)
 - [Deployment guide](./docs/deployment-guide.md)
 - Tiếng Việt: [docs/vi/](./docs/vi/)
 
