@@ -1,0 +1,42 @@
+# Tổng quan dự án — LazyCamHUD
+
+**LazyCamHUD** là ứng dụng desktop đa nền tảng để quay vlog "log entry" bằng webcam với HUD kiểu phim *The Martian* **đốt thẳng vào video**. Các gauge hiển thị thời tiết thật theo vị trí; toàn khung (webcam + HUD + hiệu ứng) được vẽ chung trên một canvas và ghi cùng nhau, nên file MP4 xuất ra đã có sẵn HUD.
+
+- **Tên hiển thị:** Lazy Camera HUD
+- **Bundle id:** `com.harry.lazycamhud`
+- **Phiên bản:** 0.1.0
+- **Nền tảng:** macOS + Windows (Linux hoãn sau)
+- **Công nghệ:** Tauri 2 (Rust) + React 19 + TypeScript + Vite
+
+## Mục tiêu
+
+- Công cụ "bấm quay là nói" với lớp overlay sci‑fi điện ảnh **là một phần của footage**.
+- Dữ liệu thật, hữu ích trên HUD (thời tiết/vị trí), không phải số trang trí.
+- Quay theo thời lượng cố định (vd 15 phút) hoặc quay tự do, UI đơn giản mà đẹp.
+
+## Năng lực chính
+
+| Mảng | Làm gì |
+|------|--------|
+| Quay | Chế độ FIXED (tự dừng) / FREE, pause/resume, đổi camera giữa chừng kèm hiệu ứng nhiễu/thu tròn |
+| Xuất | WebM → MP4 (H.264/AAC, faststart) qua ffmpeg bundle; stream ra file tạm; overlay tiến trình |
+| HUD | Layout registry data‑driven (Martian, Minimal); gauge (độ ẩm, mưa, nhiệt độ), environment, vị trí, ngày SOL, đồng hồ, log entry, soundwave mic |
+| Hiệu ứng | Grain CRT, color grade, mirror — bật/tắt |
+| Dữ liệu | IP geolocation + Open‑Meteo; override city được geocode |
+| Auth | Khoá PIN 4 số, đổi PIN, nút lock |
+| Library | Bản quay được index kèm thumbnail; lưới, player trong app, mở thư mục, xoá |
+| Settings | Lưu qua Tauri Store (tên, số log, thư mục, thời lượng, layout, audio, mirror, CRT, city) |
+
+## Không nằm trong phạm vi (hiện tại)
+
+- Không upload cloud, không edit/trim, không ghép nhiều camera.
+- Không mã hoá at‑rest — PIN chỉ là khoá UX.
+- Không build iOS/iPad (iOS cấm spawn tiến trình con cho ffmpeg).
+
+## Quyết định then chốt
+
+- **HUD trên một canvas** để `canvas.captureStream()` + `MediaRecorder` ghi webcam + HUD burned‑in cùng lúc.
+- **ffmpeg bundle chạy như tiến trình con** (tự tìm path dev vs bundle) thay vì codec webview, để MP4 ổn định.
+- **Tách stream mic (audio) và camera (video)** để đổi camera giữa chừng vẫn giữ audio liên tục.
+
+Xem [system-architecture.md](./system-architecture.md) và [codebase-summary.md](./codebase-summary.md).
