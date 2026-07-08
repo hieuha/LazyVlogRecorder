@@ -446,26 +446,73 @@ body,
 }
 
 .rec-btn.stop {
-  background: #7ee0e9;
-  color: #06121a;
+  background: #e24e3c;
+  color: #fff;
+}
+.rec-btn.stop:hover {
+  background: #f05c49;
 }
 
-.rec-progress {
-  width: 220px;
-  height: 6px;
+/* Centered processing overlay (transcode) */
+.processing-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(4, 7, 10, 0.72);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+.processing-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.4em;
+  color: #e24e3c;
+  text-shadow: 0 0 24px rgba(226, 78, 60, 0.7);
+  animation: proc-pulse 1.2s ease-in-out infinite;
+}
+@keyframes proc-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.processing-sub {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: rgba(150, 182, 189, 0.85);
+}
+
+.processing-bar {
+  width: min(420px, 60vw);
+  height: 8px;
   background: rgba(126, 224, 233, 0.15);
-  border: 1px solid rgba(126, 224, 233, 0.3);
-  border-radius: 3px;
+  border: 1px solid rgba(126, 224, 233, 0.35);
+  border-radius: 4px;
   overflow: hidden;
 }
-.rec-progress-bar {
+.processing-fill {
   height: 100%;
   background: #7ee0e9;
+  box-shadow: 0 0 12px rgba(126, 224, 233, 0.8);
   transition: width 0.2s ease;
 }
 
-.rec-btn.stop:hover {
-  background: #98e9f0;
+.processing-pct {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.15em;
+  color: #eaf7f9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .processing-title {
+    animation: none;
+  }
 }
 
 .rec-btn:disabled {

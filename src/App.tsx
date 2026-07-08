@@ -438,6 +438,20 @@ export default function App() {
           <button onClick={() => location.reload()}>Retry</button>
         </div>
       )}
+
+      {rec.saving && (
+        <div className="processing-overlay">
+          <div className="processing-title">PROCESSING</div>
+          <div className="processing-sub">TRANSCODING → MP4</div>
+          <div className="processing-bar">
+            <div
+              className="processing-fill"
+              style={{ width: `${Math.round(rec.transcodeProgress * 100)}%` }}
+            />
+          </div>
+          <div className="processing-pct">{Math.round(rec.transcodeProgress * 100)}%</div>
+        </div>
+      )}
     </div>
   );
 }
