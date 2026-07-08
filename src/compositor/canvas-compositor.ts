@@ -26,6 +26,7 @@ export class CanvasCompositor {
   // "signal loss" transition when the camera is switched mid-recording.
   private transitionUntil = 0;
   private noiseTile: HTMLCanvasElement | null = null;
+  private mirrored = false; // horizontal flip of the webcam (not the HUD)
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -69,6 +70,11 @@ export class CanvasCompositor {
   /** Show a static-noise transition for `ms` (covers a camera switch). */
   triggerSwitchTransition(ms = 700): void {
     this.transitionUntil = performance.now() + ms;
+  }
+
+  /** Mirror the webcam horizontally (HUD stays unflipped). */
+  setMirror(on: boolean): void {
+    this.mirrored = on;
   }
 
   // Size the canvas backing store to its on-screen size (× DPR) so the video
@@ -143,6 +149,14 @@ export class CanvasCompositor {
     const dh = vh * scale;
     const dx = (cw - dw) / 2;
     const dy = (ch - dh) / 2;
-    this.ctx.drawImage(this.video, dx, dy, dw, dh);
+    if (this.mirrored) {
+      this.ctx.save();
+      this.ctx.translate(cw, 0);
+      this.ctx.scale(-1, 1);
+      this.ctx.drawImage(this.video, dx, dy, dw, dh);
+      this.ctx.restore();
+    } else {
+      this.ctx.drawImage(this.video, dx, dy, dw, dh);
+    }
   }
 }

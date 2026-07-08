@@ -37,6 +37,7 @@ export default function App() {
   // Recorder inputs (refs so the recorder always reads current values).
   const mimeTypeRef = useRef<string | null>(null);
   const personNameRef = useRef<string>("Harry");
+  const mirrorRef = useRef<boolean>(true); // default mirrored (natural selfie)
   // Monotonic generation guard: only the latest startPreview call may bind a
   // stream. Protects against StrictMode double-mount + rapid device switching
   // resolving getUserMedia out of order (which would leak camera/mic tracks).
@@ -48,6 +49,7 @@ export default function App() {
   const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
   const [cameraId, setCameraId] = useState<string>("");
   const [micId, setMicId] = useState<string>("");
+  const [mirrored, setMirrored] = useState<boolean>(true);
   const [capability, setCapability] = useState<RecordingCapability | null>(null);
 
   const rec = useRecorder({ canvasRef, micStreamRef: audioStreamRef, mimeTypeRef, personNameRef });
@@ -128,6 +130,7 @@ export default function App() {
 
     if (!compositorRef.current) {
       compositorRef.current = new CanvasCompositor(canvas);
+      compositorRef.current.setMirror(mirrorRef.current);
       if (!dataSourceRef.current) dataSourceRef.current = createHudDataSource();
       const getState = () => {
         const s = dataSourceRef.current!.getState();
@@ -167,6 +170,13 @@ export default function App() {
       setError(String(err));
       setStatus("error");
     }
+  }
+
+  function toggleMirror() {
+    const next = !mirrored;
+    setMirrored(next);
+    mirrorRef.current = next;
+    compositorRef.current?.setMirror(next);
   }
 
   async function onMicChange(nextMicId: string) {
@@ -221,6 +231,13 @@ export default function App() {
 
       {status === "ready" && (
         <div className="controls">
+          <button
+            className={`mirror-btn ${mirrored ? "active" : ""}`}
+            onClick={toggleMirror}
+            title={mirrored ? "Mirror: on" : "Mirror: off"}
+          >
+            ⇋
+          </button>
           <label>
             CAM
             <select value={cameraId} onChange={(e) => void onCameraChange(e.target.value)}>
