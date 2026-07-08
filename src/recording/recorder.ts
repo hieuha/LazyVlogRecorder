@@ -6,6 +6,8 @@
 export interface Recorder {
   start(): void;
   stop(): Promise<void>;
+  pause(): void;
+  resume(): void;
   readonly mimeType: string;
 }
 
@@ -40,6 +42,12 @@ export function createRecorder({
     mimeType,
     start() {
       recorder.start(1000); // emit a chunk every second
+    },
+    pause() {
+      if (recorder.state === "recording") recorder.pause();
+    },
+    resume() {
+      if (recorder.state === "paused") recorder.resume();
     },
     stop() {
       return new Promise<void>((resolve) => {

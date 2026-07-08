@@ -169,6 +169,23 @@ export default function App() {
     if (cam?.label) cameraLabelRef.current = cam.label;
   }, [cameraId, cameras]);
 
+  // Space toggles record/stop (ignored while typing or a modal is open).
+  useEffect(() => {
+    if (!unlocked || status !== "ready" || settingsOpen || libraryOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(tag)) return;
+      e.preventDefault();
+      if (rec.saving) return;
+      if (rec.recording) void rec.stop();
+      else void rec.start();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlocked, status, settingsOpen, libraryOpen, rec.recording, rec.saving]);
+
   function applyConfigToRefs(cfg: AppConfig) {
     personNameRef.current = cfg.personName;
     logNoRef.current = cfg.logNo;
@@ -348,12 +365,16 @@ export default function App() {
           durationSec={rec.durationSec}
           setDurationSec={rec.setDurationSec}
           recording={rec.recording}
+          paused={rec.paused}
           savedFile={rec.savedFile}
           saving={rec.saving}
+          transcodeProgress={rec.transcodeProgress}
           error={rec.error}
           disabled={!capability?.ok}
           onStart={rec.start}
           onStop={() => void rec.stop()}
+          onPause={rec.pause}
+          onResume={rec.resume}
         />
       )}
 

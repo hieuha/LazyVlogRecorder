@@ -5,6 +5,7 @@
 // MP4 on stop, falling back to the raw file if ffmpeg fails.
 
 import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { createRecorder, type Recorder } from "./recorder";
 import {
   startTempRecording,
@@ -32,14 +33,19 @@ export function useRecorder(refs: UseRecorderRefs) {
   const [mode, setMode] = useState<RecMode>("fixed");
   const [durationSec, setDurationSec] = useState(900); // 15 min default
   const [recording, setRecording] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [savedFile, setSavedFile] = useState<SavedFile | null>(null);
   const [saving, setSaving] = useState(false);
+  const [transcodeProgress, setTranscodeProgress] = useState(0); // 0..1
   const [error, setError] = useState<string | null>(null);
 
   const recRef = useRef<Recorder | null>(null);
   const timerRef = useRef<number | null>(null);
   const startedAtRef = useRef<number>(0);
+  const pausedRef = useRef(false);
+  const pauseStartRef = useRef(0);
+  const pausedAccumRef = useRef(0); // total paused time (ms), excluded from elapsed
   const tempPathRef = useRef<string>("");
   const extRef = useRef<string>("webm");
   const modeRef = useRef(mode);
@@ -68,8 +74,17 @@ export function useRecorder(refs: UseRecorderRefs) {
       timerRef.current = null;
     }
     setRecording(false);
+    setPaused(false);
+    pausedRef.current = false;
     setSaving(true);
+    setTranscodeProgress(0);
     setError(null);
+
+    const now = performance.now();
+    const pausedTotal = pausedAccumRef.current + (pausedRef.current ? now - pauseStartRef.current : 0);
+    const durationSec = Math.max(0, Math.round((now - startedAtRef.current - pausedTotal) / 1000));
+
+    const unlisten = await listen<number>("transcode-progress", (e) => setTranscodeProgress(e.payload));
     try {
       await recRef.current.stop(); // flush all chunks to the temp file
       recRef.current = null;
@@ -82,20 +97,36 @@ export function useRecorder(refs: UseRecorderRefs) {
       let saved: SavedFile;
       try {
         const outName = makeRecordingName(person, logNo, "mp4");
-        saved = await transcodeToMp4(tempPath, outName, outDir);
+        saved = await transcodeToMp4(tempPath, outName, outDir, durationSec);
       } catch (transcodeErr) {
         const rawName = makeRecordingName(person, logNo, srcExt);
         saved = await moveTemp(tempPath, rawName, outDir);
         setError(`MP4 transcode failed; saved ${srcExt.toUpperCase()}. ${transcodeErr}`);
       }
       setSavedFile(saved);
-      const durationSec = Math.max(0, Math.round((performance.now() - startedAtRef.current) / 1000));
       refs.onSaved(saved, durationSec); // advance log number + index the entry
     } catch (err) {
       setError(String(err));
     } finally {
+      unlisten();
       setSaving(false);
     }
+  }
+
+  function pause(): void {
+    if (!recRef.current || pausedRef.current) return;
+    recRef.current.pause();
+    pauseStartRef.current = performance.now();
+    pausedRef.current = true;
+    setPaused(true);
+  }
+
+  function resume(): void {
+    if (!recRef.current || !pausedRef.current) return;
+    pausedAccumRef.current += performance.now() - pauseStartRef.current;
+    recRef.current.resume();
+    pausedRef.current = false;
+    setPaused(false);
   }
 
   async function start(): Promise<void> {
@@ -127,13 +158,19 @@ export function useRecorder(refs: UseRecorderRefs) {
     });
     recRef.current.start();
     setRecording(true);
+    setPaused(false);
     setElapsedSec(0);
     const startedAt = performance.now();
     startedAtRef.current = startedAt;
+    pausedRef.current = false;
+    pausedAccumRef.current = 0;
     timerRef.current = window.setInterval(() => {
-      const e = Math.floor((performance.now() - startedAt) / 1000);
+      const t = performance.now();
+      const pausedNow = pausedRef.current ? t - pauseStartRef.current : 0;
+      const e = Math.floor((t - startedAt - pausedAccumRef.current - pausedNow) / 1000);
       setElapsedSec(e);
-      if (modeRef.current === "fixed" && e >= durRef.current) void stop();
+      // Auto-stop counts active (unpaused) time only.
+      if (modeRef.current === "fixed" && !pausedRef.current && e >= durRef.current) void stop();
     }, 250);
   }
 
@@ -143,11 +180,15 @@ export function useRecorder(refs: UseRecorderRefs) {
     durationSec,
     setDurationSec,
     recording,
+    paused,
     elapsedSec,
     savedFile,
     saving,
+    transcodeProgress,
     error,
     start,
     stop,
+    pause,
+    resume,
   };
 }

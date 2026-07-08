@@ -11,12 +11,16 @@ interface Props {
   durationSec: number;
   setDurationSec: (n: number) => void;
   recording: boolean;
+  paused: boolean;
   savedFile: SavedFile | null;
   saving: boolean;
+  transcodeProgress: number;
   error: string | null;
   disabled: boolean;
   onStart: () => void;
   onStop: () => void;
+  onPause: () => void;
+  onResume: () => void;
 }
 
 // Timer + REC indicator live in the top-right badge (see App); this panel only
@@ -58,12 +62,25 @@ export function RecordingControls(p: Props) {
             {p.saving ? "PROCESSING…" : "● REC"}
           </button>
         ) : (
-          <button className="rec-btn stop" onClick={p.onStop}>
-            ■ STOP
-          </button>
+          <>
+            <button
+              className="rec-btn pause"
+              onClick={p.paused ? p.onResume : p.onPause}
+            >
+              {p.paused ? "▶ RESUME" : "❚❚ PAUSE"}
+            </button>
+            <button className="rec-btn stop" onClick={p.onStop}>
+              ■ STOP
+            </button>
+          </>
         )}
       </div>
 
+      {p.saving && (
+        <div className="rec-progress">
+          <div className="rec-progress-bar" style={{ width: `${Math.round(p.transcodeProgress * 100)}%` }} />
+        </div>
+      )}
       {p.error && <div className="rec-error">{p.error}</div>}
       {p.savedFile && !p.recording && (
         <button

@@ -18,13 +18,19 @@ export function appendTempChunk(path: string, bytes: Uint8Array): Promise<void> 
   return invoke("append_temp_chunk", { path, bytes });
 }
 
-/** Transcode a temp WebM to MP4 in the output folder; returns path + size. */
+/** Transcode a temp WebM to MP4 (emits "transcode-progress" 0..1 events). */
 export function transcodeToMp4(
   tempPath: string,
   filename: string,
   outDir: string,
+  durationSec: number,
 ): Promise<SavedFile> {
-  return invoke<SavedFile>("transcode_to_mp4", { tempPath, filename, outDir: outDir || null });
+  return invoke<SavedFile>("transcode_to_mp4", {
+    tempPath,
+    filename,
+    outDir: outDir || null,
+    durationSec,
+  });
 }
 
 /** Move the temp file into the output folder (raw fallback); returns path + size. */

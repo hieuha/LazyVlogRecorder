@@ -436,9 +436,32 @@ body,
   background: #f05c49;
 }
 
+.rec-btn.pause {
+  background: rgba(6, 10, 14, 0.9);
+  color: #e0c060;
+  border: 1.5px solid rgba(224, 192, 96, 0.5);
+}
+.rec-btn.pause:hover {
+  border-color: #e0c060;
+}
+
 .rec-btn.stop {
   background: #7ee0e9;
   color: #06121a;
+}
+
+.rec-progress {
+  width: 220px;
+  height: 6px;
+  background: rgba(126, 224, 233, 0.15);
+  border: 1px solid rgba(126, 224, 233, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rec-progress-bar {
+  height: 100%;
+  background: #7ee0e9;
+  transition: width 0.2s ease;
 }
 
 .rec-btn.stop:hover {
