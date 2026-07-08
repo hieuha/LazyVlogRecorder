@@ -23,6 +23,7 @@
 | HUD | Layout registry data‑driven (Martian, Minimal); gauge (độ ẩm, mưa, nhiệt độ), environment, vị trí, ngày SOL, đồng hồ, log entry, soundwave mic |
 | Hiệu ứng | Grain CRT, color grade, mirror — bật/tắt |
 | Dữ liệu | IP geolocation + Open‑Meteo; override city được geocode |
+| Sensor API | Endpoint HTTP nội bộ (`/sensors`, `/series`, `/text`) đẩy readouts, biểu đồ sparkline, và caption typewriter lên HUD; token + bind LAN; kèm script mô phỏng bóng thám không |
 | Auth | Khoá PIN 4 số, đổi PIN, nút lock |
 | Library | Bản quay được index kèm thumbnail; lưới, player trong app, mở thư mục, xoá |
 | Settings | Lưu qua Tauri Store (tên, số log, thư mục, thời lượng, độ phân giải, layout, audio, mirror, CRT, city) |

@@ -8,22 +8,24 @@
 │   getUserMedia(video) + getUserMedia(audio)  [separate streams] │
 │        │ video                                                  │
 │        ▼                                                        │
-│   CanvasCompositor (rAF loop, one <canvas>)                     │
+│   CanvasCompositor (rAF ~60fps, one 16:9 <canvas>, 720p/1080p)  │
 │     ├─ draw webcam frame (cover, optional mirror)               │
 │     ├─ HUD layer  = layout-engine(layout, state)                │
 │     └─ CRT overlay + switch transition                          │
 │        │ canvas.captureStream(30).videoTrack                    │
-│        │ + mic audioTrack ─► MediaRecorder (WebM, chunked)      │
+│        │ + mic audioTrack ─► MediaRecorder (VP8/WebM, chunked)  │
 │        ▼ append each chunk                                      │
 │   temp file  ─────────────invoke──────────────►                 │
-└────────┼────────────────────────────────────────────────────────┘
-         ▼
-┌────────────────── Backend (Rust / Tauri commands) ─────────────┐
-│ ffmpeg (bundled): temp WebM ─► MP4 (H.264/AAC, faststart)      │
-│   emits transcode-progress events                              │
-│ recording_fs: start/append/move temp, delete, save            │
-│ geo/weather proxies (no CORS, keyless); geocode city          │
-│ auth: PIN hash (SHA-256 + salt) in auth.json                  │
+│   sensor events (sensors/series/text) ◄── Tauri events ──┐      │
+└────────┼─────────────────────────────────────────────────┼──────┘
+         ▼                                                  │
+┌────────────────── Backend (Rust / Tauri commands) ───────┼─────┐
+│ ffmpeg (bundled): temp WebM ─► MP4 (H.264/AAC CRF‑26)     │     │
+│   emits transcode-progress events                        │     │
+│ recording_fs: start/append/move temp, delete, save       │     │
+│ geo/weather proxies (no CORS, keyless); geocode city     │     │
+│ auth: PIN hash (SHA-256 + salt) in auth.json             │     │
+│ sensor_server (tiny_http): /sensors /series /text ───────┘     │
 │ ffmpeg thumbnail; asset protocol for local playback           │
 └────────────────────────────────────────────────────────────────┘
 ```
@@ -50,10 +52,22 @@
 - `geocode_city` (Open‑Meteo geocoding) → coordinates for a city override so weather follows the chosen place.
 - Refreshes every ~10 min; caches last‑good; offline first‑launch shows `UNKNOWN` / `--`.
 
+## Recording resolution & codec
+
+- The canvas backing store is a **fixed 16:9 frame** (720p or 1080p from settings), not the window size — so output is deterministic and reasonably sized. The preview letterboxes to fit.
+- `MediaRecorder` prefers **VP8** over VP9 (no hardware VP9 encoder on macOS; VP8 is far lighter for real‑time), then transcodes to **H.264 CRF‑26 (preset medium)** for small MP4s.
+- The compositor draw loop is capped at ~60fps so ProMotion 120Hz displays don't render the HUD twice per captured frame.
+
+## Sensor API
+
+- `sensor_server.rs` runs a small `tiny_http` server (background thread) started/stopped by `App` from settings. Bind is `127.0.0.1` or `0.0.0.0` (LAN); a bearer token is required in LAN mode.
+- `POST /sensors` (scalar readouts), `POST /series` (numeric points → sparkline buffer), `POST /text` (typewriter caption). Each validated + clamped, then forwarded to the frontend via Tauri events (`sensors`/`series`/`text`).
+- The frontend injects these into `HudState` each frame, so they render as HUD widgets and are **burned into the recording** like everything else.
+
 ## Auth
 
 - `set_pin` / `verify_pin` / `change_pin`: salted SHA‑256 stored in `auth.json` (app config dir). This is a **UX lock**, not encryption. On lock, the camera/streams are released and the app returns to the PIN screen; the compositor is nulled so it rebinds the freshly‑mounted canvas on re‑unlock.
 
 ## ffmpeg bundling
 
-Bundled as a static binary (per target triple) under `src-tauri/binaries/` (git‑ignored, fetched by `scripts/fetch-ffmpeg.sh`). Resolved at runtime from the executable directory (bundle) or `CARGO_MANIFEST_DIR/binaries` (dev). iOS is blocked because it forbids spawning subprocesses.
+Bundled as a static binary (per target triple) under `src-tauri/binaries/` (git‑ignored, fetched by `scripts/fetch-ffmpeg.sh` on macOS or `scripts/fetch-ffmpeg.ps1` on Windows). Resolved at runtime from the executable directory (bundle) or `CARGO_MANIFEST_DIR/binaries` (dev), with the `.exe` suffix on Windows. iOS is blocked because it forbids spawning subprocesses.

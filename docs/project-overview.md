@@ -23,6 +23,7 @@
 | HUD | Data‑driven layout registry (Martian, Minimal); gauges (humidity, rain, temp), environment, location, SOL date, clock, log entry, live mic soundwave |
 | Effects | CRT grain, color grade, mirror — toggleable |
 | Data | IP geolocation + Open‑Meteo weather; city override is forward‑geocoded |
+| Sensor API | Local HTTP endpoint (`/sensors`, `/series`, `/text`) pushes custom readouts, sparkline charts, and a typewriter caption onto the HUD; token + LAN bind; weather‑balloon simulators bundled |
 | Auth | 4‑digit PIN gate, change PIN, lock button |
 | Library | Indexed recordings with thumbnails; grid, in‑app player, reveal, delete |
 | Settings | Persisted via Tauri Store (name, log #, folder, duration, resolution, layout, audio, mirror, CRT, city) |

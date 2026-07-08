@@ -8,22 +8,24 @@
 │   getUserMedia(video) + getUserMedia(audio)  [stream tách biệt] │
 │        │ video                                                  │
 │        ▼                                                        │
-│   CanvasCompositor (vòng rAF, một <canvas>)                     │
+│   CanvasCompositor (rAF ~60fps, một <canvas> 16:9, 720p/1080p)  │
 │     ├─ vẽ frame webcam (cover, mirror tuỳ chọn)                 │
 │     ├─ HUD layer = layout-engine(layout, state)                │
 │     └─ overlay CRT + hiệu ứng chuyển camera                    │
 │        │ canvas.captureStream(30).videoTrack                    │
-│        │ + mic audioTrack ─► MediaRecorder (WebM, chunk)       │
+│        │ + mic audioTrack ─► MediaRecorder (VP8/WebM, chunk)   │
 │        ▼ ghi từng chunk                                         │
 │   file tạm  ─────────────invoke──────────────►                  │
-└────────┼────────────────────────────────────────────────────────┘
-         ▼
-┌────────────────── Backend (Rust / Tauri commands) ─────────────┐
-│ ffmpeg (bundle): WebM tạm ─► MP4 (H.264/AAC, faststart)        │
-│   emit sự kiện transcode-progress                              │
-│ recording_fs: start/append/move temp, delete, save            │
-│ proxy geo/weather (không CORS, không key); geocode city       │
-│ auth: hash PIN (SHA-256 + salt) trong auth.json               │
+│   sensor events (sensors/series/text) ◄── Tauri events ──┐      │
+└────────┼─────────────────────────────────────────────────┼──────┘
+         ▼                                                  │
+┌────────────────── Backend (Rust / Tauri commands) ───────┼─────┐
+│ ffmpeg (bundle): WebM tạm ─► MP4 (H.264/AAC CRF‑26)       │     │
+│   emit sự kiện transcode-progress                        │     │
+│ recording_fs: start/append/move temp, delete, save       │     │
+│ proxy geo/weather (không CORS, không key); geocode city  │     │
+│ auth: hash PIN (SHA-256 + salt) trong auth.json          │     │
+│ sensor_server (tiny_http): /sensors /series /text ───────┘     │
 │ thumbnail ffmpeg; asset protocol để phát file local           │
 └────────────────────────────────────────────────────────────────┘
 ```
@@ -50,10 +52,22 @@
 - `geocode_city` (Open‑Meteo geocoding) → toạ độ cho city override để thời tiết theo đúng nơi đó.
 - Refresh ~10 phút; cache last‑good; offline lần đầu hiện `UNKNOWN` / `--`.
 
+## Độ phân giải & codec
+
+- Backing store của canvas là **khung 16:9 cố định** (720p hoặc 1080p theo settings), không theo kích thước cửa sổ — nên output ổn định và nhẹ. Preview letterbox cho vừa.
+- `MediaRecorder` ưu tiên **VP8** hơn VP9 (macOS không có hardware encode VP9; VP8 nhẹ hơn nhiều cho realtime), rồi transcode sang **H.264 CRF‑26 (preset medium)** cho MP4 nhỏ.
+- Vòng vẽ compositor giới hạn ~60fps để màn ProMotion 120Hz không vẽ HUD gấp đôi mỗi frame quay.
+
+## Sensor API
+
+- `sensor_server.rs` chạy server `tiny_http` nhỏ (thread nền), được `App` bật/tắt theo settings. Bind `127.0.0.1` hoặc `0.0.0.0` (LAN); chế độ LAN bắt buộc bearer token.
+- `POST /sensors` (readouts vô hướng), `POST /series` (điểm số → buffer sparkline), `POST /text` (caption typewriter). Mỗi cái được validate + clamp rồi forward lên frontend qua Tauri events (`sensors`/`series`/`text`).
+- Frontend đưa vào `HudState` mỗi frame → vẽ thành widget HUD và **burn vào bản ghi** như mọi thứ khác.
+
 ## Auth
 
 - `set_pin` / `verify_pin` / `change_pin`: SHA‑256 + salt lưu `auth.json` (thư mục config). Đây là **khoá UX**, không mã hoá. Khi lock, camera/stream được nhả và app về màn PIN; compositor được null để bind lại canvas mới mount khi mở khoá.
 
 ## Bundle ffmpeg
 
-Đóng gói dạng binary static (theo target triple) trong `src-tauri/binaries/` (git‑ignore, tải bằng `scripts/fetch-ffmpeg.sh`). Runtime tự tìm từ thư mục exe (bundle) hoặc `CARGO_MANIFEST_DIR/binaries` (dev). iOS bị chặn vì cấm spawn tiến trình con.
+Đóng gói dạng binary static (theo target triple) trong `src-tauri/binaries/` (git‑ignore, tải bằng `scripts/fetch-ffmpeg.sh` trên macOS hoặc `scripts/fetch-ffmpeg.ps1` trên Windows). Runtime tự tìm từ thư mục exe (bundle) hoặc `CARGO_MANIFEST_DIR/binaries` (dev), kèm đuôi `.exe` trên Windows. iOS bị chặn vì cấm spawn tiến trình con.
