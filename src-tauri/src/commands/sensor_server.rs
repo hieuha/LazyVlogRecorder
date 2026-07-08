@@ -92,6 +92,11 @@ pub fn start_sensor_server(
 ) -> Result<(), String> {
     stop_sensor_server(); // enforce a single instance
 
+    // Defense in depth: never expose an unauthenticated endpoint to the network.
+    if bind_lan && token.is_empty() {
+        return Err("LAN mode requires a token".into());
+    }
+
     let host = if bind_lan { "0.0.0.0" } else { "127.0.0.1" };
     let addr = format!("{host}:{port}");
     let server = Server::http(&addr).map_err(|e| format!("cannot bind {addr}: {e}"))?;
@@ -147,14 +152,14 @@ fn handle(app: &AppHandle, mut request: tiny_http::Request, expected: Option<&st
         return json(request, 404, r#"{"ok":false,"error":"not found"}"#);
     }
 
-    // Token (when configured).
+    // Token (when configured), compared in constant time.
     if let Some(expected) = expected {
         let provided = request
             .headers()
             .iter()
             .find(|h| h.field.equiv("Authorization"))
             .map(|h| h.value.as_str().to_string());
-        if provided.as_deref() != Some(expected) {
+        if !provided.as_deref().is_some_and(|p| ct_eq(p, expected)) {
             return json(request, 401, r#"{"ok":false,"error":"unauthorized"}"#);
         }
     }
@@ -222,6 +227,19 @@ fn handle(app: &AppHandle, mut request: tiny_http::Request, expected: Option<&st
 
 fn clip(s: &str, max: usize) -> String {
     s.trim().chars().take(max).collect()
+}
+
+// Length‑independent byte comparison to avoid leaking the token via timing.
+fn ct_eq(a: &str, b: &str) -> bool {
+    let (a, b) = (a.as_bytes(), b.as_bytes());
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for i in 0..a.len() {
+        diff |= a[i] ^ b[i];
+    }
+    diff == 0
 }
 
 // Respond with a JSON body so clients get clear feedback (curl prints it).

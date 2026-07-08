@@ -181,5 +181,5 @@ then per row:
 
 - The endpoint accepts **display text only**; there is no code path that executes it.
 - Size/count/length are clamped so a device cannot overflow the HUD or memory.
-- LAN binding requires a token; treat the token like a shared password on your network.
+- LAN binding **requires** a token — the server refuses to start on `0.0.0.0` without one — and the token is compared in constant time. Treat it like a shared password on your network.
 - The token lives in `config.json` alongside other settings (not a secret store).
