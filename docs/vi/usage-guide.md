@@ -11,16 +11,16 @@
 - **Record / Stop:** bấm `● REC` / `■ STOP`, hoặc nhấn **Space**.
 - **Pause / Resume:** `❚❚ PAUSE` / `▶ RESUME` khi đang quay (thời gian pause bị trừ khỏi đồng hồ và khỏi auto‑stop của FIXED).
 - **Đổi camera khi đang quay:** chọn camera khác ở dropdown — recording vẫn tiếp tục; một đoạn nhiễu + thu tròn được chèn vào. (Không đổi mic khi đang quay.)
-- Sau khi stop, overlay **PROCESSING** giữa màn hình hiện tiến trình transcode; MP4 vào thư mục lưu và có toast `SAVED ▸ dung lượng`.
+- Sau khi stop, overlay **PROCESSING** giữa màn hình hiện tiến trình transcode; MP4 vào thư mục lưu và hiện pill `SAVED ▸ dung lượng · tên file` ngay cạnh `● REC` trong thanh điều khiển (bấm để mở thư mục).
 
 ## HUD
 
 - Gauge: **Humidity**, **Rain** (khả năng mưa giờ hiện tại), **Temp**; kèm **Environment**, **HAB > CAMERA**, ngày **MISSION DAY**, **TIME**, **LOG ENTRY**, và **soundwave mic** trực tiếp.
 - Vị trí + thời tiết theo IP; đặt **City override** trong Settings để ghim một nơi (thời tiết theo nơi đó).
 
-## Controls (góc dưới phải)
+## Thanh điều khiển (bên dưới video)
 
-- **▤ Library** · **⚙ Settings** · dropdown **Camera** / **Mic** · **⏻ Lock**.
+Tất cả nút nằm trong thanh đen dưới video (không đè lên camera). Nút quay (chế độ, `MIN`, `● REC`) ở bên trái; bên phải: **▤ Library** · **⚙ Settings** · dropdown **Camera** / **Mic** · **⏻ Lock**.
 
 ## Settings (⚙)
 

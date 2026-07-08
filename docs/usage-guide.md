@@ -11,16 +11,16 @@
 - **Record / Stop:** click `● REC` / `■ STOP`, or press **Space**.
 - **Pause / Resume:** `❚❚ PAUSE` / `▶ RESUME` while recording (paused time is excluded from the timer and from the FIXED auto‑stop).
 - **Switch camera while recording:** pick another camera in the dropdown — recording continues; a short static + collapse transition is baked in. (Mic can't be changed while recording.)
-- After stop, a centered **PROCESSING** overlay shows transcode progress; the MP4 lands in your output folder and a `SAVED ▸ size` toast appears.
+- After stop, a centered **PROCESSING** overlay shows transcode progress; the MP4 lands in your output folder and a `SAVED ▸ size · filename` pill appears next to `● REC` in the control bar (click it to reveal in folder).
 
 ## HUD
 
 - Gauges: **Humidity**, **Rain** (current‑hour chance), **Temp**; plus **Environment**, **HAB > CAMERA**, **MISSION DAY** date, **TIME**, **LOG ENTRY**, and a live **mic soundwave**.
 - Location + weather follow your IP; set **City override** in Settings to pin a place (weather follows it).
 
-## Controls (bottom‑right)
+## Control bar (below the video)
 
-- **▤ Library** · **⚙ Settings** · **Camera** / **Mic** dropdowns · **⏻ Lock**.
+All buttons live in a black bar under the video (nothing overlays the camera). Recording controls (mode, `MIN`, `● REC`) sit on the left; on the right: **▤ Library** · **⚙ Settings** · **Camera** / **Mic** dropdowns · **⏻ Lock**.
 
 ## Settings (⚙)
 
