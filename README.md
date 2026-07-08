@@ -4,7 +4,7 @@
 
 **LazyCamHUD** (display name: *Lazy Camera HUD*) is a desktop webcam vlog recorder that burns a sci‑fi *The Martian*–style HUD directly into the video — mission day, live weather gauges, location, a real‑time mic soundwave and a CRT overlay. Built with **Tauri 2 + React/TypeScript**.
 
-**Version:** 0.2.0 · **Platforms:** macOS + Windows (Linux deferred)
+**Version:** 0.3.0 · **Platforms:** macOS + Windows (Linux deferred)
 
 ## Screenshots
 

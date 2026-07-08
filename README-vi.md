@@ -4,7 +4,7 @@
 
 **LazyCamHUD** (tên hiển thị: *Lazy Camera HUD*) là ứng dụng desktop quay vlog bằng webcam, **đốt (burn) HUD sci‑fi kiểu phim *The Martian* thẳng vào video** — mission day, gauge thời tiết trực tiếp, vị trí, soundwave mic realtime và lớp CRT. Viết bằng **Tauri 2 + React/TypeScript**.
 
-**Phiên bản:** 0.2.0 · **Nền tảng:** macOS + Windows (Linux hoãn sau)
+**Phiên bản:** 0.3.0 · **Nền tảng:** macOS + Windows (Linux hoãn sau)
 
 ## Ảnh chụp màn hình
 
