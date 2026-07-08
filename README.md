@@ -97,8 +97,9 @@ curl -X POST http://<host>:1337/text \
 Simulates a weather-balloon flight (lat/lon, altitude sparkline, distance, battery, name caption):
 
 ```bash
-node scripts/mock-sonde.mjs <token>                        # synthetic flight
-node scripts/replay-sonde-log.mjs <auto_rx.log> <token>    # replay a real RS41 log
+node scripts/mock-sonde.mjs <token>   # synthetic flight
+# replay the bundled real RS41 log:
+node scripts/replay-sonde-log.mjs scripts/20260708-115249_Y0532363_RS41_403000_sonde.log <token>
 ```
 
 Full reference: **[docs/sensor-api.md](./docs/sensor-api.md)**.

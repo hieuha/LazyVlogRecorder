@@ -100,6 +100,24 @@ Thêm `-i` vào `curl` để thấy cả dòng HTTP status.
 Hai script Node không cần dependency (Node 18+) đi kèm để bơm telemetry radiosonde
 thực tế vào API — tiện demo và test panel.
 
+### Test nhanh (copy‑paste)
+
+1. Chạy app (`npm run tauri dev`), rồi **Settings → Sensor API → Enable** và copy **token**.
+2. Bơm dữ liệu — chuyến bay tổng hợp hoặc log thật:
+
+```bash
+# chuyến bay tổng hợp (không cần file dữ liệu)
+node scripts/mock-sonde.mjs <token>
+
+# phát lại log auto_rx RS41 thật (ví dụ: nhanh hơn thực + lặp)
+SONDE_SPEED=20 SONDE_LOOP=1 \
+  node scripts/replay-sonde-log.mjs scripts/20260708-115249_Y0532363_RS41_403000_sonde.log <token>
+```
+
+`<token>` là token Sensor API trong Settings. Đường dẫn log là arg đầu tiên (tuyệt đối,
+hoặc tương đối so với nơi chạy lệnh). Thêm `SONDE_URL=...` để trỏ máy/cổng khác. Xem
+readouts, sparkline và caption typewriter hiện trên HUD (và trong bản ghi).
+
 ### `scripts/mock-sonde.mjs` — chuyến bay tổng hợp
 
 Sinh chuyến bay từ đầu: leo ~5 m/s → **nổ ở ~32 km** → rơi dù (nhanh khi cao, chậm
@@ -119,7 +137,8 @@ SONDE_URL=http://192.168.1.20:1337 SONDE_INTERVAL=1000 \
 ### `scripts/replay-sonde-log.mjs` — phát lại log thật
 
 Phát lại một file CSV [auto_rx](https://github.com/projecthorus/radiosonde_auto_rx)
-thật (vd RS41) theo từng dòng, đúng nhịp thời gian trong log.
+thật (vd RS41) theo từng dòng, đúng nhịp thời gian trong log. Có sẵn log mẫu ở
+`scripts/20260708-115249_Y0532363_RS41_403000_sonde.log`.
 
 Header mong đợi:
 `timestamp,serial,frame,lat,lon,alt,vel_v,vel_h,heading,temp,humidity,pressure,type,freq_mhz,snr,f_error_hz,sats,batt_v,burst_timer,aux_data`

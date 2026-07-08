@@ -97,8 +97,9 @@ curl -X POST http://<host>:1337/text \
 Mô phỏng bóng thám không (lat/lon, sparkline độ cao, khoảng cách, pin, caption tên):
 
 ```bash
-node scripts/mock-sonde.mjs <token>                        # chuyến bay tổng hợp
-node scripts/replay-sonde-log.mjs <auto_rx.log> <token>    # phát lại log RS41 thật
+node scripts/mock-sonde.mjs <token>   # chuyến bay tổng hợp
+# phát lại log RS41 thật (đã kèm sẵn):
+node scripts/replay-sonde-log.mjs scripts/20260708-115249_Y0532363_RS41_403000_sonde.log <token>
 ```
 
 Tài liệu đầy đủ: **[docs/vi/sensor-api.md](./docs/vi/sensor-api.md)**.

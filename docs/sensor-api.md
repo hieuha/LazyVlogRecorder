@@ -102,6 +102,25 @@ Add `-i` to `curl` to also see the HTTP status line.
 Two zero‑dependency Node scripts (Node 18+) are bundled to feed the API with
 realistic radiosonde telemetry — handy for demos and for testing the panels.
 
+### Quick test (copy‑paste)
+
+1. Run the app (`npm run tauri dev`), then **Settings → Sensor API → Enable** and copy the **token**.
+2. Feed it — either the synthetic flight or a real log:
+
+```bash
+# synthetic flight (no data file needed)
+node scripts/mock-sonde.mjs <token>
+
+# replay a real auto_rx RS41 log (example, faster than real time + looping)
+SONDE_SPEED=20 SONDE_LOOP=1 \
+  node scripts/replay-sonde-log.mjs scripts/20260708-115249_Y0532363_RS41_403000_sonde.log <token>
+```
+
+`<token>` is the Sensor API token from Settings. Pass the log path as the first
+arg (absolute, or relative to where you run the command). Add `SONDE_URL=...` to
+target another machine/port. Watch the readouts, sparklines and typewriter caption
+appear on the HUD (and in the recording).
+
 ### `scripts/mock-sonde.mjs` — synthetic flight
 
 Generates a flight from scratch: ascent at ~5 m/s → **burst at ~32 km** →
@@ -122,7 +141,8 @@ Pushes a name caption once (`/text` → "MOCK SONDE · HANOI"), then each second
 ### `scripts/replay-sonde-log.mjs` — replay a real log
 
 Replays a real [auto_rx](https://github.com/projecthorus/radiosonde_auto_rx)
-CSV log (e.g. an RS41) row‑by‑row, paced by the rows' own timestamps.
+CSV log (e.g. an RS41) row‑by‑row, paced by the rows' own timestamps. A sample log
+is bundled at `scripts/20260708-115249_Y0532363_RS41_403000_sonde.log`.
 
 Expected header:
 `timestamp,serial,frame,lat,lon,alt,vel_v,vel_h,heading,temp,humidity,pressure,type,freq_mhz,snr,f_error_hz,sats,batt_v,burst_timer,aux_data`
