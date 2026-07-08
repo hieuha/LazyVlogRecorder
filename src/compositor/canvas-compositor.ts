@@ -3,6 +3,8 @@
 // frame. Because everything lives on one canvas, `canvas.captureStream()`
 // (Phase 4) records the webcam + HUD burned in together.
 
+import { drawCrtOverlay } from "../hud/widgets/signal-noise";
+
 export interface LayerContext {
   ctx: CanvasRenderingContext2D;
   width: number;
@@ -25,8 +27,10 @@ export class CanvasCompositor {
   // While `now < transitionUntil` the frame is filled with TV static — used as a
   // "signal loss" transition when the camera is switched mid-recording.
   private transitionUntil = 0;
+  private transitionMs = 700;
   private noiseTile: HTMLCanvasElement | null = null;
   private mirrored = false; // horizontal flip of the webcam (not the HUD)
+  private crt = true; // CRT/analog grain overlay, applied over every layout
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -67,14 +71,20 @@ export class CanvasCompositor {
     return this.canvas;
   }
 
-  /** Show a static-noise transition for `ms` (covers a camera switch). */
+  /** Show a static + collapse-to-center transition for `ms` (camera switch). */
   triggerSwitchTransition(ms = 700): void {
+    this.transitionMs = ms;
     this.transitionUntil = performance.now() + ms;
   }
 
   /** Mirror the webcam horizontally (HUD stays unflipped). */
   setMirror(on: boolean): void {
     this.mirrored = on;
+  }
+
+  /** Toggle the CRT grain overlay (applies over every layout). */
+  setCrt(on: boolean): void {
+    this.crt = on;
   }
 
   // Size the canvas backing store to its on-screen size (× DPR) so the video
@@ -99,11 +109,20 @@ export class CanvasCompositor {
 
     // Draw the webcam when it has data; otherwise keep the last frame so a
     // camera swap doesn't flash black underneath the static.
+    const inTransition = now < this.transitionUntil;
     if (videoReady) this.drawVideoCover(width, height);
-    if (now < this.transitionUntil) this.drawStatic(width, height);
+    if (inTransition) {
+      this.drawStatic(width, height);
+      const p = Math.min(1, Math.max(0, 1 - (this.transitionUntil - now) / this.transitionMs));
+      this.drawCollapse(width, height, p);
+    }
 
     const layerCtx: LayerContext = { ctx: this.ctx, width, height, frame: this.frame++, now };
     for (const layer of this.layers) layer(layerCtx);
+
+    // CRT grain over everything — skipped during a transition (the static burst
+    // already provides grain, and this avoids generating two noise tiles/frame).
+    if (this.crt && !inTransition) drawCrtOverlay(this.ctx, width, height);
   };
 
   // Full-frame grayscale static with slight jitter (signal-loss transition).
@@ -118,12 +137,44 @@ export class CanvasCompositor {
     this.ctx.restore();
   }
 
+  // CRT power-off style: the visible feed collapses into a shrinking circle at
+  // center (p: 0 open → 0.5 pinched to a dot → 1 open) with a bright ring.
+  private drawCollapse(w: number, h: number, p: number): void {
+    const cx = w / 2;
+    const cy = h / 2;
+    const maxR = Math.hypot(w, h) / 2;
+    const r = maxR * Math.abs(Math.cos(p * Math.PI));
+    const ctx = this.ctx;
+
+    ctx.save();
+    // Darken everything outside the shrinking circle.
+    const mask = ctx.createRadialGradient(cx, cy, Math.max(0, r - 2), cx, cy, r + w * 0.4);
+    mask.addColorStop(0, "rgba(0,0,0,0)");
+    mask.addColorStop(0.03, "rgba(2,4,6,0.92)");
+    mask.addColorStop(1, "rgba(0,0,0,1)");
+    ctx.fillStyle = mask;
+    ctx.fillRect(0, 0, w, h);
+
+    // Bright CRT ring at the collapsing edge.
+    ctx.strokeStyle = "rgba(206,244,248,0.85)";
+    ctx.lineWidth = Math.max(1, w * 0.003);
+    ctx.shadowColor = "rgba(150,235,240,0.9)";
+    ctx.shadowBlur = w * 0.012;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   private staticTile(): HTMLCanvasElement {
     if (!this.noiseTile) {
       this.noiseTile = document.createElement("canvas");
       this.noiseTile.width = 128;
       this.noiseTile.height = 128;
     }
+    // Regenerate the noise only every other frame to halve the per-frame cost;
+    // still reads as animated grain.
+    if (this.frame % 2 !== 0) return this.noiseTile;
     const t = this.noiseTile.getContext("2d");
     if (!t) return this.noiseTile;
     const img = t.createImageData(128, 128);

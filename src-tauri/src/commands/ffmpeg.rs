@@ -4,9 +4,8 @@
 
 use std::path::PathBuf;
 use std::process::Command;
-use tauri::Manager;
 
-use super::recording_fs::SavedFile;
+use super::recording_fs::{resolve_out_dir, SavedFile};
 
 /// Transcode `temp_path` (WebM) to `filename` (MP4) in the output folder, delete
 /// the temp file, and return the final path + size. ffmpeg runs on a blocking
@@ -16,15 +15,9 @@ pub async fn transcode_to_mp4(
     app: tauri::AppHandle,
     temp_path: String,
     filename: String,
+    out_dir: Option<String>,
 ) -> Result<SavedFile, String> {
-    let base = app
-        .path()
-        .video_dir()
-        .or_else(|_| app.path().download_dir())
-        .map_err(|e| e.to_string())?;
-    let dir = base.join("LazyVlogRecorder");
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let out = dir.join(&filename);
+    let out = resolve_out_dir(&app, out_dir)?.join(&filename);
     let out_path = out.to_string_lossy().into_owned();
     let ffmpeg = ffmpeg_path().ok_or("bundled ffmpeg binary not found")?;
 
@@ -42,13 +35,13 @@ pub async fn transcode_to_mp4(
     .map_err(|e| e.to_string())?
     .map_err(|e| e.to_string())?;
 
-    let _ = std::fs::remove_file(&temp_path); // best-effort cleanup
-
     if !output.status.success() {
+        // Keep the temp file so the caller can fall back to saving it raw.
         let stderr = String::from_utf8_lossy(&output.stderr);
         let tail = stderr.lines().rev().take(3).collect::<Vec<_>>();
         return Err(format!("ffmpeg failed: {}", tail.join(" | ")));
     }
+    let _ = std::fs::remove_file(&temp_path); // cleanup only on success
     Ok(SavedFile::at(out))
 }
 

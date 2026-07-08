@@ -66,8 +66,7 @@ export type WidgetSpec =
   | { type: "corner-frame"; anchor: Anchor; offset: Vec2 }
   | { type: "scanline"; anchor: Anchor; offset: Vec2 }
   | { type: "color-grade"; anchor: Anchor; offset: Vec2 }
-  | { type: "soundwave"; anchor: Anchor; offset: Vec2; widthPct: number }
-  | { type: "signal-noise"; anchor: Anchor; offset: Vec2 };
+  | { type: "soundwave"; anchor: Anchor; offset: Vec2; widthPct: number };
 
 export interface Vec2 {
   x: number;

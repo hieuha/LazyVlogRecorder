@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { CanvasCompositor } from "./compositor/canvas-compositor";
 import {
   enumerateDevices,
@@ -10,11 +11,13 @@ import {
 } from "./compositor/media-devices";
 import { probeRecordingCapability, type RecordingCapability } from "./recording/capability";
 import { createHudLayer } from "./hud/layout-engine";
-import { getLayout, DEFAULT_LAYOUT_ID } from "./hud/layout-registry";
+import { getLayout, listLayouts } from "./hud/layout-registry";
 import { createHudDataSource, type HudDataSource } from "./data/hud-data-source";
 import { createAudioAnalyser, type AudioAnalyser } from "./hud/audio-analyser";
 import { useRecorder } from "./recording/use-recorder";
 import { RecordingControls } from "./recording/recording-controls";
+import { SettingsPanel } from "./settings/settings-panel";
+import { loadConfig, saveConfig, DEFAULT_CONFIG, type AppConfig } from "./settings/config-store";
 import "./App.css";
 
 type Status = "init" | "requesting" | "ready" | "error";
@@ -25,22 +28,21 @@ const CAPTURE_HEIGHT = 1080;
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const compositorRef = useRef<CanvasCompositor | null>(null);
-  // Video (camera) and audio (mic) streams are kept separate so switching the
-  // camera mid-recording only swaps video — the mic track the recorder holds
-  // stays live and recording continues.
   const videoStreamRef = useRef<MediaStream | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AudioAnalyser | null>(null);
   const dataSourceRef = useRef<HudDataSource | null>(null);
-  // Friendly name of the selected camera, shown as the HUD camera label.
+  const hudUnsubRef = useRef<(() => void) | null>(null);
   const cameraLabelRef = useRef<string>("CAM");
-  // Recorder inputs (refs so the recorder always reads current values).
+  // Recorder / HUD inputs (refs so async code always reads current values).
   const mimeTypeRef = useRef<string | null>(null);
-  const personNameRef = useRef<string>("Harry");
-  const mirrorRef = useRef<boolean>(true); // default mirrored (natural selfie)
-  // Monotonic generation guard: only the latest startPreview call may bind a
-  // stream. Protects against StrictMode double-mount + rapid device switching
-  // resolving getUserMedia out of order (which would leak camera/mic tracks).
+  const personNameRef = useRef<string>(DEFAULT_CONFIG.personName);
+  const logNoRef = useRef<number>(DEFAULT_CONFIG.logNo);
+  const outDirRef = useRef<string>(DEFAULT_CONFIG.outputDir);
+  const audioEnabledRef = useRef<boolean>(DEFAULT_CONFIG.audioEnabled);
+  const layoutIdRef = useRef<string>(DEFAULT_CONFIG.layoutId);
+  const mirrorRef = useRef<boolean>(DEFAULT_CONFIG.mirror);
+  const crtRef = useRef<boolean>(DEFAULT_CONFIG.crtEffect);
   const genRef = useRef(0);
 
   const [status, setStatus] = useState<Status>("init");
@@ -49,12 +51,40 @@ export default function App() {
   const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
   const [cameraId, setCameraId] = useState<string>("");
   const [micId, setMicId] = useState<string>("");
-  const [mirrored, setMirrored] = useState<boolean>(true);
   const [capability, setCapability] = useState<RecordingCapability | null>(null);
+  const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const rec = useRecorder({ canvasRef, micStreamRef: audioStreamRef, mimeTypeRef, personNameRef });
+  const rec = useRecorder({
+    canvasRef,
+    micStreamRef: audioStreamRef,
+    mimeTypeRef,
+    personNameRef,
+    logNoRef,
+    outDirRef,
+    onSaved: handleSaved,
+  });
 
-  // One-time init: probe capability, request permission, list devices, preview.
+  // Stable per-frame HUD state provider (reads refs, so it never goes stale).
+  const getState = useCallback(() => {
+    const s = dataSourceRef.current!.getState();
+    s.audioBars = analyserRef.current?.sampleBars(56) ?? null;
+    s.cameraLabel = cameraLabelRef.current;
+    s.personName = personNameRef.current;
+    s.logNo = logNoRef.current;
+    return s;
+  }, []);
+
+  // (Re)register the HUD layer for the current layout id.
+  const registerHud = useCallback(() => {
+    if (!compositorRef.current) return;
+    hudUnsubRef.current?.();
+    hudUnsubRef.current = compositorRef.current.registerLayer(
+      createHudLayer(getLayout(layoutIdRef.current), getState),
+    );
+  }, [getState]);
+
+  // One-time init: load config, probe capability, request permission, preview.
   useEffect(() => {
     let cancelled = false;
     const cap = probeRecordingCapability();
@@ -64,7 +94,14 @@ export default function App() {
     (async () => {
       setStatus("requesting");
       try {
-        await requestPermission(true);
+        const cfg = await loadConfig();
+        if (cancelled) return;
+        applyConfigToRefs(cfg);
+        setConfig(cfg);
+        rec.setDurationSec(cfg.durationMin * 60);
+        dataSourceRef.current = createHudDataSource(cfg.cityOverride);
+
+        await requestPermission(cfg.audioEnabled);
         const devices = await enumerateDevices();
         if (cancelled) return;
         setCameras(devices.cameras);
@@ -73,7 +110,7 @@ export default function App() {
         const mic = devices.mics[0]?.deviceId ?? "";
         setCameraId(cam);
         setMicId(mic);
-        await startAudio(mic); // persistent mic before video
+        await startAudio(mic);
         await startVideo(cam, false);
         if (!cancelled) setStatus("ready");
       } catch (err) {
@@ -85,7 +122,8 @@ export default function App() {
 
     return () => {
       cancelled = true;
-      genRef.current++; // invalidate any in-flight startVideo
+      genRef.current++;
+      hudUnsubRef.current?.();
       compositorRef.current?.stop();
       analyserRef.current?.dispose();
       analyserRef.current = null;
@@ -105,9 +143,18 @@ export default function App() {
     if (cam?.label) cameraLabelRef.current = cam.label;
   }, [cameraId, cameras]);
 
-  // Swap the camera video only. Uses a generation guard + open-before-close so a
-  // failed switch keeps the current preview. `withTransition` plays a static
-  // burst over the gap (the canvas keeps recording, so it lands in the video).
+  function applyConfigToRefs(cfg: AppConfig) {
+    personNameRef.current = cfg.personName;
+    logNoRef.current = cfg.logNo;
+    outDirRef.current = cfg.outputDir;
+    audioEnabledRef.current = cfg.audioEnabled;
+    layoutIdRef.current = cfg.layoutId;
+    mirrorRef.current = cfg.mirror;
+    crtRef.current = cfg.crtEffect;
+  }
+
+  // Swap the camera video only (open-before-close + generation guard). A static
+  // burst covers the switch gap and lands in the recording.
   async function startVideo(camDeviceId: string, withTransition: boolean) {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -131,14 +178,9 @@ export default function App() {
     if (!compositorRef.current) {
       compositorRef.current = new CanvasCompositor(canvas);
       compositorRef.current.setMirror(mirrorRef.current);
+      compositorRef.current.setCrt(crtRef.current);
       if (!dataSourceRef.current) dataSourceRef.current = createHudDataSource();
-      const getState = () => {
-        const s = dataSourceRef.current!.getState();
-        s.audioBars = analyserRef.current?.sampleBars(56) ?? null;
-        s.cameraLabel = cameraLabelRef.current;
-        return s;
-      };
-      compositorRef.current.registerLayer(createHudLayer(getLayout(DEFAULT_LAYOUT_ID), getState));
+      registerHud();
     }
     await compositorRef.current.start(stream);
 
@@ -149,9 +191,10 @@ export default function App() {
     stopStream(previous);
   }
 
-  // (Re)open the mic and rebuild the analyser. Not called mid-recording (the
-  // recorder holds the current mic track).
+  // (Re)open the mic + analyser. No-op when audio is disabled. Not called
+  // mid-recording (the recorder holds the current mic track).
   async function startAudio(micDeviceId: string) {
+    if (!audioEnabledRef.current) return;
     const stream = await openAudioStream(micDeviceId || undefined);
     const previous = audioStreamRef.current;
     audioStreamRef.current = stream;
@@ -160,11 +203,17 @@ export default function App() {
     stopStream(previous);
   }
 
+  function stopAudio() {
+    analyserRef.current?.dispose();
+    analyserRef.current = null;
+    stopStream(audioStreamRef.current);
+    audioStreamRef.current = null;
+  }
+
   async function onCameraChange(nextCameraId: string) {
     if (nextCameraId === cameraId) return;
     setCameraId(nextCameraId);
     try {
-      // Static transition; preview/recording stays live (no status overlay).
       await startVideo(nextCameraId, true);
     } catch (err) {
       setError(String(err));
@@ -172,15 +221,8 @@ export default function App() {
     }
   }
 
-  function toggleMirror() {
-    const next = !mirrored;
-    setMirrored(next);
-    mirrorRef.current = next;
-    compositorRef.current?.setMirror(next);
-  }
-
   async function onMicChange(nextMicId: string) {
-    if (nextMicId === micId || rec.recording) return; // can't swap mic mid-record
+    if (nextMicId === micId || rec.recording) return;
     setMicId(nextMicId);
     try {
       await startAudio(nextMicId);
@@ -188,6 +230,43 @@ export default function App() {
       setError(String(err));
       setStatus("error");
     }
+  }
+
+  // Advance + persist the log number after each successful save.
+  function handleSaved() {
+    const next = logNoRef.current + 1;
+    logNoRef.current = next;
+    setConfig((c) => {
+      const n = { ...c, logNo: next };
+      void saveConfig(n);
+      return n;
+    });
+  }
+
+  function setField<K extends keyof AppConfig>(key: K, value: AppConfig[K]) {
+    setConfig((c) => ({ ...c, [key]: value }));
+  }
+
+  async function browseFolder() {
+    const dir = await openDialog({ directory: true });
+    if (typeof dir === "string") setField("outputDir", dir);
+  }
+
+  async function applySettings() {
+    await saveConfig(config);
+    const audioWas = audioEnabledRef.current;
+    applyConfigToRefs(config);
+    compositorRef.current?.setMirror(config.mirror);
+    compositorRef.current?.setCrt(config.crtEffect);
+    rec.setDurationSec(config.durationMin * 60);
+    dataSourceRef.current?.setCityOverride(config.cityOverride);
+    registerHud(); // re-apply layout
+
+    if (config.audioEnabled !== audioWas && !rec.recording) {
+      if (config.audioEnabled) await startAudio(micId);
+      else stopAudio();
+    }
+    setSettingsOpen(false);
   }
 
   return (
@@ -232,11 +311,11 @@ export default function App() {
       {status === "ready" && (
         <div className="controls">
           <button
-            className={`mirror-btn ${mirrored ? "active" : ""}`}
-            onClick={toggleMirror}
-            title={mirrored ? "Mirror: on" : "Mirror: off"}
+            className="icon-btn"
+            onClick={() => setSettingsOpen(true)}
+            title="Settings"
           >
-            ⇋
+            ⚙
           </button>
           <label>
             CAM
@@ -252,7 +331,7 @@ export default function App() {
             MIC
             <select
               value={micId}
-              disabled={rec.recording}
+              disabled={rec.recording || !config.audioEnabled}
               title={rec.recording ? "Mic can't be changed while recording" : undefined}
               onChange={(e) => void onMicChange(e.target.value)}
             >
@@ -264,6 +343,17 @@ export default function App() {
             </select>
           </label>
         </div>
+      )}
+
+      {settingsOpen && (
+        <SettingsPanel
+          config={config}
+          setField={setField}
+          layouts={listLayouts()}
+          onBrowse={() => void browseFolder()}
+          onClose={() => setSettingsOpen(false)}
+          onSave={() => void applySettings()}
+        />
       )}
 
       {status === "requesting" && (

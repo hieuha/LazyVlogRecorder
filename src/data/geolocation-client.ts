@@ -13,3 +13,8 @@ export interface GeoInfo {
 export function geoLocate(): Promise<GeoInfo> {
   return invoke<GeoInfo>("geo_locate");
 }
+
+/** Forward-geocode a "city" or "city, country" query to coordinates. */
+export function geocodeCity(query: string): Promise<GeoInfo> {
+  return invoke<GeoInfo>("geocode_city", { query });
+}

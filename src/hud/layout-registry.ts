@@ -3,11 +3,13 @@
 
 import type { LayoutConfig } from "./types";
 import { martianLayout } from "./layouts/martian.layout";
+import { minimalLayout } from "./layouts/minimal.layout";
 
 export const DEFAULT_LAYOUT_ID = "martian";
 
 const LAYOUTS: Record<string, LayoutConfig> = {
   [martianLayout.id]: martianLayout,
+  [minimalLayout.id]: minimalLayout,
 };
 
 export function getLayout(id: string): LayoutConfig {

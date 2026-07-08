@@ -136,7 +136,7 @@ body,
   cursor: not-allowed;
 }
 
-.mirror-btn {
+.icon-btn {
   height: 29px;
   width: 34px;
   display: flex;
@@ -151,10 +151,138 @@ body,
   line-height: 1;
 }
 
-.mirror-btn.active {
+.icon-btn:hover {
+  border-color: #7ee0e9;
+}
+
+.icon-btn.active {
   color: #06121a;
   background: #7ee0e9;
   border-color: #7ee0e9;
+}
+
+/* Settings modal */
+.settings-backdrop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 6, 9, 0.6);
+  z-index: 10;
+}
+
+.settings-modal {
+  width: min(440px, 90vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+  background: rgba(8, 12, 16, 0.97);
+  border: 1.5px solid rgba(126, 224, 233, 0.4);
+  border-radius: 6px;
+  color: #cfe6ea;
+}
+
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #7ee0e9;
+}
+
+.settings-x {
+  background: transparent;
+  border: none;
+  color: #9fb6bd;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(150, 182, 189, 0.9);
+}
+
+.settings-field input,
+.settings-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(6, 10, 14, 0.9);
+  color: #eaf7f9;
+  border: 1px solid rgba(126, 224, 233, 0.4);
+  border-radius: 3px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.settings-folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-folder-path {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: #cfe6ea;
+  word-break: break-all;
+}
+
+.settings-folder button,
+.settings-actions button {
+  background: rgba(6, 10, 14, 0.9);
+  color: #cfe6ea;
+  border: 1px solid rgba(126, 224, 233, 0.4);
+  border-radius: 3px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.settings-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 4px;
+}
+
+.settings-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #cfe6ea;
+  cursor: pointer;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.settings-save {
+  color: #06121a !important;
+  background: #7ee0e9 !important;
+  border-color: #7ee0e9 !important;
 }
 
 .overlay {

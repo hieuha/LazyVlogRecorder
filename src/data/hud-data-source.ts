@@ -7,7 +7,7 @@
 // (later) Settings inject the real values into each frame's state.
 
 import type { GaugeValue, HudState } from "../hud/types";
-import { geoLocate } from "./geolocation-client";
+import { geoLocate, geocodeCity } from "./geolocation-client";
 import { getWeather } from "./weather-client";
 import { weatherCodeToText } from "./metric-mapping";
 
@@ -15,6 +15,7 @@ const REFRESH_MS = 10 * 60 * 1000;
 
 export interface HudDataSource {
   getState(): HudState;
+  setCityOverride(city: string): void;
   dispose(): void;
 }
 
@@ -24,7 +25,8 @@ export function createHudDataSource(cityOverride?: string): HudDataSource {
     precip: { value: null, unit: "%", min: 0, max: 100 },
     temp: { value: null, unit: "C", min: -20, max: 50 },
   };
-  let location = cityOverride?.toUpperCase() || "UNKNOWN";
+  let override = cityOverride?.trim() || "";
+  let location = override.toUpperCase() || "UNKNOWN";
   let environment = "";
   let coords: { lat: number; lon: number } | null = null;
 
@@ -41,18 +43,32 @@ export function createHudDataSource(cityOverride?: string): HudDataSource {
     }
   }
 
-  async function init(): Promise<void> {
+  // Resolve coordinates + location: geocode the override when set, else IP geo.
+  // Weather/AQI then follow the resolved coordinates.
+  async function resolveLocation(): Promise<void> {
+    if (override) {
+      try {
+        const g = await geocodeCity(override);
+        coords = { lat: g.lat, lon: g.lon };
+        location = (g.city || override).toUpperCase();
+        await refreshConditions();
+        return;
+      } catch {
+        location = override.toUpperCase(); // keep label; conditions stay last-good
+        return;
+      }
+    }
     try {
       const g = await geoLocate();
       coords = { lat: g.lat, lon: g.lon };
-      if (!cityOverride) location = (g.city || "UNKNOWN").toUpperCase();
+      location = (g.city || "UNKNOWN").toUpperCase();
       await refreshConditions();
     } catch {
-      if (!cityOverride) location = "UNKNOWN";
+      location = "UNKNOWN";
     }
   }
 
-  void init();
+  void resolveLocation();
   const timer = setInterval(() => void refreshConditions(), REFRESH_MS);
 
   return {
@@ -70,6 +86,10 @@ export function createHudDataSource(cityOverride?: string): HudDataSource {
         gauges,
         audioBars: null, // App overrides with live mic data
       };
+    },
+    setCityOverride(city: string): void {
+      override = city.trim();
+      void resolveLocation(); // re-geocode + refetch weather for the new place
     },
     dispose(): void {
       clearInterval(timer);

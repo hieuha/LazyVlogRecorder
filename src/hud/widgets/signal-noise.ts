@@ -1,12 +1,11 @@
 // CRT / analog signal overlay: animated film grain + a slow rolling refresh
-// band. Drawn on top of the whole frame (including HUD) so the recording gets
-// the "dashcam signal" look. Kept cheap: a small noise tile refreshed per frame
-// and tiled via a pattern, plus one gradient band.
-
-import type { WidgetRenderContext } from "../types";
+// band. Drawn by the compositor on top of everything (all layouts), toggled via
+// the CRT setting. Kept cheap: a small noise tile refreshed per frame and tiled
+// via a pattern, plus one gradient band.
 
 const TILE = 128;
 let tileCanvas: HTMLCanvasElement | null = null;
+let tileFrame = 0;
 
 function refreshNoiseTile(): HTMLCanvasElement {
   if (!tileCanvas) {
@@ -14,6 +13,8 @@ function refreshNoiseTile(): HTMLCanvasElement {
     tileCanvas.width = TILE;
     tileCanvas.height = TILE;
   }
+  // Regenerate only every other frame — halves cost, still looks animated.
+  if (tileFrame++ % 2 !== 0) return tileCanvas;
   const tctx = tileCanvas.getContext("2d");
   if (!tctx) return tileCanvas;
   const img = tctx.createImageData(TILE, TILE);
@@ -29,10 +30,8 @@ function refreshNoiseTile(): HTMLCanvasElement {
   return tileCanvas;
 }
 
-export function drawSignalNoise(c: WidgetRenderContext): void {
-  const { ctx, width, height } = c;
-
-  // Animated grain via overlay blend (subtle so HUD stays legible).
+/** Draw the CRT grain + rolling band over the whole frame. */
+export function drawCrtOverlay(ctx: CanvasRenderingContext2D, width: number, height: number): void {
   const pattern = ctx.createPattern(refreshNoiseTile(), "repeat");
   if (pattern) {
     ctx.save();
@@ -43,7 +42,6 @@ export function drawSignalNoise(c: WidgetRenderContext): void {
     ctx.restore();
   }
 
-  // Rolling CRT refresh band: a soft bright bar drifting downward.
   const bandH = height * 0.16;
   const y = (performance.now() / 22) % (height + bandH) - bandH;
   const band = ctx.createLinearGradient(0, y, 0, y + bandH);

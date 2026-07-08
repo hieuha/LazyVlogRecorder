@@ -39,8 +39,5 @@ export const martianLayout: LayoutConfig = {
 
     // Live mic soundwave, bottom-right, level with HAB on the left
     { type: "soundwave", anchor: "bottom-right", offset: { x: -4, y: -5.5 }, widthPct: 0.28 },
-
-    // CRT/analog signal grain over the whole frame (drawn last, on top).
-    { type: "signal-noise", anchor: "top-left", offset: { x: 0, y: 0 } },
   ],
 };

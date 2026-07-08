@@ -13,7 +13,6 @@ import {
 } from "./widgets/readout-widgets";
 import { drawColorGrade, drawCornerFrame, drawScanline } from "./widgets/frame-widgets";
 import { drawSoundwave } from "./widgets/soundwave-widget";
-import { drawSignalNoise } from "./widgets/signal-noise";
 import type { LayerContext } from "../compositor/canvas-compositor";
 
 /**
@@ -66,8 +65,6 @@ function dispatch(c: WidgetRenderContext, spec: LayoutConfig["widgets"][number])
       return drawColorGrade(c);
     case "soundwave":
       return drawSoundwave(c, spec.widthPct);
-    case "signal-noise":
-      return drawSignalNoise(c);
   }
 }
 
