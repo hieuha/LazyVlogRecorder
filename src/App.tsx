@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { CanvasCompositor } from "./compositor/canvas-compositor";
 import {
   enumerateDevices,
@@ -24,8 +26,19 @@ import { LibraryView } from "./library/library-view";
 import { addEntry, updateEntry } from "./library/entries-store";
 import { generateThumbnail } from "./library/library-client";
 import type { SavedFile } from "./recording/save-client";
+import type { SensorItem } from "./hud/types";
 import { HudSelect } from "./components/hud-select";
 import "./App.css";
+
+const SENSOR_STALE_MS = 10_000; // dim sensor rows not refreshed within this window
+const SERIES_MAX_POINTS = 120; // rolling window kept per sparkline series
+
+interface SeriesBuf {
+  points: number[];
+  value: number;
+  unit: string;
+  at: number;
+}
 
 type Status = "init" | "requesting" | "ready" | "error";
 
@@ -52,6 +65,10 @@ export default function App() {
   const crtRef = useRef<boolean>(DEFAULT_CONFIG.crtEffect);
   const recordHeightRef = useRef<number>(DEFAULT_CONFIG.recordHeight);
   const genRef = useRef(0);
+  // Latest external sensor readings + when they arrived (for staleness).
+  const sensorsRef = useRef<{ items: SensorItem[]; at: number }>({ items: [], at: 0 });
+  // Rolling per-label buffers for /series sparklines.
+  const seriesRef = useRef<Map<string, SeriesBuf>>(new Map());
 
   const [status, setStatus] = useState<Status>("init");
   const [error, setError] = useState<string>("");
@@ -84,6 +101,24 @@ export default function App() {
     s.cameraLabel = cameraLabelRef.current;
     s.personName = personNameRef.current;
     s.logNo = logNoRef.current;
+    const now = performance.now();
+    const sr = sensorsRef.current;
+    s.sensors = sr.items.length
+      ? sr.items.map((it) => ({ ...it, stale: now - sr.at > SENSOR_STALE_MS }))
+      : undefined;
+
+    const series: NonNullable<typeof s.series> = [];
+    seriesRef.current.forEach((buf, label) => {
+      if (!buf.points.length) return;
+      series.push({
+        label,
+        value: fmtSeriesValue(buf.value),
+        unit: buf.unit,
+        points: buf.points.slice(),
+        stale: now - buf.at > SENSOR_STALE_MS,
+      });
+    });
+    s.series = series.length ? series : undefined;
     return s;
   }, []);
 
@@ -137,7 +172,10 @@ export default function App() {
         setMicId(mic);
         await startAudio(mic);
         await startVideo(cam, false);
-        if (!cancelled) setStatus("ready");
+        if (!cancelled) {
+          void applySensorServer(cfg);
+          setStatus("ready");
+        }
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof PermissionDeniedError ? err.message : String(err));
@@ -160,8 +198,31 @@ export default function App() {
       stopStream(audioStreamRef.current);
       videoStreamRef.current = null;
       audioStreamRef.current = null;
+      void invoke("stop_sensor_server");
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlocked]);
+
+  // Receive sensor readings / series points pushed to the local HTTP API.
+  useEffect(() => {
+    if (!unlocked) return;
+    const unlisteners: Array<() => void> = [];
+    void listen<SensorItem[]>("sensors", (e) => {
+      sensorsRef.current = { items: e.payload ?? [], at: performance.now() };
+    }).then((fn) => unlisteners.push(fn));
+    void listen<{ label: string; value: number; unit: string }>("series", (e) => {
+      const p = e.payload;
+      if (!p || !Number.isFinite(p.value)) return;
+      const map = seriesRef.current;
+      const buf = map.get(p.label) ?? { points: [], value: p.value, unit: p.unit, at: 0 };
+      buf.points.push(p.value);
+      if (buf.points.length > SERIES_MAX_POINTS) buf.points.shift();
+      buf.value = p.value;
+      buf.unit = p.unit;
+      buf.at = performance.now();
+      map.set(p.label, buf);
+    }).then((fn) => unlisteners.push(fn));
+    return () => unlisteners.forEach((fn) => fn());
   }, [unlocked]);
 
   // Keep the HUD camera label in sync with the selected camera device.
@@ -335,7 +396,28 @@ export default function App() {
       if (config.audioEnabled) await startAudio(micId);
       else stopAudio();
     }
+    void applySensorServer(config);
     setSettingsOpen(false);
+  }
+
+  // Start/stop the sensor HTTP server to match the current config.
+  async function applySensorServer(cfg: AppConfig) {
+    try {
+      if (cfg.sensorApiEnabled) {
+        await invoke("start_sensor_server", {
+          port: cfg.sensorApiPort,
+          bindLan: cfg.sensorApiLan,
+          token: cfg.sensorApiToken,
+        });
+      } else {
+        sensorsRef.current = { items: [], at: 0 };
+        seriesRef.current.clear();
+        await invoke("stop_sensor_server");
+      }
+    } catch (err) {
+      // Surface bind failures (e.g. port in use) without breaking the app.
+      console.error("sensor server:", err);
+    }
   }
 
   if (!authReady) return <div className="stage" />;
@@ -473,6 +555,11 @@ function fmtClock(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+// Compact display of a numeric series value (integers as-is, else 1 decimal).
+function fmtSeriesValue(v: number): string {
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
 function shortMime(mime: string | null): string {

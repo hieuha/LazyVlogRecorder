@@ -24,6 +24,8 @@ pub fn run() {
             commands::recording_fs::delete_files,
             commands::ffmpeg::transcode_to_mp4,
             commands::ffmpeg::generate_thumbnail,
+            commands::sensor_server::start_sensor_server,
+            commands::sensor_server::stop_sensor_server,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

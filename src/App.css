@@ -245,7 +245,7 @@ body,
   color: rgba(150, 182, 189, 0.9);
 }
 
-.settings-field input,
+.settings-field input:not([type="checkbox"]),
 .settings-field select {
   appearance: none;
   -webkit-appearance: none;
@@ -256,6 +256,15 @@ body,
   padding: 8px 10px;
   font-size: 13px;
   font-weight: 500;
+}
+
+/* Consistent, on-theme checkboxes (the settings-field rule above would strip them). */
+.settings-check input[type="checkbox"],
+.settings-field input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #7ee0e9;
+  cursor: pointer;
 }
 
 .settings-folder {

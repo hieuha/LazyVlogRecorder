@@ -14,6 +14,11 @@ export interface AppConfig {
   crtEffect: boolean; // CRT/analog grain overlay
   layoutId: string;
   cityOverride: string; // "" = auto (IP geolocation)
+  // External sensor HTTP API (right-side HUD panel).
+  sensorApiEnabled: boolean;
+  sensorApiPort: number;
+  sensorApiLan: boolean; // true = bind 0.0.0.0 (LAN), false = 127.0.0.1 only
+  sensorApiToken: string; // required when LAN; auto-generated
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -27,7 +32,18 @@ export const DEFAULT_CONFIG: AppConfig = {
   crtEffect: true,
   layoutId: "martian",
   cityOverride: "",
+  sensorApiEnabled: false,
+  sensorApiPort: 1337,
+  sensorApiLan: true,
+  sensorApiToken: "",
 };
+
+/** Random hex token for the sensor API (used as a bearer token). */
+export function generateToken(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 const store = new LazyStore("config.json");
 

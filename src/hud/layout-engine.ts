@@ -13,6 +13,8 @@ import {
 } from "./widgets/readout-widgets";
 import { drawColorGrade, drawCornerFrame, drawScanline } from "./widgets/frame-widgets";
 import { drawSoundwave } from "./widgets/soundwave-widget";
+import { drawSensorPanel } from "./widgets/sensor-panel-widget";
+import { drawSeriesPanel } from "./widgets/series-panel-widget";
 import type { LayerContext } from "../compositor/canvas-compositor";
 
 /**
@@ -65,6 +67,10 @@ function dispatch(c: WidgetRenderContext, spec: LayoutConfig["widgets"][number])
       return drawColorGrade(c);
     case "soundwave":
       return drawSoundwave(c, spec.widthPct);
+    case "sensor-panel":
+      return drawSensorPanel(c);
+    case "series-panel":
+      return drawSeriesPanel(c);
   }
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChangePinFlow } from "../auth/change-pin-flow";
-import type { AppConfig } from "./config-store";
+import { generateToken, type AppConfig } from "./config-store";
 
 interface Props {
   config: AppConfig;
@@ -119,6 +119,69 @@ export function SettingsPanel(p: Props) {
             CRT EFFECT
           </label>
         </div>
+
+        <div className="settings-field">
+          SENSOR API (right‑side HUD panel)
+          <label className="settings-check">
+            <input
+              type="checkbox"
+              checked={c.sensorApiEnabled}
+              onChange={(e) => {
+                const on = e.target.checked;
+                p.setField("sensorApiEnabled", on);
+                if (on && !c.sensorApiToken) p.setField("sensorApiToken", generateToken());
+              }}
+            />
+            Enable HTTP endpoint
+          </label>
+        </div>
+
+        {c.sensorApiEnabled && (
+          <>
+            <div className="settings-row">
+              <label className="settings-field" style={{ flex: 1 }}>
+                PORT
+                <input
+                  type="number"
+                  min={1}
+                  max={65535}
+                  value={c.sensorApiPort}
+                  onChange={(e) =>
+                    p.setField("sensorApiPort", Math.min(65535, Math.max(1, Number(e.target.value) || 1)))
+                  }
+                />
+              </label>
+              <label className="settings-check">
+                <input
+                  type="checkbox"
+                  checked={c.sensorApiLan}
+                  onChange={(e) => p.setField("sensorApiLan", e.target.checked)}
+                />
+                Allow LAN devices
+              </label>
+            </div>
+
+            <div className="settings-field">
+              TOKEN (Bearer)
+              <div className="settings-folder">
+                <span className="settings-folder-path">{c.sensorApiToken || "(none)"}</span>
+                <button onClick={() => p.setField("sensorApiToken", generateToken())}>Regenerate</button>
+              </div>
+            </div>
+
+            <div className="settings-field">
+              ENDPOINTS (POST)
+              <span className="settings-folder-path" style={{ whiteSpace: "nowrap" }}>
+                http://{c.sensorApiLan ? "IP" : "127.0.0.1"}:{c.sensorApiPort}/sensors
+                {"  ·  readouts"}
+              </span>
+              <span className="settings-folder-path" style={{ whiteSpace: "nowrap" }}>
+                http://{c.sensorApiLan ? "IP" : "127.0.0.1"}:{c.sensorApiPort}/series
+                {"  ·  sparkline"}
+              </span>
+            </div>
+          </>
+        )}
 
         <div className="settings-field">
           SECURITY

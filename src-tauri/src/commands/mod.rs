@@ -6,4 +6,5 @@ pub mod auth;
 pub mod ffmpeg;
 pub mod geo;
 pub mod recording_fs;
+pub mod sensor_server;
 pub mod weather;

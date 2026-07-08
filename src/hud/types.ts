@@ -41,6 +41,27 @@ export interface HudState {
   gauges: Record<GaugeMetric, GaugeValue>;
   /** Normalized 0..1 amplitudes for the live mic waveform; null when no audio. */
   audioBars?: number[] | null;
+  /** External sensor readings pushed via the local HTTP API (right-side panel). */
+  sensors?: SensorItem[];
+  /** Time series pushed via POST /series, rendered as sparkline rows. */
+  series?: SeriesItem[];
+}
+
+/** One external sensor reading shown on the HUD; `stale` when not updated recently. */
+export interface SensorItem {
+  label: string;
+  value: string;
+  unit: string;
+  stale?: boolean;
+}
+
+/** A time series (POST /series) rendered as a labelled sparkline row. */
+export interface SeriesItem {
+  label: string;
+  value: string; // latest value, formatted for display
+  unit: string;
+  points: number[]; // recent numeric samples, oldest → newest
+  stale?: boolean;
 }
 
 export type GaugeMetric = "humidity" | "precip" | "temp";
@@ -66,7 +87,9 @@ export type WidgetSpec =
   | { type: "corner-frame"; anchor: Anchor; offset: Vec2 }
   | { type: "scanline"; anchor: Anchor; offset: Vec2 }
   | { type: "color-grade"; anchor: Anchor; offset: Vec2 }
-  | { type: "soundwave"; anchor: Anchor; offset: Vec2; widthPct: number };
+  | { type: "soundwave"; anchor: Anchor; offset: Vec2; widthPct: number }
+  | { type: "sensor-panel"; anchor: Anchor; offset: Vec2 }
+  | { type: "series-panel"; anchor: Anchor; offset: Vec2 };
 
 export interface Vec2 {
   x: number;
