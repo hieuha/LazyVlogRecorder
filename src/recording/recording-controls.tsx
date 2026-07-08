@@ -3,6 +3,7 @@
 
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import type { RecMode } from "./use-recorder";
+import type { SavedFile } from "./save-client";
 
 interface Props {
   mode: RecMode;
@@ -10,7 +11,7 @@ interface Props {
   durationSec: number;
   setDurationSec: (n: number) => void;
   recording: boolean;
-  savedPath: string | null;
+  savedFile: SavedFile | null;
   saving: boolean;
   error: string | null;
   disabled: boolean;
@@ -54,7 +55,7 @@ export function RecordingControls(p: Props) {
         )}
         {!p.recording ? (
           <button className="rec-btn start" onClick={p.onStart} disabled={p.disabled || p.saving}>
-            {p.saving ? "SAVING…" : "● REC"}
+            {p.saving ? "PROCESSING…" : "● REC"}
           </button>
         ) : (
           <button className="rec-btn stop" onClick={p.onStop}>
@@ -64,16 +65,22 @@ export function RecordingControls(p: Props) {
       </div>
 
       {p.error && <div className="rec-error">{p.error}</div>}
-      {p.savedPath && !p.recording && (
+      {p.savedFile && !p.recording && (
         <button
           className="rec-saved"
           title="Reveal in folder"
-          onClick={() => void revealItemInDir(p.savedPath!)}
+          onClick={() => void revealItemInDir(p.savedFile!.path)}
         >
-          <span className="rec-saved-label">SAVED ▸</span>
-          <span className="rec-saved-path">{p.savedPath}</span>
+          <span className="rec-saved-label">SAVED ▸ {fmtSize(p.savedFile.size)}</span>
+          <span className="rec-saved-path">{p.savedFile.path}</span>
         </button>
       )}
     </div>
   );
+}
+
+function fmtSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${bytes} B`;
 }

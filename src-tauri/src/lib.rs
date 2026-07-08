@@ -12,6 +12,8 @@ pub fn run() {
             commands::geo::geo_locate,
             commands::weather::get_weather,
             commands::recording_fs::save_recording,
+            commands::recording_fs::save_temp_recording,
+            commands::ffmpeg::transcode_to_mp4,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

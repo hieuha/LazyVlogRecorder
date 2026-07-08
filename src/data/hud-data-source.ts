@@ -62,7 +62,7 @@ export function createHudDataSource(cityOverride?: string): HudDataSource {
         missionDay: 26, // Settings (Phase 6) will source this
         personName: "Harry",
         logNo: 1,
-        clock: { h: now.getHours(), m: now.getMinutes() },
+        clock: { h: now.getHours(), m: now.getMinutes(), s: now.getSeconds() },
         dateText: `${now.getFullYear()}.${p2(now.getMonth() + 1)}.${p2(now.getDate())}`,
         environment,
         location,

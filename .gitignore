@@ -63,6 +63,9 @@ repomix-output.xml
 .claude/
 plans/
 screenshots/*
+
+# bundled ffmpeg sidecars (fetched via scripts/fetch-ffmpeg.sh)
+src-tauri/binaries/
 docs/screenshots/*
 logs.txt
 test-ck

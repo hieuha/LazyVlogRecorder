@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from "react";
 import { createRecorder, type Recorder } from "./recorder";
-import { saveRecording } from "./save-client";
+import { saveRecording, saveTempRecording, transcodeToMp4, type SavedFile } from "./save-client";
 import { extForMime, makeRecordingName } from "./output-naming";
 
 export type RecMode = "fixed" | "free";
@@ -22,7 +22,7 @@ export function useRecorder(refs: UseRecorderRefs) {
   const [durationSec, setDurationSec] = useState(900); // 15 min default
   const [recording, setRecording] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
-  const [savedPath, setSavedPath] = useState<string | null>(null);
+  const [savedFile, setSavedFile] = useState<SavedFile | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,10 +44,10 @@ export function useRecorder(refs: UseRecorderRefs) {
 
   // Auto-dismiss the "saved" notice after 10s.
   useEffect(() => {
-    if (!savedPath) return;
-    const t = window.setTimeout(() => setSavedPath(null), 10000);
+    if (!savedFile) return;
+    const t = window.setTimeout(() => setSavedFile(null), 10000);
     return () => clearTimeout(t);
-  }, [savedPath]);
+  }, [savedFile]);
 
   async function stop(): Promise<void> {
     if (!recRef.current) return;
@@ -62,9 +62,19 @@ export function useRecorder(refs: UseRecorderRefs) {
       const blob = await recRef.current.stop();
       recRef.current = null;
       const bytes = new Uint8Array(await blob.arrayBuffer());
-      const ext = extForMime(refs.mimeTypeRef.current ?? "video/webm");
-      const name = makeRecordingName(refs.personNameRef.current, ext);
-      setSavedPath(await saveRecording(bytes, name));
+      const srcExt = extForMime(refs.mimeTypeRef.current ?? "video/webm");
+      const person = refs.personNameRef.current;
+      // Transcode recorded WebM → MP4 (H.264/AAC). Fall back to the raw source
+      // file if ffmpeg fails, so a take is never lost.
+      try {
+        const tempPath = await saveTempRecording(bytes, srcExt);
+        const outName = makeRecordingName(person, "mp4");
+        setSavedFile(await transcodeToMp4(tempPath, outName));
+      } catch (transcodeErr) {
+        const rawName = makeRecordingName(person, srcExt);
+        setSavedFile(await saveRecording(bytes, rawName));
+        setError(`MP4 transcode failed; saved ${srcExt.toUpperCase()}. ${transcodeErr}`);
+      }
     } catch (err) {
       setError(String(err));
     } finally {
@@ -76,7 +86,7 @@ export function useRecorder(refs: UseRecorderRefs) {
     const canvas = refs.canvasRef.current;
     const mime = refs.mimeTypeRef.current;
     if (!canvas || !mime || recRef.current) return;
-    setSavedPath(null);
+    setSavedFile(null);
     setError(null);
     recRef.current = createRecorder({
       canvas,
@@ -101,7 +111,7 @@ export function useRecorder(refs: UseRecorderRefs) {
     setDurationSec,
     recording,
     elapsedSec,
-    savedPath,
+    savedFile,
     saving,
     error,
     start,

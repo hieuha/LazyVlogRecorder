@@ -220,7 +220,7 @@ export default function App() {
           durationSec={rec.durationSec}
           setDurationSec={rec.setDurationSec}
           recording={rec.recording}
-          savedPath={rec.savedPath}
+          savedFile={rec.savedFile}
           saving={rec.saving}
           error={rec.error}
           disabled={!capability?.ok}

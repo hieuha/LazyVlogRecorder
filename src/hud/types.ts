@@ -33,7 +33,7 @@ export interface HudState {
   missionDay: number; // SOL
   personName: string; // LOG ENTRY > {name}
   logNo: number;
-  clock: { h: number; m: number };
+  clock: { h: number; m: number; s: number };
   dateText: string; // e.g. "2026.07.08"
   environment: string; // weather-code text
   location: string; // place (left of ">"): geo city, "UNKNOWN" when unresolved

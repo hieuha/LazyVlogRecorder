@@ -40,7 +40,8 @@ export function drawMissionDay(c: WidgetRenderContext): void {
 // TIME hh mm (top-right, right-aligned). DATE lives in the MISSION DAY block.
 export function drawClock(c: WidgetRenderContext): void {
   const { ctx, origin, u, theme, state } = c;
-  drawText(ctx, `TIME  ${pad2(state.clock.h)} ${pad2(state.clock.m)}`, origin.x, origin.y, {
+  const t = `TIME  ${pad2(state.clock.h)}:${pad2(state.clock.m)}:${pad2(state.clock.s)}`;
+  drawText(ctx, t, origin.x, origin.y, {
     font: theme.fontMono,
     size: 1.9 * u,
     color: theme.text,
