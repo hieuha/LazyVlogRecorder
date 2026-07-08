@@ -20,7 +20,7 @@ impl SavedFile {
 }
 
 /// Resolve (and create) the output directory: a user override when non-empty,
-/// otherwise Movies/LazyVlogRecorder (or Downloads fallback).
+/// otherwise Movies/LazyCamHUD (or Downloads fallback).
 pub fn resolve_out_dir(
     app: &tauri::AppHandle,
     out_dir: Option<String>,
@@ -32,7 +32,7 @@ pub fn resolve_out_dir(
             .video_dir()
             .or_else(|_| app.path().download_dir())
             .map_err(|e| e.to_string())?
-            .join("LazyVlogRecorder"),
+            .join("LazyCamHUD"),
     };
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir)
@@ -41,7 +41,7 @@ pub fn resolve_out_dir(
 /// Create an empty temp file for a new recording; returns its path.
 #[tauri::command]
 pub fn start_temp_recording(ext: String) -> Result<String, String> {
-    let dir = std::env::temp_dir().join("LazyVlogRecorder");
+    let dir = std::env::temp_dir().join("LazyCamHUD");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Build + package **LazyVlogRecorder** (Tauri 2 + React). MVP targets **macOS + Windows**; Linux is deferred.
+Build + package **LazyCamHUD** (Tauri 2 + React). MVP targets **macOS + Windows**; Linux is deferred.
 
 ## Prerequisites
 

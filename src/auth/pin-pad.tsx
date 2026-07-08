@@ -27,7 +27,7 @@ export function PinPad({ title, len, pin, error, shake, onDigit, onDelete, onClo
         </button>
       )}
 
-      <div className="pin-brand">LAZY VLOG RECORDER</div>
+      <div className="pin-brand">LAZY CAMERA HUD</div>
       <div className="pin-title">{title}</div>
 
       <div className={`pin-dots ${shake ? "shake" : ""}`}>

@@ -147,7 +147,9 @@ export default function App() {
       cancelled = true;
       genRef.current++;
       hudUnsubRef.current?.();
+      hudUnsubRef.current = null;
       compositorRef.current?.stop();
+      compositorRef.current = null; // fresh compositor binds the remounted canvas on re-unlock
       analyserRef.current?.dispose();
       analyserRef.current = null;
       dataSourceRef.current?.dispose();
@@ -320,7 +322,7 @@ export default function App() {
       <canvas ref={canvasRef} className="preview-canvas" />
 
       <header className="topbar">
-        <span className="brand">LAZY VLOG RECORDER</span>
+        <span className="brand">LAZY CAMERA HUD</span>
         {rec.recording ? (
           <span className="cap-badge recording">
             <span className="rec-dot" />

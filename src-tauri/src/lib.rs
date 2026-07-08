@@ -1,4 +1,4 @@
-// LazyVlogRecorder — Tauri backend entrypoint.
+// LazyCamHUD — Tauri backend entrypoint.
 // Registers the data-layer commands (weather / air-quality / geo proxies).
 // Later phases add recording fs + ffmpeg transcode commands here.
 
