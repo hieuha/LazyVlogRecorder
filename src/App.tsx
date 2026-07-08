@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { CanvasCompositor } from "./compositor/canvas-compositor";
 import {
   enumerateDevices,
-  openStream,
+  openVideoStream,
+  openAudioStream,
   requestPermission,
   stopStream,
   PermissionDeniedError,
@@ -24,7 +25,11 @@ const CAPTURE_HEIGHT = 1080;
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const compositorRef = useRef<CanvasCompositor | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  // Video (camera) and audio (mic) streams are kept separate so switching the
+  // camera mid-recording only swaps video — the mic track the recorder holds
+  // stays live and recording continues.
+  const videoStreamRef = useRef<MediaStream | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AudioAnalyser | null>(null);
   const dataSourceRef = useRef<HudDataSource | null>(null);
   // Friendly name of the selected camera, shown as the HUD camera label.
@@ -45,7 +50,7 @@ export default function App() {
   const [micId, setMicId] = useState<string>("");
   const [capability, setCapability] = useState<RecordingCapability | null>(null);
 
-  const rec = useRecorder({ canvasRef, micStreamRef: streamRef, mimeTypeRef, personNameRef });
+  const rec = useRecorder({ canvasRef, micStreamRef: audioStreamRef, mimeTypeRef, personNameRef });
 
   // One-time init: probe capability, request permission, list devices, preview.
   useEffect(() => {
@@ -66,7 +71,8 @@ export default function App() {
         const mic = devices.mics[0]?.deviceId ?? "";
         setCameraId(cam);
         setMicId(mic);
-        await startPreview(cam, mic);
+        await startAudio(mic); // persistent mic before video
+        await startVideo(cam, false);
         if (!cancelled) setStatus("ready");
       } catch (err) {
         if (cancelled) return;
@@ -77,14 +83,16 @@ export default function App() {
 
     return () => {
       cancelled = true;
-      genRef.current++; // invalidate any in-flight startPreview
+      genRef.current++; // invalidate any in-flight startVideo
       compositorRef.current?.stop();
       analyserRef.current?.dispose();
       analyserRef.current = null;
       dataSourceRef.current?.dispose();
       dataSourceRef.current = null;
-      stopStream(streamRef.current);
-      streamRef.current = null;
+      stopStream(videoStreamRef.current);
+      stopStream(audioStreamRef.current);
+      videoStreamRef.current = null;
+      audioStreamRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -95,38 +103,31 @@ export default function App() {
     if (cam?.label) cameraLabelRef.current = cam.label;
   }, [cameraId, cameras]);
 
-  // Open the new stream BEFORE tearing down the old one (open-before-close), so
-  // a failed openStream leaves the working preview intact, and stale streams
-  // from superseded calls are always stopped rather than leaked.
-  async function startPreview(camDeviceId: string, micDeviceId: string) {
+  // Swap the camera video only. Uses a generation guard + open-before-close so a
+  // failed switch keeps the current preview. `withTransition` plays a static
+  // burst over the gap (the canvas keeps recording, so it lands in the video).
+  async function startVideo(camDeviceId: string, withTransition: boolean) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const gen = ++genRef.current;
 
-    const stream = await openStream({
+    if (withTransition) compositorRef.current?.triggerSwitchTransition(700);
+
+    const stream = await openVideoStream({
       cameraDeviceId: camDeviceId || undefined,
-      micDeviceId: micDeviceId || undefined,
-      audio: true,
       width: CAPTURE_WIDTH,
       height: CAPTURE_HEIGHT,
     });
-
-    // A newer call (or unmount) superseded us while awaiting: discard our stream.
     if (gen !== genRef.current) {
       stopStream(stream);
       return;
     }
 
-    const previous = streamRef.current;
-    streamRef.current = stream;
-
-    // (Re)build the mic analyser for the new stream so the soundwave reflects it.
-    analyserRef.current?.dispose();
-    analyserRef.current = createAudioAnalyser(stream);
+    const previous = videoStreamRef.current;
+    videoStreamRef.current = stream;
 
     if (!compositorRef.current) {
       compositorRef.current = new CanvasCompositor(canvas);
-      // Data-driven HUD layer (Phase 2). Mock gauges + real mic waveform.
       if (!dataSourceRef.current) dataSourceRef.current = createHudDataSource();
       const getState = () => {
         const s = dataSourceRef.current!.getState();
@@ -139,21 +140,40 @@ export default function App() {
     await compositorRef.current.start(stream);
 
     if (gen !== genRef.current) {
-      // Superseded during start(): the winning call owns streamRef now.
       stopStream(stream);
       return;
     }
-    stopStream(previous); // new preview is live; safe to release the old stream
+    stopStream(previous);
   }
 
-  async function onDeviceChange(nextCameraId: string, nextMicId: string) {
-    if (nextCameraId === cameraId && nextMicId === micId) return; // no-op re-select
+  // (Re)open the mic and rebuild the analyser. Not called mid-recording (the
+  // recorder holds the current mic track).
+  async function startAudio(micDeviceId: string) {
+    const stream = await openAudioStream(micDeviceId || undefined);
+    const previous = audioStreamRef.current;
+    audioStreamRef.current = stream;
+    analyserRef.current?.dispose();
+    analyserRef.current = createAudioAnalyser(stream);
+    stopStream(previous);
+  }
+
+  async function onCameraChange(nextCameraId: string) {
+    if (nextCameraId === cameraId) return;
     setCameraId(nextCameraId);
+    try {
+      // Static transition; preview/recording stays live (no status overlay).
+      await startVideo(nextCameraId, true);
+    } catch (err) {
+      setError(String(err));
+      setStatus("error");
+    }
+  }
+
+  async function onMicChange(nextMicId: string) {
+    if (nextMicId === micId || rec.recording) return; // can't swap mic mid-record
     setMicId(nextMicId);
     try {
-      setStatus("requesting");
-      await startPreview(nextCameraId, nextMicId);
-      setStatus("ready");
+      await startAudio(nextMicId);
     } catch (err) {
       setError(String(err));
       setStatus("error");
@@ -203,7 +223,7 @@ export default function App() {
         <div className="controls">
           <label>
             CAM
-            <select value={cameraId} onChange={(e) => onDeviceChange(e.target.value, micId)}>
+            <select value={cameraId} onChange={(e) => void onCameraChange(e.target.value)}>
               {cameras.map((c, i) => (
                 <option key={c.deviceId || i} value={c.deviceId}>
                   {c.label || `Camera ${i + 1}`}
@@ -213,7 +233,12 @@ export default function App() {
           </label>
           <label>
             MIC
-            <select value={micId} onChange={(e) => onDeviceChange(cameraId, e.target.value)}>
+            <select
+              value={micId}
+              disabled={rec.recording}
+              title={rec.recording ? "Mic can't be changed while recording" : undefined}
+              onChange={(e) => void onMicChange(e.target.value)}
+            >
               {mics.map((m, i) => (
                 <option key={m.deviceId || i} value={m.deviceId}>
                   {m.label || `Mic ${i + 1}`}

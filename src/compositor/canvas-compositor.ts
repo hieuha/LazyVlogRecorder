@@ -22,6 +22,10 @@ export class CanvasCompositor {
   private layers: LayerDrawFn[] = [];
   private rafId: number | null = null;
   private frame = 0;
+  // While `now < transitionUntil` the frame is filled with TV static — used as a
+  // "signal loss" transition when the camera is switched mid-recording.
+  private transitionUntil = 0;
+  private noiseTile: HTMLCanvasElement | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -62,6 +66,11 @@ export class CanvasCompositor {
     return this.canvas;
   }
 
+  /** Show a static-noise transition for `ms` (covers a camera switch). */
+  triggerSwitchTransition(ms = 700): void {
+    this.transitionUntil = performance.now() + ms;
+  }
+
   // Size the canvas backing store to its on-screen size (× DPR) so the video
   // fills the window with no letterbox bars, and the HUD spans the full frame.
   private resizeToDisplay(): void {
@@ -76,21 +85,53 @@ export class CanvasCompositor {
 
   private loop = (): void => {
     this.rafId = requestAnimationFrame(this.loop);
-    if (this.video.readyState < 2) return; // not enough data yet
     this.resizeToDisplay();
 
     const { width, height } = this.canvas;
-    this.drawVideoCover(width, height);
+    const now = performance.now();
+    const videoReady = this.video.readyState >= 2 && this.video.videoWidth > 0;
 
-    const layerCtx: LayerContext = {
-      ctx: this.ctx,
-      width,
-      height,
-      frame: this.frame++,
-      now: performance.now(),
-    };
+    // Draw the webcam when it has data; otherwise keep the last frame so a
+    // camera swap doesn't flash black underneath the static.
+    if (videoReady) this.drawVideoCover(width, height);
+    if (now < this.transitionUntil) this.drawStatic(width, height);
+
+    const layerCtx: LayerContext = { ctx: this.ctx, width, height, frame: this.frame++, now };
     for (const layer of this.layers) layer(layerCtx);
   };
+
+  // Full-frame grayscale static with slight jitter (signal-loss transition).
+  private drawStatic(w: number, h: number): void {
+    const pattern = this.ctx.createPattern(this.staticTile(), "repeat");
+    if (!pattern) return;
+    this.ctx.save();
+    this.ctx.globalAlpha = 0.92;
+    this.ctx.fillStyle = pattern;
+    this.ctx.translate((Math.random() * 2 - 1) * 5, (Math.random() * 2 - 1) * 5);
+    this.ctx.fillRect(-8, -8, w + 16, h + 16);
+    this.ctx.restore();
+  }
+
+  private staticTile(): HTMLCanvasElement {
+    if (!this.noiseTile) {
+      this.noiseTile = document.createElement("canvas");
+      this.noiseTile.width = 128;
+      this.noiseTile.height = 128;
+    }
+    const t = this.noiseTile.getContext("2d");
+    if (!t) return this.noiseTile;
+    const img = t.createImageData(128, 128);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = (Math.random() * 255) | 0;
+      d[i] = v;
+      d[i + 1] = v;
+      d[i + 2] = v;
+      d[i + 3] = 255;
+    }
+    t.putImageData(img, 0, 0);
+    return this.noiseTile;
+  }
 
   /** Draw the video scaled to cover the canvas (center-crop, no distortion). */
   private drawVideoCover(cw: number, ch: number): void {

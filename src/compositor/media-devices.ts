@@ -7,10 +7,8 @@ export interface MediaDeviceLists {
   mics: MediaDeviceInfo[];
 }
 
-export interface OpenStreamOptions {
+export interface OpenVideoOptions {
   cameraDeviceId?: string;
-  micDeviceId?: string;
-  audio: boolean;
   /** Requested capture size; browser picks nearest supported. */
   width?: number;
   height?: number;
@@ -47,19 +45,31 @@ export async function enumerateDevices(): Promise<MediaDeviceLists> {
   };
 }
 
-/** Open a live webcam (+mic) stream, honoring optional device selection. */
-export async function openStream(opts: OpenStreamOptions): Promise<MediaStream> {
+/**
+ * Open a video-only webcam stream. Kept separate from audio so switching the
+ * camera mid-recording only swaps video — the mic track (held by the recorder)
+ * stays alive and recording continues uninterrupted.
+ */
+export async function openVideoStream(opts: OpenVideoOptions): Promise<MediaStream> {
   const video: MediaTrackConstraints = {
     width: opts.width ? { ideal: opts.width } : undefined,
     height: opts.height ? { ideal: opts.height } : undefined,
     deviceId: opts.cameraDeviceId ? { exact: opts.cameraDeviceId } : undefined,
   };
-  const audio: boolean | MediaTrackConstraints = opts.audio
-    ? { deviceId: opts.micDeviceId ? { exact: opts.micDeviceId } : undefined }
-    : false;
-
   try {
-    return await navigator.mediaDevices.getUserMedia({ video, audio });
+    return await navigator.mediaDevices.getUserMedia({ video, audio: false });
+  } catch (err) {
+    throw toPermissionError(err);
+  }
+}
+
+/** Open an audio-only (mic) stream, honoring optional device selection. */
+export async function openAudioStream(micDeviceId?: string): Promise<MediaStream> {
+  const audio: MediaTrackConstraints = {
+    deviceId: micDeviceId ? { exact: micDeviceId } : undefined,
+  };
+  try {
+    return await navigator.mediaDevices.getUserMedia({ video: false, audio });
   } catch (err) {
     throw toPermissionError(err);
   }
