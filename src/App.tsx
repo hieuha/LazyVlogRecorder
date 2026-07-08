@@ -12,6 +12,8 @@ import { createHudLayer } from "./hud/layout-engine";
 import { getLayout, DEFAULT_LAYOUT_ID } from "./hud/layout-registry";
 import { createHudDataSource, type HudDataSource } from "./data/hud-data-source";
 import { createAudioAnalyser, type AudioAnalyser } from "./hud/audio-analyser";
+import { useRecorder } from "./recording/use-recorder";
+import { RecordingControls } from "./recording/recording-controls";
 import "./App.css";
 
 type Status = "init" | "requesting" | "ready" | "error";
@@ -27,6 +29,9 @@ export default function App() {
   const dataSourceRef = useRef<HudDataSource | null>(null);
   // Friendly name of the selected camera, shown as the HUD camera label.
   const cameraLabelRef = useRef<string>("CAM");
+  // Recorder inputs (refs so the recorder always reads current values).
+  const mimeTypeRef = useRef<string | null>(null);
+  const personNameRef = useRef<string>("Harry");
   // Monotonic generation guard: only the latest startPreview call may bind a
   // stream. Protects against StrictMode double-mount + rapid device switching
   // resolving getUserMedia out of order (which would leak camera/mic tracks).
@@ -40,10 +45,14 @@ export default function App() {
   const [micId, setMicId] = useState<string>("");
   const [capability, setCapability] = useState<RecordingCapability | null>(null);
 
+  const rec = useRecorder({ canvasRef, micStreamRef: streamRef, mimeTypeRef, personNameRef });
+
   // One-time init: probe capability, request permission, list devices, preview.
   useEffect(() => {
     let cancelled = false;
-    setCapability(probeRecordingCapability());
+    const cap = probeRecordingCapability();
+    setCapability(cap);
+    mimeTypeRef.current = cap.supportedMimeType;
 
     (async () => {
       setStatus("requesting");
@@ -157,14 +166,38 @@ export default function App() {
 
       <header className="topbar">
         <span className="brand">LAZY VLOG RECORDER</span>
-        {capability && (
-          <span className={`cap-badge ${capability.ok ? "ok" : "warn"}`}>
-            {capability.ok
-              ? `REC READY · ${shortMime(capability.supportedMimeType)}`
-              : "REC UNSUPPORTED"}
+        {rec.recording ? (
+          <span className="cap-badge recording">
+            <span className="rec-dot" />
+            {rec.mode === "fixed" ? "-" : ""}
+            {fmtClock(rec.mode === "fixed" ? Math.max(0, rec.durationSec - rec.elapsedSec) : rec.elapsedSec)}
           </span>
+        ) : (
+          capability && (
+            <span className={`cap-badge ${capability.ok ? "ok" : "warn"}`}>
+              {capability.ok
+                ? `REC READY · ${shortMime(capability.supportedMimeType)}`
+                : "REC UNSUPPORTED"}
+            </span>
+          )
         )}
       </header>
+
+      {status === "ready" && (
+        <RecordingControls
+          mode={rec.mode}
+          setMode={rec.setMode}
+          durationSec={rec.durationSec}
+          setDurationSec={rec.setDurationSec}
+          recording={rec.recording}
+          savedPath={rec.savedPath}
+          saving={rec.saving}
+          error={rec.error}
+          disabled={!capability?.ok}
+          onStart={rec.start}
+          onStop={() => void rec.stop()}
+        />
+      )}
 
       {status === "ready" && (
         <div className="controls">
@@ -202,6 +235,12 @@ export default function App() {
       )}
     </div>
   );
+}
+
+function fmtClock(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
 function shortMime(mime: string | null): string {

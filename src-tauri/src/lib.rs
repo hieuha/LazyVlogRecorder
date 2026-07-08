@@ -11,6 +11,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::geo::geo_locate,
             commands::weather::get_weather,
+            commands::recording_fs::save_recording,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

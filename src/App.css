@@ -32,13 +32,15 @@ body,
 
 .topbar {
   position: absolute;
-  top: 0;
+  /* Center the row on the HUD corner bracket's horizontal arm (canvas y = 2u ≈ 2vw). */
+  top: 2vw;
   left: 0;
   right: 0;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 3vw;
+  padding: 0 3vw;
   pointer-events: none;
 }
 
@@ -66,6 +68,23 @@ body,
 
 .cap-badge.warn {
   color: #e0a857;
+}
+
+/* Recording state: solid red box with the timer inside */
+.cap-badge.recording {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  background: #e24e3c;
+  border-color: #e24e3c;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+}
+
+.cap-badge.recording .rec-dot {
+  background: #fff;
 }
 
 .controls {
@@ -125,4 +144,184 @@ body,
   border-radius: 2px;
   cursor: pointer;
   letter-spacing: 0.14em;
+}
+
+/* Recording panel — bottom-left, opposite the device selectors */
+.rec-panel {
+  position: absolute;
+  left: 22px;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+}
+
+/* Segmented FIXED/FREE toggle with a sliding highlight */
+.rec-toggle {
+  position: relative;
+  display: inline-flex;
+  background: rgba(8, 12, 16, 0.82);
+  border: 1.5px solid rgba(126, 224, 233, 0.5);
+  border-radius: 3px;
+  padding: 3px;
+}
+
+.rec-toggle::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 2px;
+  background: #7ee0e9;
+  transition: transform 0.2s ease;
+}
+
+.rec-toggle[data-mode="free"]::before {
+  transform: translateX(100%);
+}
+
+.rec-toggle .seg {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  border: none;
+  padding: 9px 24px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #9fb6bd;
+  transition: color 0.2s ease;
+}
+
+.rec-toggle .seg.active {
+  color: #06121a;
+}
+
+.rec-duration {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cfe6ea;
+  font-weight: 600;
+}
+
+.rec-duration input {
+  width: 60px;
+  background: rgba(8, 12, 16, 0.82);
+  color: #eaf7f9;
+  border: 1.5px solid rgba(126, 224, 233, 0.5);
+  border-radius: 3px;
+  padding: 9px 8px;
+  font-size: 14px;
+}
+
+.rec-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rec-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #f0d0c0;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.rec-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e24e3c;
+  animation: rec-blink 1s steps(2, start) infinite;
+}
+
+@keyframes rec-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.rec-btn {
+  border: none;
+  border-radius: 3px;
+  padding: 12px 28px;
+  cursor: pointer;
+  letter-spacing: 0.18em;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.rec-btn.start {
+  background: #e24e3c;
+}
+
+.rec-btn.start:hover {
+  background: #f05c49;
+}
+
+.rec-btn.stop {
+  background: #7ee0e9;
+  color: #06121a;
+}
+
+.rec-btn.stop:hover {
+  background: #98e9f0;
+}
+
+.rec-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.rec-saved {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  max-width: 60vw;
+  background: rgba(8, 12, 16, 0.82);
+  border: 1.5px solid rgba(126, 224, 233, 0.5);
+  border-radius: 3px;
+  padding: 9px 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rec-saved:hover {
+  border-color: #7ee0e9;
+}
+
+.rec-saved-label {
+  color: #7ee0e9;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.rec-saved-path {
+  color: #cfe6ea;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.rec-error {
+  color: #f0a58f;
+  max-width: 320px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rec-dot {
+    animation: none;
+  }
 }
