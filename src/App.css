@@ -1,0 +1,128 @@
+:root {
+  color-scheme: dark;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: #05070a;
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: #05070a;
+}
+
+.preview-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 3vw;
+  pointer-events: none;
+}
+
+/* Sit to the right of the top-left HUD corner bracket (bracket spans ~7% width). */
+.brand {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: rgba(120, 230, 235, 0.85);
+  margin-left: 6vw;
+}
+
+.cap-badge {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  /* Sit left of the top-right HUD corner bracket (bracket spans ~7% width). */
+  margin-right: 6vw;
+}
+
+.cap-badge.ok {
+  color: #57e0c4;
+}
+
+.cap-badge.warn {
+  color: #e0a857;
+}
+
+.controls {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  display: flex;
+  gap: 14px;
+  padding: 10px 14px;
+  background: rgba(5, 8, 12, 0.55);
+  border: 1px solid rgba(120, 230, 235, 0.25);
+  border-radius: 3px;
+}
+
+.controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: rgba(200, 220, 225, 0.75);
+}
+
+.controls select {
+  max-width: 220px;
+  background: #0a1016;
+  color: #cfe6ea;
+  border: 1px solid rgba(120, 230, 235, 0.3);
+  border-radius: 2px;
+  padding: 5px 6px;
+  font-size: 12px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(5, 7, 10, 0.82);
+  color: #cfe6ea;
+  text-align: center;
+  padding: 24px;
+}
+
+.overlay.error {
+  color: #f0a58f;
+}
+
+.overlay button {
+  background: transparent;
+  color: inherit;
+  border: 1px solid currentColor;
+  padding: 8px 20px;
+  border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 0.14em;
+}
