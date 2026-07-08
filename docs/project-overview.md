@@ -4,7 +4,7 @@
 
 - **Display name:** Lazy Camera HUD
 - **Bundle id:** `com.hatrunghieu.lazycamhud`
-- **Version:** 0.1.0
+- **Version:** 0.2.0
 - **Targets:** macOS + Windows (Linux deferred)
 - **Stack:** Tauri 2 (Rust) + React 19 + TypeScript + Vite
 
@@ -19,13 +19,13 @@
 | Area | What it does |
 |------|--------------|
 | Recording | FIXED (auto‑stop) / FREE modes, pause/resume, mid‑recording camera switch with a static/collapse transition |
-| Export | WebM → MP4 (H.264/AAC, faststart) via bundled ffmpeg; streamed to temp file; progress overlay |
+| Export | VP8/WebM (720p or 1080p, 16:9) → MP4 (H.264/AAC, CRF‑26, faststart) via bundled ffmpeg; streamed to temp file; progress overlay |
 | HUD | Data‑driven layout registry (Martian, Minimal); gauges (humidity, rain, temp), environment, location, SOL date, clock, log entry, live mic soundwave |
 | Effects | CRT grain, color grade, mirror — toggleable |
 | Data | IP geolocation + Open‑Meteo weather; city override is forward‑geocoded |
 | Auth | 4‑digit PIN gate, change PIN, lock button |
 | Library | Indexed recordings with thumbnails; grid, in‑app player, reveal, delete |
-| Settings | Persisted via Tauri Store (name, log #, folder, duration, layout, audio, mirror, CRT, city) |
+| Settings | Persisted via Tauri Store (name, log #, folder, duration, resolution, layout, audio, mirror, CRT, city) |
 
 ## Non‑goals (current)
 

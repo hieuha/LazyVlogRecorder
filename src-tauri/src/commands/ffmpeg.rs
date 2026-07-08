@@ -48,8 +48,8 @@ fn run_ffmpeg(
 ) -> Result<bool, String> {
     let mut child = Command::new(ffmpeg)
         .args([
-            "-y", "-i", input, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart",
+            "-y", "-i", input, "-c:v", "libx264", "-preset", "medium", "-crf", "26",
+            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
             "-progress", "pipe:1", "-nostats", output,
         ])
         .stdout(Stdio::piped())

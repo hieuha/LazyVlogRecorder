@@ -4,7 +4,7 @@
 
 **LazyCamHUD** (tên hiển thị: *Lazy Camera HUD*) là ứng dụng desktop quay vlog bằng webcam, **đốt (burn) HUD sci‑fi kiểu phim *The Martian* thẳng vào video** — mission day, gauge thời tiết trực tiếp, vị trí, soundwave mic realtime và lớp CRT. Viết bằng **Tauri 2 + React/TypeScript**.
 
-**Phiên bản:** 0.1.0 · **Nền tảng:** macOS + Windows (Linux hoãn sau)
+**Phiên bản:** 0.2.0 · **Nền tảng:** macOS + Windows (Linux hoãn sau)
 
 ## Ảnh chụp màn hình
 
@@ -19,12 +19,12 @@
 - **HUD burned‑in** — webcam + HUD vẽ chung trên một `<canvas>` rồi ghi cùng nhau (không phải track overlay riêng).
 - **HUD dữ liệu thật** — độ ẩm, khả năng mưa, nhiệt độ, tình trạng thời tiết, vị trí lấy từ Open‑Meteo + IP geolocation; có thể override city (geocode để thời tiết theo đúng nơi đó).
 - **Chế độ quay** — `FIXED` (đếm ngược tự dừng) và `FREE` (dừng thủ công); pause/resume; đổi camera giữa chừng vẫn giữ recording, chèn hiệu ứng nhiễu + thu tròn về tâm.
-- **Xuất MP4** — WebM → MP4 (H.264/AAC, faststart) qua ffmpeg static bundle; ghi stream ra file tạm (RAM phẳng) kèm overlay tiến trình.
+- **Xuất MP4** — quay VP8/WebM ở **720p hoặc 1080p** cố định (16:9), rồi transcode sang MP4 (H.264/AAC, CRF‑26, faststart) qua ffmpeg static bundle; ghi stream ra file tạm (RAM phẳng) kèm overlay tiến trình.
 - **Layout** — registry data‑driven; có sẵn `Martian` và `Minimal` (thêm layout = thêm 1 file).
 - **Hiệu ứng** — lớp grain CRT, color grade điện ảnh, lật gương camera — bật/tắt được.
 - **Khoá PIN** — mã 4 số khi mở app, luồng đổi PIN, nút lock.
 - **Library** — mỗi bản quay được index kèm thumbnail; xem dạng lưới, player trong app, mở thư mục, xoá.
-- **Settings bền** — tên, số log (tự tăng), thư mục lưu, thời lượng, layout, audio, mirror, CRT, city.
+- **Settings bền** — tên, số log (tự tăng), thư mục lưu, thời lượng, độ phân giải (720p/1080p), layout, audio, mirror, CRT, city.
 
 ## Chạy nhanh (dev)
 

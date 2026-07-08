@@ -8,6 +8,7 @@ export interface AppConfig {
   logNo: number; // auto-incremented after each save
   outputDir: string; // "" = default (Movies/LazyVlogRecorder)
   durationMin: number; // FIXED-mode default
+  recordHeight: number; // output frame height (720 or 1080); width is 16:9
   audioEnabled: boolean;
   mirror: boolean;
   crtEffect: boolean; // CRT/analog grain overlay
@@ -20,6 +21,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   logNo: 1,
   outputDir: "",
   durationMin: 15,
+  recordHeight: 1080,
   audioEnabled: true,
   mirror: true,
   crtEffect: true,

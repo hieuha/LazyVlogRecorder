@@ -11,9 +11,12 @@ export interface RecordingCapability {
   ok: boolean;
 }
 
+// VP8 first: on macOS there is no hardware VP8/VP9 encoder, and VP8 software
+// real-time encoding is much lighter than VP9 — VP9 at 1080p30 saturates the
+// main thread and stutters the capture. VP9 stays as a fallback.
 const CANDIDATE_MIME_TYPES = [
-  "video/webm;codecs=vp9,opus",
   "video/webm;codecs=vp8,opus",
+  "video/webm;codecs=vp9,opus",
   "video/webm",
   "video/mp4;codecs=h264,aac",
   "video/mp4",

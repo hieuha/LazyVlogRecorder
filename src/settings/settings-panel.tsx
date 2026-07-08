@@ -63,6 +63,17 @@ export function SettingsPanel(p: Props) {
         </label>
 
         <label className="settings-field">
+          RECORD RESOLUTION
+          <select
+            value={c.recordHeight}
+            onChange={(e) => p.setField("recordHeight", Number(e.target.value))}
+          >
+            <option value={720}>720p (smaller files)</option>
+            <option value={1080}>1080p (higher quality)</option>
+          </select>
+        </label>
+
+        <label className="settings-field">
           HUD LAYOUT
           <select value={c.layoutId} onChange={(e) => p.setField("layoutId", e.target.value)}>
             {p.layouts.map((l) => (

@@ -25,18 +25,32 @@ body,
   background: #05070a;
 }
 
-/* Video area: fills the space above the control bar; overlays anchor here. */
+/* Video area: fills the space above the control bar and centers the 16:9 frame.
+   `container-type: size` exposes its width/height as cqw/cqh for the frame. */
 .video-area {
   position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Largest 16:9 box that fits the video area (the canvas's real on-screen box).
+   `container-type: inline-size` makes the top bar's cqw units track this width,
+   so HTML chrome stays aligned with the burned-in HUD brackets when letterboxed. */
+.frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: min(100cqw, calc(100cqh * 16 / 9));
+  container-type: inline-size;
 }
 
 .preview-canvas {
   width: 100%;
   height: 100%;
-  object-fit: contain;
   display: block;
 }
 
@@ -55,15 +69,16 @@ body,
 
 .topbar {
   position: absolute;
-  /* Center the row on the HUD corner bracket's horizontal arm (canvas y = 2u ≈ 2vw). */
-  top: 2vw;
+  /* Center the row on the HUD corner bracket's horizontal arm (canvas y = 2u =
+     2% of the frame width → 2cqw). */
+  top: 2cqw;
   left: 0;
   right: 0;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 3vw;
+  padding: 0 3cqw;
   pointer-events: none;
 }
 
@@ -72,7 +87,7 @@ body,
   font-size: 12px;
   letter-spacing: 0.16em;
   color: rgba(120, 230, 235, 0.85);
-  margin-left: 6vw;
+  margin-left: 6cqw;
 }
 
 .cap-badge {
@@ -82,7 +97,7 @@ body,
   border: 1px solid currentColor;
   border-radius: 2px;
   /* Sit left of the top-right HUD corner bracket (bracket spans ~7% width). */
-  margin-right: 6vw;
+  margin-right: 6cqw;
 }
 
 .cap-badge.ok {

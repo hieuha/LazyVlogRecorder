@@ -24,6 +24,10 @@ export class CanvasCompositor {
   private layers: LayerDrawFn[] = [];
   private rafId: number | null = null;
   private frame = 0;
+  // Cap the redraw rate (~60fps) so ProMotion 120Hz displays don't run the
+  // expensive HUD/CRT compositing twice per captured frame during recording.
+  private lastDrawAt = 0;
+  private readonly minFrameMs = 1000 / 60 - 2;
   // While `now < transitionUntil` the frame is filled with TV static — used as a
   // "signal loss" transition when the camera is switched mid-recording.
   private transitionUntil = 0;
@@ -31,6 +35,7 @@ export class CanvasCompositor {
   private noiseTile: HTMLCanvasElement | null = null;
   private mirrored = false; // horizontal flip of the webcam (not the HUD)
   private crt = true; // CRT/analog grain overlay, applied over every layout
+  private targetHeight = 1080; // output/backing-store height; width is 16:9
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -46,7 +51,7 @@ export class CanvasCompositor {
   async start(stream: MediaStream): Promise<void> {
     this.video.srcObject = stream;
     await this.video.play();
-    this.resizeToDisplay();
+    this.applyResolution();
     if (this.rafId === null) this.loop();
   }
 
@@ -87,12 +92,18 @@ export class CanvasCompositor {
     this.crt = on;
   }
 
-  // Size the canvas backing store to its on-screen size (× DPR) so the video
-  // fills the window with no letterbox bars, and the HUD spans the full frame.
-  private resizeToDisplay(): void {
-    const dpr = window.devicePixelRatio || 1;
-    const w = Math.max(1, Math.round(this.canvas.clientWidth * dpr));
-    const h = Math.max(1, Math.round(this.canvas.clientHeight * dpr));
+  /** Set the output/recording resolution (16:9 frame of the given height). */
+  setResolution(height: number): void {
+    this.targetHeight = Math.max(1, Math.round(height));
+    this.applyResolution();
+  }
+
+  // Fix the canvas backing store to a 16:9 frame of `targetHeight`, so the
+  // recording resolution is deterministic (not window size × DPR). CSS scales
+  // the preview to fit (object-fit: contain letterboxes non-16:9 windows).
+  private applyResolution(): void {
+    const h = this.targetHeight;
+    const w = Math.round((h * 16) / 9);
     if (this.canvas.width !== w || this.canvas.height !== h) {
       this.canvas.width = w;
       this.canvas.height = h;
@@ -101,10 +112,12 @@ export class CanvasCompositor {
 
   private loop = (): void => {
     this.rafId = requestAnimationFrame(this.loop);
-    this.resizeToDisplay();
+
+    const now = performance.now();
+    if (now - this.lastDrawAt < this.minFrameMs) return; // throttle to ~60fps
+    this.lastDrawAt = now;
 
     const { width, height } = this.canvas;
-    const now = performance.now();
     const videoReady = this.video.readyState >= 2 && this.video.videoWidth > 0;
 
     // Draw the webcam when it has data; otherwise keep the last frame so a

@@ -50,6 +50,7 @@ export default function App() {
   const layoutIdRef = useRef<string>(DEFAULT_CONFIG.layoutId);
   const mirrorRef = useRef<boolean>(DEFAULT_CONFIG.mirror);
   const crtRef = useRef<boolean>(DEFAULT_CONFIG.crtEffect);
+  const recordHeightRef = useRef<number>(DEFAULT_CONFIG.recordHeight);
   const genRef = useRef(0);
 
   const [status, setStatus] = useState<Status>("init");
@@ -194,6 +195,7 @@ export default function App() {
     layoutIdRef.current = cfg.layoutId;
     mirrorRef.current = cfg.mirror;
     crtRef.current = cfg.crtEffect;
+    recordHeightRef.current = cfg.recordHeight;
   }
 
   // Swap the camera video only (open-before-close + generation guard). A static
@@ -222,6 +224,7 @@ export default function App() {
       compositorRef.current = new CanvasCompositor(canvas);
       compositorRef.current.setMirror(mirrorRef.current);
       compositorRef.current.setCrt(crtRef.current);
+      compositorRef.current.setResolution(recordHeightRef.current);
       if (!dataSourceRef.current) dataSourceRef.current = createHudDataSource();
       registerHud();
     }
@@ -321,6 +324,9 @@ export default function App() {
     applyConfigToRefs(config);
     compositorRef.current?.setMirror(config.mirror);
     compositorRef.current?.setCrt(config.crtEffect);
+    // Resolution resizes the canvas backing store; skip mid-recording (it would
+    // break the active capture stream). Ref is already updated for the next take.
+    if (!rec.recording) compositorRef.current?.setResolution(config.recordHeight);
     rec.setDurationSec(config.durationMin * 60);
     dataSourceRef.current?.setCityOverride(config.cityOverride);
     registerHud(); // re-apply layout
@@ -338,6 +344,10 @@ export default function App() {
   return (
     <div className="stage">
       <div className="video-area">
+        {/* 16:9 frame that matches the canvas's on-screen box, so the HTML top
+            bar (brand + badge) stays aligned with the burned-in HUD brackets
+            even when the window is letterboxed. */}
+        <div className="frame">
         <canvas ref={canvasRef} className="preview-canvas" />
 
       <header className="topbar">
@@ -358,6 +368,7 @@ export default function App() {
           )
         )}
       </header>
+        </div>
       </div>
 
       {status === "ready" && (
