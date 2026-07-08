@@ -82,7 +82,7 @@ curl -X POST http://127.0.0.1:1337/text \
 
 ```bash
 curl http://127.0.0.1:1337/healthz
-# → 200 {"ok":true,"app":"LazyCamHUD","version":"0.4.0"}
+# → 200 {"ok":true,"app":"LazyCamHUD","version":"0.4.1"}
 ```
 
 No token required — use it to confirm the server is reachable (right IP/port,

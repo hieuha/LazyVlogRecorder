@@ -4,7 +4,7 @@
 
 - **Tên hiển thị:** Lazy Camera HUD
 - **Bundle id:** `com.hatrunghieu.lazycamhud`
-- **Phiên bản:** 0.4.0
+- **Phiên bản:** 0.4.1
 - **Nền tảng:** macOS + Windows (Linux hoãn sau)
 - **Công nghệ:** Tauri 2 (Rust) + React 19 + TypeScript + Vite
 
