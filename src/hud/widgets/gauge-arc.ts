@@ -28,7 +28,7 @@ export function drawGaugeArc(
   });
 
   // Value (large, holographic vertical gradient) + gold unit
-  const valueText = g.value == null ? "--" : g.value.toFixed(2);
+  const valueText = g.value == null ? "--" : Math.round(g.value).toString();
   const valueY = oy + 2.6 * u;
   drawText(ctx, valueText, ox, valueY, {
     font: theme.fontCondensed,
@@ -40,18 +40,20 @@ export function drawGaugeArc(
     glow: 0.7 * u,
   });
   const valueW = measure(ctx, valueText, `500 ${5.4 * u}px ${theme.fontCondensed}`);
-  drawText(ctx, g.unit, ox + valueW + 0.8 * u, valueY + 0.6 * u, {
+  const unitX = ox + valueW + 0.8 * u;
+  drawText(ctx, g.unit, unitX, valueY + 0.6 * u, {
     font: theme.fontMono,
     size: 1.6 * u,
     color: theme.gold,
     weight: 600,
     baseline: "top",
   });
+  const unitW = measure(ctx, g.unit, `600 ${1.6 * u}px ${theme.fontMono}`);
 
-  // Arc dial to the right of the value
-  const cx = ox + 13 * u;
-  const cy = valueY + 2.7 * u;
+  // Arc dial follows the value + unit width so the gap stays constant
   const r = 2.6 * u;
+  const cx = unitX + unitW + 0.6 * u + r;
+  const cy = valueY + 2.7 * u;
   const frac = fraction(g.value, g.min, g.max);
   drawDial(c, cx, cy, r, frac, 0.5 * u);
 }

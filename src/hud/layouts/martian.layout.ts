@@ -24,8 +24,8 @@ export const martianLayout: LayoutConfig = {
     // Left column, top-anchored so vertical spacing is fixed regardless of
     // window aspect (SOL → gauges → ENVIRONMENT), mirroring the film order.
     { type: "mission-day", anchor: "top-left", offset: { x: 4, y: 4.5 } },
-    { type: "gauge-arc", anchor: "top-left", offset: { x: 4, y: 14 }, metric: "pressure", label: "Pressure" },
-    { type: "gauge-arc", anchor: "top-left", offset: { x: 4, y: 24 }, metric: "oxygen", label: "Oxygen" },
+    { type: "gauge-arc", anchor: "top-left", offset: { x: 4, y: 14 }, metric: "humidity", label: "Humidity" },
+    { type: "gauge-arc", anchor: "top-left", offset: { x: 4, y: 24 }, metric: "precip", label: "Rain" },
     { type: "gauge-arc", anchor: "top-left", offset: { x: 4, y: 34 }, metric: "temp", label: "Temp" },
     { type: "environment", anchor: "top-left", offset: { x: 4, y: 42 } },
 

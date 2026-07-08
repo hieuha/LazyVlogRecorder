@@ -43,7 +43,7 @@ export interface HudState {
   audioBars?: number[] | null;
 }
 
-export type GaugeMetric = "pressure" | "oxygen" | "temp";
+export type GaugeMetric = "humidity" | "precip" | "temp";
 
 export interface GaugeValue {
   value: number | null; // null => render as "--" (offline first-launch)

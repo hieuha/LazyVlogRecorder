@@ -10,7 +10,7 @@ import {
 import { probeRecordingCapability, type RecordingCapability } from "./recording/capability";
 import { createHudLayer } from "./hud/layout-engine";
 import { getLayout, DEFAULT_LAYOUT_ID } from "./hud/layout-registry";
-import { createMockHudState } from "./hud/mock-hud-state";
+import { createHudDataSource, type HudDataSource } from "./data/hud-data-source";
 import { createAudioAnalyser, type AudioAnalyser } from "./hud/audio-analyser";
 import "./App.css";
 
@@ -24,6 +24,7 @@ export default function App() {
   const compositorRef = useRef<CanvasCompositor | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AudioAnalyser | null>(null);
+  const dataSourceRef = useRef<HudDataSource | null>(null);
   // Friendly name of the selected camera, shown as the HUD camera label.
   const cameraLabelRef = useRef<string>("CAM");
   // Monotonic generation guard: only the latest startPreview call may bind a
@@ -71,6 +72,8 @@ export default function App() {
       compositorRef.current?.stop();
       analyserRef.current?.dispose();
       analyserRef.current = null;
+      dataSourceRef.current?.dispose();
+      dataSourceRef.current = null;
       stopStream(streamRef.current);
       streamRef.current = null;
     };
@@ -115,9 +118,9 @@ export default function App() {
     if (!compositorRef.current) {
       compositorRef.current = new CanvasCompositor(canvas);
       // Data-driven HUD layer (Phase 2). Mock gauges + real mic waveform.
-      const mock = createMockHudState();
+      if (!dataSourceRef.current) dataSourceRef.current = createHudDataSource();
       const getState = () => {
-        const s = mock();
+        const s = dataSourceRef.current!.getState();
         s.audioBars = analyserRef.current?.sampleBars(56) ?? null;
         s.cameraLabel = cameraLabelRef.current;
         return s;
