@@ -3,7 +3,7 @@
 **LazyCamHUD** là ứng dụng desktop đa nền tảng để quay vlog "log entry" bằng webcam với HUD kiểu phim *The Martian* **đốt thẳng vào video**. Các gauge hiển thị thời tiết thật theo vị trí; toàn khung (webcam + HUD + hiệu ứng) được vẽ chung trên một canvas và ghi cùng nhau, nên file MP4 xuất ra đã có sẵn HUD.
 
 - **Tên hiển thị:** Lazy Camera HUD
-- **Bundle id:** `com.harry.lazycamhud`
+- **Bundle id:** `com.hatrunghieu.lazycamhud`
 - **Phiên bản:** 0.1.0
 - **Nền tảng:** macOS + Windows (Linux hoãn sau)
 - **Công nghệ:** Tauri 2 (Rust) + React 19 + TypeScript + Vite

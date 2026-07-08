@@ -36,10 +36,10 @@ Kết quả ở `src-tauri/target/release/bundle/` (`.app` + `.dmg` trên macOS)
 
 ## Nơi lưu dữ liệu (macOS)
 
-Theo bundle identifier `com.harry.lazycamhud`:
+Theo bundle identifier `com.hatrunghieu.lazycamhud`:
 
-- `~/Library/Application Support/com.harry.lazycamhud/` — `config.json`, `entries.json`, `auth.json` (PIN)
-- `~/Library/Caches/com.harry.lazycamhud/thumbs/` — thumbnail
+- `~/Library/Application Support/com.hatrunghieu.lazycamhud/` — `config.json`, `entries.json`, `auth.json` (PIN)
+- `~/Library/Caches/com.hatrunghieu.lazycamhud/thumbs/` — thumbnail
 - `~/Movies/LazyCamHUD/` — video (hoặc thư mục bạn chọn)
 
 ## Lưu ý bảo mật

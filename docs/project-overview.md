@@ -3,7 +3,7 @@
 **LazyCamHUD** is a cross‑platform desktop app that records webcam "log entry" vlogs with a *The Martian*–style HUD **burned into the video**. Gauges show real weather for your location; the whole frame (webcam + HUD + effects) is composited on a single canvas and recorded together, so the exported MP4 already contains the HUD.
 
 - **Display name:** Lazy Camera HUD
-- **Bundle id:** `com.harry.lazycamhud`
+- **Bundle id:** `com.hatrunghieu.lazycamhud`
 - **Version:** 0.1.0
 - **Targets:** macOS + Windows (Linux deferred)
 - **Stack:** Tauri 2 (Rust) + React 19 + TypeScript + Vite

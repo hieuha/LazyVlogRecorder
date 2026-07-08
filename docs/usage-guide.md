@@ -37,4 +37,4 @@
 ## Files
 
 - Videos: `~/Movies/LazyCamHUD/` (or your chosen folder) — named `log-<name>-<logNo>-<timestamp>.mp4`.
-- Settings/PIN/library: `~/Library/Application Support/com.harry.lazycamhud/`.
+- Settings/PIN/library: `~/Library/Application Support/com.hatrunghieu.lazycamhud/`.

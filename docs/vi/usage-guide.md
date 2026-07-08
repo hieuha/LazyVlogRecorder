@@ -37,4 +37,4 @@
 ## File
 
 - Video: `~/Movies/LazyCamHUD/` (hoặc thư mục bạn chọn) — tên `log-<tên>-<logNo>-<timestamp>.mp4`.
-- Settings/PIN/library: `~/Library/Application Support/com.harry.lazycamhud/`.
+- Settings/PIN/library: `~/Library/Application Support/com.hatrunghieu.lazycamhud/`.

@@ -36,10 +36,10 @@ Outputs to `src-tauri/target/release/bundle/` (`.app` + `.dmg` on macOS). See [d
 
 ## Where things are stored (macOS)
 
-Under the bundle identifier `com.harry.lazycamhud`:
+Under the bundle identifier `com.hatrunghieu.lazycamhud`:
 
-- `~/Library/Application Support/com.harry.lazycamhud/` — `config.json`, `entries.json`, `auth.json` (PIN)
-- `~/Library/Caches/com.harry.lazycamhud/thumbs/` — thumbnails
+- `~/Library/Application Support/com.hatrunghieu.lazycamhud/` — `config.json`, `entries.json`, `auth.json` (PIN)
+- `~/Library/Caches/com.hatrunghieu.lazycamhud/thumbs/` — thumbnails
 - `~/Movies/LazyCamHUD/` — recorded videos (or your chosen output folder)
 
 ## Security note
