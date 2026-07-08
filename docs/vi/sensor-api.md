@@ -71,8 +71,10 @@ curl -X POST http://127.0.0.1:1337/text \
 ```
 
 - Body: `{ "text": string, "typing"?: boolean }` (`typing` mặc định `true`).
-- Vẽ căn giữa gần đáy như phụ đề; ký tự hiện dần ~25/giây kèm con trỏ nhấp nháy.
+- Vẽ canh trái ngay dưới dòng location; ký tự hiện dần ~25/giây kèm con trỏ nhấp nháy.
   Gửi text mới → gõ lại từ đầu. `"typing":false` để hiện tức thì. Cắt còn **120 ký tự**.
+- **Idle fallback:** nếu ~12 giây không có caption, chỗ đó hiện dòng hex ngẫu nhiên
+  trang trí (vd `0x4F2A 0x9C11 …`) để không bị trống.
 
 ## Phản hồi
 

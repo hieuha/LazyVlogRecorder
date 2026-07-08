@@ -72,9 +72,11 @@ curl -X POST http://127.0.0.1:1337/text \
 ```
 
 - Body: `{ "text": string, "typing"?: boolean }` (`typing` defaults to `true`).
-- Drawn centered near the bottom as a subtitle; characters reveal at ~25/sec with
-  a blinking cursor. A new push restarts the reveal. Set `"typing":false` to show
-  it instantly. Text is truncated to **120 chars**.
+- Drawn left‑aligned just below the location line; characters reveal at ~25/sec
+  with a blinking cursor. A new push restarts the reveal. Set `"typing":false` to
+  show it instantly. Text is truncated to **120 chars**.
+- **Idle fallback:** with no caption in the last ~12 s, the slot shows a decorative
+  random hex stream (e.g. `0x4F2A 0x9C11 …`) so it never looks empty.
 
 ## Responses
 
