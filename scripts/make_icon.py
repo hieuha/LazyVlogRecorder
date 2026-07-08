@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""Generate the LazyVlogRecorder app icon: a Martian HUD record button.
-Rendered at 2x then downscaled for smooth edges."""
-import math
-from PIL import Image, ImageDraw, ImageFilter
+"""Generate the LazyVlogRecorder app icon: a simple Martian record button —
+one teal ring + a red record dot on a dark graphite square. Rendered at 2x
+then downscaled for smooth edges."""
+from PIL import Image, ImageDraw, ImageFilter, ImageChops
 
 S = 2048  # supersample size
-R = int(S * 0.225)  # corner radius (squircle-ish)
+R = int(S * 0.225)  # corner radius
 CX = CY = S / 2
 
 CYAN = (126, 224, 233)
-CYAN_BRIGHT = (208, 250, 255)
 RED = (226, 78, 60)
 
 
@@ -22,12 +21,10 @@ def rounded_mask():
 def base_gradient():
     img = Image.new("RGB", (S, S))
     d = ImageDraw.Draw(img)
-    top = (10, 16, 22)
-    bot = (26, 15, 10)
+    top, bot = (12, 18, 24), (18, 12, 10)
     for y in range(S):
         t = y / S
-        c = tuple(int(top[i] + (bot[i] - top[i]) * t) for i in range(3))
-        d.line([(0, y), (S, y)], fill=c)
+        d.line([(0, y), (S, y)], fill=tuple(int(top[i] + (bot[i] - top[i]) * t) for i in range(3)))
     return img
 
 
@@ -37,121 +34,45 @@ def radial_glow(cx, cy, radius, color, strength=1.0):
     steps = 60
     for i in range(steps, 0, -1):
         rr = radius * i / steps
-        a = int(255 * strength * (1 - i / steps) ** 2)
-        dg.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=a)
+        dg.ellipse([cx - rr, cy - rr, cx + rr, cy + rr],
+                   fill=int(255 * strength * (1 - i / steps) ** 2))
     layer = Image.new("RGB", (S, S), color)
     out = Image.new("RGB", (S, S), (0, 0, 0))
     out.paste(layer, (0, 0), g)
     return out
 
 
-def screen(base, add):
-    # additive-ish screen blend
-    from PIL import ImageChops
-    return ImageChops.screen(base, add)
-
-
-def draw_arcs(size, lw):
-    """Draw the HUD gauge ring on a transparent RGBA image."""
-    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-
-    def arc(r, a0, a1, color, width, alpha=255):
-        d.arc([CX - r, CY - r, CX + r, CY + r], a0, a1, fill=color + (alpha,), width=width)
-
-    r1 = S * 0.30
-    # main dial: 270-degree arc, teal
-    arc(r1, 135, 135 + 300, CYAN, lw)
-    # inner thin arc
-    arc(S * 0.235, -40, 200, CYAN, max(2, lw // 2), alpha=180)
-    # outer broken arcs (segments)
-    ro = S * 0.355
-    for seg in range(0, 360, 30):
-        arc(ro, seg + 4, seg + 22, CYAN, max(2, lw // 3), alpha=140)
-    # tick marks around main dial
-    for ang in range(135, 135 + 300, 15):
-        a = math.radians(ang)
-        r_in = r1 - lw * 1.4
-        r_out = r1 - lw * 0.2
-        x0, y0 = CX + r_in * math.cos(a), CY + r_in * math.sin(a)
-        x1, y1 = CX + r_out * math.cos(a), CY + r_out * math.sin(a)
-        d.line([(x0, y0), (x1, y1)], fill=CYAN + (170,), width=max(2, lw // 3))
-    return img
-
-
-def corner_brackets():
-    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    m = int(S * 0.11)
-    ln = int(S * 0.10)
-    w = max(3, int(S * 0.008))
-    col = CYAN + (150,)
-    pts = [
-        # (corner x, y, dx, dy)
-        (m, m, 1, 1), (S - m, m, -1, 1),
-        (m, S - m, 1, -1), (S - m, S - m, -1, -1),
-    ]
-    for x, y, dx, dy in pts:
-        d.line([(x, y), (x + dx * ln, y)], fill=col, width=w)
-        d.line([(x, y), (x, y + dy * ln)], fill=col, width=w)
-    return img
-
-
 def main():
     mask = rounded_mask()
+    img = base_gradient()
 
-    img = base_gradient().convert("RGB")
-
-    # Mars horizon glow (bottom), rust-orange
-    mars = radial_glow(CX, S * 0.92, S * 0.55, (150, 70, 24), strength=0.9)
-    img = screen(img, mars)
-
-    # cyan center aura (subtle)
-    aura = radial_glow(CX, CY, S * 0.42, (24, 66, 78), strength=0.7)
-    img = screen(img, aura)
-
-    # scanlines
-    sl = Image.new("L", (S, S), 0)
-    dsl = ImageDraw.Draw(sl)
-    gap = max(3, int(S * 0.006))
-    for y in range(0, S, gap * 2):
-        dsl.line([(0, y), (S, y)], fill=14, width=gap)
-    dark = Image.new("RGB", (S, S), (0, 0, 0))
-    img = Image.composite(dark, img, sl)
-
+    # subtle warm glow at the bottom (Mars horizon), kept minimal
+    img = ImageChops.screen(img, radial_glow(CX, S * 0.95, S * 0.5, (120, 55, 20), 0.55))
     img = img.convert("RGBA")
 
-    # HUD arcs + glow
-    lw = max(6, int(S * 0.016))
-    arcs = draw_arcs(S, lw)
-    glow = arcs.filter(ImageFilter.GaussianBlur(S * 0.012))
+    # single clean teal ring
+    ring = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    r = S * 0.30
+    lw = max(6, int(S * 0.022))
+    ImageDraw.Draw(ring).ellipse([CX - r, CY - r, CX + r, CY + r], outline=CYAN + (255,), width=lw)
+    glow = ring.filter(ImageFilter.GaussianBlur(S * 0.02))
     img.alpha_composite(glow)
-    img.alpha_composite(glow)
-    img.alpha_composite(arcs)
+    img.alpha_composite(ring)
 
-    # corner brackets
-    img.alpha_composite(corner_brackets())
-
-    # center record dot (red) with glow
+    # red record dot + soft glow + top highlight
     dot = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    dd = ImageDraw.Draw(dot)
-    rr = S * 0.115
-    dd.ellipse([CX - rr, CY - rr, CX + rr, CY + rr], fill=RED + (255,))
-    dot_glow = dot.filter(ImageFilter.GaussianBlur(S * 0.03))
-    img.alpha_composite(dot_glow)
-    img.alpha_composite(dot_glow)
+    rr = S * 0.135
+    ImageDraw.Draw(dot).ellipse([CX - rr, CY - rr, CX + rr, CY + rr], fill=RED + (255,))
+    img.alpha_composite(dot.filter(ImageFilter.GaussianBlur(S * 0.03)))
     img.alpha_composite(dot)
-    # inner highlight on dot
-    dh = ImageDraw.Draw(img)
-    hr = rr * 0.45
-    dh.ellipse([CX - hr, CY - hr - rr * 0.2, CX + hr, CY + hr - rr * 0.2],
-               fill=(255, 150, 130, 120))
+    hr = rr * 0.5
+    ImageDraw.Draw(img).ellipse(
+        [CX - hr, CY - hr - rr * 0.25, CX + hr, CY + hr - rr * 0.25],
+        fill=(255, 150, 130, 110),
+    )
 
-    # apply rounded mask (transparent corners)
-    a = img.split()[3]
-    from PIL import ImageChops
-    a = ImageChops.multiply(a, mask)
-    img.putalpha(a)
+    # rounded corners
+    img.putalpha(ImageChops.multiply(img.split()[3], mask))
 
     out = img.resize((1024, 1024), Image.LANCZOS)
     path = "/Users/harry/Projects/LazyVlogRecorder/assets/app-icon-source.png"
