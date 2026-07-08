@@ -42,6 +42,7 @@ const col = {
   type: idx("type"),
   sats: idx("sats"),
   batt: idx("batt_v"),
+  snr: idx("snr"),
 };
 const rows = lines.slice(1).map((l) => l.split(","));
 if (!rows.length) {
@@ -77,6 +78,50 @@ async function post(path, body) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// --- Flavour captions: mission-control style, varied by flight phase. ---
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+let maxAltSeen = 0;
+
+function caption(r) {
+  const alt = Number(r[col.alt]);
+  const vv = Number(r[col.vv]);
+  const sats = r[col.sats];
+  const snr = r[col.snr];
+  const serial = r[col.serial] || "?";
+  const type = r[col.type] || "SONDE";
+  maxAltSeen = Math.max(maxAltSeen, alt);
+  const descending = vv < -0.5;
+  const burst = descending && maxAltSeen - alt > 300 && maxAltSeen > 5000;
+
+  const common = [
+    `${type} · ${serial}`,
+    "MISSION NOMINAL",
+    `GPS FIX · ${sats} SATS`,
+    `SIGNAL ${snr} dB`,
+    "TELEMETRY LOCKED",
+    `ALT ${Math.round(alt)} M`,
+  ];
+  if (burst) return pick(["*** BURST DETECTED ***", "BALLOON BURST · DESCENDING"]);
+  if (descending) {
+    return pick([
+      "DESCENDING",
+      "PARACHUTE DEPLOYED",
+      `FALLING ${Math.abs(vv).toFixed(0)} M/S`,
+      "RECOVERY MODE",
+      "TRACKING DESCENT",
+      ...common,
+    ]);
+  }
+  const ascent = [
+    "ASCENDING",
+    "CLIMB NOMINAL",
+    `RISING ${vv.toFixed(0)} M/S`,
+    ...common,
+  ];
+  if (alt > 15000) ascent.push("ENTERING STRATOSPHERE", "APPROACHING BURST ALT");
+  return pick(ascent);
+}
+
 async function pushRow(r) {
   const lat = Number(r[col.lat]);
   const lon = Number(r[col.lon]);
@@ -107,14 +152,19 @@ async function pushRow(r) {
 
 async function run() {
   console.log(`Replay ${rows.length} rows → ${BASE}  (speed ${SPEED}x${LOOP ? ", looping" : ""}; Ctrl+C to stop)`);
-  // Announce the sonde name/serial as a typewriter caption; re-send periodically
-  // so a late-started/late-enabled app still receives it.
+  // Announce the sonde name first, then rotate flavour captions every ~5 s of
+  // real time (independent of SPEED, so the typewriter isn't retriggered too fast).
   const name = `${rows[0][col.type] || "SONDE"} · ${rows[0][col.serial] || "?"}`;
   console.log(`[text] ${name} → ${await post("/text", { text: name })}`);
+  let lastCaption = Date.now();
+  const CAPTION_EVERY_MS = 5000;
   do {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
-      if (i > 0 && i % 60 === 0) await post("/text", { text: name });
+      if (Date.now() - lastCaption > CAPTION_EVERY_MS) {
+        lastCaption = Date.now();
+        await post("/text", { text: caption(r) });
+      }
       const { alt, dist, temp, s1, s2 } = await pushRow(r);
       process.stdout.write(
         `\r${String(i + 1).padStart(4)}/${rows.length}  ` +
