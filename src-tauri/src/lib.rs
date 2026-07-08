@@ -21,7 +21,9 @@ pub fn run() {
             commands::recording_fs::start_temp_recording,
             commands::recording_fs::append_temp_chunk,
             commands::recording_fs::move_temp,
+            commands::recording_fs::delete_files,
             commands::ffmpeg::transcode_to_mp4,
+            commands::ffmpeg::generate_thumbnail,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

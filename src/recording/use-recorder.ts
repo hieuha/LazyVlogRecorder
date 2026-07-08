@@ -24,8 +24,8 @@ export interface UseRecorderRefs {
   personNameRef: MutableRefObject<string>;
   logNoRef: MutableRefObject<number>;
   outDirRef: MutableRefObject<string>;
-  /** Called after a successful save (used to auto-increment the log number). */
-  onSaved: () => void;
+  /** Called after a successful save: advance the log number + index the entry. */
+  onSaved: (file: SavedFile, durationSec: number) => void;
 }
 
 export function useRecorder(refs: UseRecorderRefs) {
@@ -39,6 +39,7 @@ export function useRecorder(refs: UseRecorderRefs) {
 
   const recRef = useRef<Recorder | null>(null);
   const timerRef = useRef<number | null>(null);
+  const startedAtRef = useRef<number>(0);
   const tempPathRef = useRef<string>("");
   const extRef = useRef<string>("webm");
   const modeRef = useRef(mode);
@@ -78,15 +79,18 @@ export function useRecorder(refs: UseRecorderRefs) {
       const person = refs.personNameRef.current;
       const logNo = refs.logNoRef.current;
       const outDir = refs.outDirRef.current;
+      let saved: SavedFile;
       try {
         const outName = makeRecordingName(person, logNo, "mp4");
-        setSavedFile(await transcodeToMp4(tempPath, outName, outDir));
+        saved = await transcodeToMp4(tempPath, outName, outDir);
       } catch (transcodeErr) {
         const rawName = makeRecordingName(person, logNo, srcExt);
-        setSavedFile(await moveTemp(tempPath, rawName, outDir));
+        saved = await moveTemp(tempPath, rawName, outDir);
         setError(`MP4 transcode failed; saved ${srcExt.toUpperCase()}. ${transcodeErr}`);
       }
-      refs.onSaved(); // advance the log number
+      setSavedFile(saved);
+      const durationSec = Math.max(0, Math.round((performance.now() - startedAtRef.current) / 1000));
+      refs.onSaved(saved, durationSec); // advance log number + index the entry
     } catch (err) {
       setError(String(err));
     } finally {
@@ -125,6 +129,7 @@ export function useRecorder(refs: UseRecorderRefs) {
     setRecording(true);
     setElapsedSec(0);
     const startedAt = performance.now();
+    startedAtRef.current = startedAt;
     timerRef.current = window.setInterval(() => {
       const e = Math.floor((performance.now() - startedAt) / 1000);
       setElapsedSec(e);

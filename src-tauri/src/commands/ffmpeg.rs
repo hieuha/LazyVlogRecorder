@@ -4,6 +4,7 @@
 
 use std::path::PathBuf;
 use std::process::Command;
+use tauri::Manager;
 
 use super::recording_fs::{resolve_out_dir, SavedFile};
 
@@ -43,6 +44,34 @@ pub async fn transcode_to_mp4(
     }
     let _ = std::fs::remove_file(&temp_path); // cleanup only on success
     Ok(SavedFile::at(out))
+}
+
+/// Extract a JPEG thumbnail (~1s in) for a recording into the app cache dir.
+#[tauri::command]
+pub async fn generate_thumbnail(
+    app: tauri::AppHandle,
+    video_path: String,
+    id: String,
+) -> Result<String, String> {
+    let dir = app.path().app_cache_dir().map_err(|e| e.to_string())?.join("thumbs");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let thumb = dir.join(format!("{id}.jpg")).to_string_lossy().into_owned();
+    let ffmpeg = ffmpeg_path().ok_or("bundled ffmpeg binary not found")?;
+
+    let (video, out) = (video_path, thumb.clone());
+    let output = tauri::async_runtime::spawn_blocking(move || {
+        Command::new(&ffmpeg)
+            .args(["-y", "-ss", "1", "-i", &video, "-frames:v", "1", "-vf", "scale=480:-1", &out])
+            .output()
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())?;
+
+    if !output.status.success() {
+        return Err("thumbnail generation failed".into());
+    }
+    Ok(thumb)
 }
 
 fn ffmpeg_path() -> Option<PathBuf> {

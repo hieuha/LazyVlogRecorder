@@ -63,6 +63,15 @@ pub fn append_temp_chunk(path: String, bytes: Vec<u8>) -> Result<(), String> {
     Ok(())
 }
 
+/// Delete files (e.g. a recording + its thumbnail). Best-effort per path.
+#[tauri::command]
+pub fn delete_files(paths: Vec<String>) -> Result<(), String> {
+    for p in paths {
+        let _ = std::fs::remove_file(p);
+    }
+    Ok(())
+}
+
 /// Move the temp file into the output folder as `filename` (fallback when MP4
 /// transcode is unavailable, so the raw take is never lost).
 #[tauri::command]

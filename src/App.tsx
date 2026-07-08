@@ -20,6 +20,10 @@ import { SettingsPanel } from "./settings/settings-panel";
 import { loadConfig, saveConfig, DEFAULT_CONFIG, type AppConfig } from "./settings/config-store";
 import { PinGate } from "./auth/pin-gate";
 import { hasPin } from "./auth/auth-client";
+import { LibraryView } from "./library/library-view";
+import { addEntry, updateEntry } from "./library/entries-store";
+import { generateThumbnail } from "./library/library-client";
+import type { SavedFile } from "./recording/save-client";
 import "./App.css";
 
 type Status = "init" | "requesting" | "ready" | "error";
@@ -56,6 +60,7 @@ export default function App() {
   const [capability, setCapability] = useState<RecordingCapability | null>(null);
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [pinMode, setPinMode] = useState<"set" | "enter">("enter");
   const [unlocked, setUnlocked] = useState(false);
@@ -250,9 +255,29 @@ export default function App() {
     }
   }
 
-  // Advance + persist the log number after each successful save.
-  function handleSaved() {
-    const next = logNoRef.current + 1;
+  // After each successful save: index the entry (+ thumbnail) and advance the log #.
+  function handleSaved(file: SavedFile, durationSec: number) {
+    const usedLogNo = logNoRef.current;
+    const city = dataSourceRef.current?.getState().location ?? "";
+    const id = `${Date.now()}-${usedLogNo}`;
+    void addEntry({
+      id,
+      name: personNameRef.current,
+      logNo: usedLogNo,
+      dateISO: new Date().toISOString(),
+      city,
+      durationSec,
+      path: file.path,
+      size: file.size,
+      thumbPath: "",
+    })
+      .then(() => generateThumbnail(file.path, id))
+      .then((thumb) => updateEntry(id, { thumbPath: thumb }))
+      .catch(() => {
+        /* thumbnail is best-effort */
+      });
+
+    const next = usedLogNo + 1;
     logNoRef.current = next;
     setConfig((c) => {
       const n = { ...c, logNo: next };
@@ -333,6 +358,19 @@ export default function App() {
         <div className="controls">
           <button
             className="icon-btn"
+            onClick={() => {
+              setPinMode("enter");
+              setUnlocked(false);
+            }}
+            title="Lock"
+          >
+            ⏻
+          </button>
+          <button className="icon-btn" onClick={() => setLibraryOpen(true)} title="Library">
+            ▤
+          </button>
+          <button
+            className="icon-btn"
             onClick={() => setSettingsOpen(true)}
             title="Settings"
           >
@@ -365,6 +403,8 @@ export default function App() {
           </label>
         </div>
       )}
+
+      {libraryOpen && <LibraryView onClose={() => setLibraryOpen(false)} />}
 
       {settingsOpen && (
         <SettingsPanel
