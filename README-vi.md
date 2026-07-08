@@ -6,6 +6,14 @@
 
 **Phiên bản:** 0.1.0 · **Nền tảng:** macOS + Windows (Linux hoãn sau)
 
+## Ảnh chụp màn hình
+
+| Khoá PIN | Đang quay |
+| --- | --- |
+| ![Màn khoá PIN](./docs/screenshot/1-lockscreen.webp) | ![Đang quay với HUD burned‑in](./docs/screenshot/2-video-recorder.webp) |
+| **Xử lý → MP4** | **Thư viện log** |
+| ![Overlay tiến trình transcode](./docs/screenshot/3-processing-video.webp) | ![Lưới thư viện log](./docs/screenshot/4-logs-library.webp) |
+
 ## Tính năng
 
 - **HUD burned‑in** — webcam + HUD vẽ chung trên một `<canvas>` rồi ghi cùng nhau (không phải track overlay riêng).

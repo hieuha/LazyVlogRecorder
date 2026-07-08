@@ -6,6 +6,14 @@
 
 **Version:** 0.1.0 · **Platforms:** macOS + Windows (Linux deferred)
 
+## Screenshots
+
+| PIN lock | Recording |
+| --- | --- |
+| ![PIN lock screen](./docs/screenshot/1-lockscreen.webp) | ![Recording with burned‑in HUD](./docs/screenshot/2-video-recorder.webp) |
+| **Processing → MP4** | **Log library** |
+| ![Transcode progress overlay](./docs/screenshot/3-processing-video.webp) | ![Log library grid](./docs/screenshot/4-logs-library.webp) |
+
 ## Features
 
 - **Burned‑in HUD** — webcam + HUD composited on one `<canvas>` and recorded together (nothing is a separate overlay track).
