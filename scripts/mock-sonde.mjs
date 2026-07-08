@@ -89,9 +89,14 @@ function step() {
 }
 
 let ticks = 0;
+const NAME = "MOCK SONDE · HANOI";
+
 async function tick() {
   const { climb, speed, dist } = step();
   ticks++;
+
+  // Re-announce the name periodically so a late-enabled app still gets it.
+  if (ticks % 60 === 1) void post("/text", { text: NAME });
 
   const scalars = post("/sensors", {
     items: [
@@ -114,7 +119,6 @@ async function tick() {
 }
 
 console.log(`Mock sonde → ${BASE}  (every ${INTERVAL}ms; Ctrl+C to stop)`);
-console.log(`[text] → ${await post("/text", { text: "MOCK SONDE · HANOI" })}`);
 await tick();
 const timer = setInterval(tick, INTERVAL);
 process.on("SIGINT", () => {

@@ -107,12 +107,14 @@ async function pushRow(r) {
 
 async function run() {
   console.log(`Replay ${rows.length} rows → ${BASE}  (speed ${SPEED}x${LOOP ? ", looping" : ""}; Ctrl+C to stop)`);
-  // Announce the sonde name/serial as a typewriter caption.
+  // Announce the sonde name/serial as a typewriter caption; re-send periodically
+  // so a late-started/late-enabled app still receives it.
   const name = `${rows[0][col.type] || "SONDE"} · ${rows[0][col.serial] || "?"}`;
   console.log(`[text] ${name} → ${await post("/text", { text: name })}`);
   do {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
+      if (i > 0 && i % 60 === 0) await post("/text", { text: name });
       const { alt, dist, temp, s1, s2 } = await pushRow(r);
       process.stdout.write(
         `\r${String(i + 1).padStart(4)}/${rows.length}  ` +
