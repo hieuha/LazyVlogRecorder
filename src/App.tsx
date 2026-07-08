@@ -18,6 +18,8 @@ import { useRecorder } from "./recording/use-recorder";
 import { RecordingControls } from "./recording/recording-controls";
 import { SettingsPanel } from "./settings/settings-panel";
 import { loadConfig, saveConfig, DEFAULT_CONFIG, type AppConfig } from "./settings/config-store";
+import { PinGate } from "./auth/pin-gate";
+import { hasPin } from "./auth/auth-client";
 import "./App.css";
 
 type Status = "init" | "requesting" | "ready" | "error";
@@ -54,6 +56,9 @@ export default function App() {
   const [capability, setCapability] = useState<RecordingCapability | null>(null);
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [pinMode, setPinMode] = useState<"set" | "enter">("enter");
+  const [unlocked, setUnlocked] = useState(false);
 
   const rec = useRecorder({
     canvasRef,
@@ -84,8 +89,21 @@ export default function App() {
     );
   }, [getState]);
 
-  // One-time init: load config, probe capability, request permission, preview.
+  // Decide whether to onboard a PIN or ask for one.
   useEffect(() => {
+    (async () => {
+      try {
+        setPinMode((await hasPin()) ? "enter" : "set");
+      } catch {
+        setPinMode("set");
+      }
+      setAuthReady(true);
+    })();
+  }, []);
+
+  // Camera/HUD init runs only after unlock. Load config, probe, preview.
+  useEffect(() => {
+    if (!unlocked) return;
     let cancelled = false;
     const cap = probeRecordingCapability();
     setCapability(cap);
@@ -135,7 +153,7 @@ export default function App() {
       audioStreamRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [unlocked]);
 
   // Keep the HUD camera label in sync with the selected camera device.
   useEffect(() => {
@@ -268,6 +286,9 @@ export default function App() {
     }
     setSettingsOpen(false);
   }
+
+  if (!authReady) return <div className="stage" />;
+  if (!unlocked) return <PinGate mode={pinMode} onUnlocked={() => setUnlocked(true)} />;
 
   return (
     <div className="stage">

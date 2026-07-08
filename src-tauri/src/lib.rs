@@ -11,6 +11,10 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
+            commands::auth::has_pin,
+            commands::auth::set_pin,
+            commands::auth::verify_pin,
+            commands::auth::change_pin,
             commands::geo::geo_locate,
             commands::geo::geocode_city,
             commands::weather::get_weather,

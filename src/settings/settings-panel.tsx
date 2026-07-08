@@ -1,5 +1,7 @@
 // Settings modal. Edits a working copy of AppConfig; Save persists + applies.
 
+import { useState } from "react";
+import { ChangePinFlow } from "../auth/change-pin-flow";
 import type { AppConfig } from "./config-store";
 
 interface Props {
@@ -13,6 +15,8 @@ interface Props {
 
 export function SettingsPanel(p: Props) {
   const c = p.config;
+  const [changingPin, setChangingPin] = useState(false);
+  const [pinMsg, setPinMsg] = useState("");
   return (
     <div className="settings-backdrop" onClick={p.onClose}>
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
@@ -104,6 +108,24 @@ export function SettingsPanel(p: Props) {
             CRT EFFECT
           </label>
         </div>
+
+        <div className="settings-field">
+          SECURITY
+          <div className="settings-folder">
+            <button onClick={() => setChangingPin(true)}>Change PIN</button>
+            {pinMsg && <span className="settings-folder-path">{pinMsg}</span>}
+          </div>
+        </div>
+
+        {changingPin && (
+          <ChangePinFlow
+            onClose={() => setChangingPin(false)}
+            onDone={() => {
+              setChangingPin(false);
+              setPinMsg("PIN updated ✓");
+            }}
+          />
+        )}
 
         <div className="settings-actions">
           <button className="settings-cancel" onClick={p.onClose}>
