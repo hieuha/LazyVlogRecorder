@@ -358,16 +358,6 @@ export default function App() {
 
       {status === "ready" && (
         <div className="controls">
-          <button
-            className="icon-btn"
-            onClick={() => {
-              setPinMode("enter");
-              setUnlocked(false);
-            }}
-            title="Lock"
-          >
-            ⏻
-          </button>
           <button className="icon-btn" onClick={() => setLibraryOpen(true)} title="Library">
             ▤
           </button>
@@ -378,31 +368,39 @@ export default function App() {
           >
             ⚙
           </button>
-          <label>
-            CAM
-            <select value={cameraId} onChange={(e) => void onCameraChange(e.target.value)}>
-              {cameras.map((c, i) => (
-                <option key={c.deviceId || i} value={c.deviceId}>
-                  {c.label || `Camera ${i + 1}`}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            MIC
-            <select
-              value={micId}
-              disabled={rec.recording || !config.audioEnabled}
-              title={rec.recording ? "Mic can't be changed while recording" : undefined}
-              onChange={(e) => void onMicChange(e.target.value)}
-            >
-              {mics.map((m, i) => (
-                <option key={m.deviceId || i} value={m.deviceId}>
-                  {m.label || `Mic ${i + 1}`}
-                </option>
-              ))}
-            </select>
-          </label>
+          <select
+            title="Camera"
+            value={cameraId}
+            onChange={(e) => void onCameraChange(e.target.value)}
+          >
+            {cameras.map((c, i) => (
+              <option key={c.deviceId || i} value={c.deviceId}>
+                {c.label || `Camera ${i + 1}`}
+              </option>
+            ))}
+          </select>
+          <select
+            title={rec.recording ? "Mic can't be changed while recording" : "Microphone"}
+            value={micId}
+            disabled={rec.recording || !config.audioEnabled}
+            onChange={(e) => void onMicChange(e.target.value)}
+          >
+            {mics.map((m, i) => (
+              <option key={m.deviceId || i} value={m.deviceId}>
+                {m.label || `Mic ${i + 1}`}
+              </option>
+            ))}
+          </select>
+          <button
+            className="icon-btn"
+            onClick={() => {
+              setPinMode("enter");
+              setUnlocked(false);
+            }}
+            title="Lock"
+          >
+            ⏻
+          </button>
         </div>
       )}
 

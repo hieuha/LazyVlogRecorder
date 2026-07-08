@@ -1892,7 +1892,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lazyvlogrecorder"
+name = "lazycamhud"
 version = "0.1.0"
 dependencies = [
  "getrandom 0.2.17",

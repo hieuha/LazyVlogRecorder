@@ -92,7 +92,7 @@ body,
   bottom: 18px;
   right: 18px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
   padding: 8px 10px;
   background: rgba(8, 12, 16, 0.82);

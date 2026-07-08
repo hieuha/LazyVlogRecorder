@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    lazyvlogrecorder_lib::run()
+    lazycamhud_lib::run()
 }
