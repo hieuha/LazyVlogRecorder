@@ -183,6 +183,10 @@ export function SettingsPanel(p: Props) {
                 http://{c.sensorApiLan ? "IP" : "127.0.0.1"}:{c.sensorApiPort}/text
                 {"  ·  caption"}
               </span>
+              <span className="settings-folder-path" style={{ whiteSpace: "nowrap" }}>
+                GET http://{c.sensorApiLan ? "IP" : "127.0.0.1"}:{c.sensorApiPort}/healthz
+                {"  ·  status"}
+              </span>
             </div>
           </>
         )}

@@ -78,6 +78,17 @@ curl -X POST http://127.0.0.1:1337/text \
 - **Idle fallback:** with no caption in the last ~12 s, the slot shows a decorative
   random hex stream (e.g. `0x4F2A 0x9C11 …`) so it never looks empty.
 
+## `GET /healthz` — liveness
+
+```bash
+curl http://127.0.0.1:1337/healthz
+# → 200 {"ok":true,"app":"LazyCamHUD","version":"0.4.0"}
+```
+
+No token required — use it to confirm the server is reachable (right IP/port,
+firewall) before pushing. A connection error means the API is off; `200` means it
+is up; a `401` from a data POST means it is up but the token is wrong.
+
 ## Responses
 
 Every response is JSON:

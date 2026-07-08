@@ -76,6 +76,17 @@ curl -X POST http://127.0.0.1:1337/text \
 - **Idle fallback:** nếu ~12 giây không có caption, chỗ đó hiện dòng hex ngẫu nhiên
   trang trí (vd `0x4F2A 0x9C11 …`) để không bị trống.
 
+## `GET /healthz` — kiểm tra sống
+
+```bash
+curl http://127.0.0.1:1337/healthz
+# → 200 {"ok":true,"app":"LazyCamHUD","version":"0.4.0"}
+```
+
+Không cần token — dùng để xác nhận server tới được (đúng IP/port, firewall) trước
+khi đẩy. Lỗi kết nối = API tắt; `200` = đang chạy; `401` khi POST data = đang chạy
+nhưng sai token.
+
 ## Phản hồi
 
 Mọi phản hồi đều là JSON:

@@ -129,8 +129,18 @@ pub fn stop_sensor_server() {
 }
 
 fn handle(app: &AppHandle, mut request: tiny_http::Request, expected: Option<&str>) {
-    // Routes: POST /sensors (scalar readouts) and POST /series (chart points).
     let path = request.url().split('?').next().unwrap_or("").to_string();
+
+    // Liveness probe — no auth (only reveals that the server is up + version).
+    if *request.method() == Method::Get && path == "/healthz" {
+        return json(
+            request,
+            200,
+            concat!(r#"{"ok":true,"app":"LazyCamHUD","version":""#, env!("CARGO_PKG_VERSION"), r#""}"#),
+        );
+    }
+
+    // Data routes are POST only.
     if *request.method() != Method::Post
         || (path != "/sensors" && path != "/series" && path != "/text")
     {

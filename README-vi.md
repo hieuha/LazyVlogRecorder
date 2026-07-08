@@ -71,6 +71,7 @@ curl -X POST http://<host>:1337/sensors \
 - Chế độ LAN bind `0.0.0.0` và **bắt buộc** token; nếu không thì bind `127.0.0.1`.
 - Giới hạn: ≤ 6 dòng; `label`/`value`/`unit` cắt còn 12/10/6 ký tự; body ≤ 8 KB.
 - Dòng mờ đi sau ~10s không cập nhật. Chỉ nhận text hiển thị — không thực thi gì.
+- `GET /healthz` (không cần token) → `{"ok":true,...}` để kiểm tra kết nối/sống.
 
 ### Chuỗi thời gian (sparkline)
 

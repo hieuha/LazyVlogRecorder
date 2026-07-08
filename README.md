@@ -71,6 +71,7 @@ curl -X POST http://<host>:1337/sensors \
 - LAN mode binds `0.0.0.0` and **requires** the token; otherwise it binds `127.0.0.1`.
 - Limits: ≤ 6 items; `label`/`value`/`unit` truncated to 12/10/6 chars; body ≤ 8 KB.
 - Rows dim after ~10 s without an update. Only display text is accepted — nothing is executed.
+- `GET /healthz` (no token) → `{"ok":true,...}` for a reachability/liveness check.
 
 ### Time series (sparklines)
 
