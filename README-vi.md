@@ -78,11 +78,26 @@ curl -X POST http://<host>:1337/series \
   -d '{"label":"ALT","value":12345,"unit":"m"}'
 ```
 
-Thử nhanh bằng script mock (mô phỏng bóng thám không — lat/lon, độ cao, khoảng cách, pin):
+### Caption (typewriter)
+
+`POST /text` hiện một dòng text tự do gần đáy, gõ ra kiểu typewriter:
 
 ```bash
-node scripts/mock-sonde.mjs <token>            # → http://127.0.0.1:1337
+curl -X POST http://<host>:1337/text \
+  -H "Authorization: Bearer <token>" \
+  -d '{"text":"RS41 · Y0532363"}'
 ```
+
+### Thử nhanh bằng script mock
+
+Mô phỏng bóng thám không (lat/lon, sparkline độ cao, khoảng cách, pin, caption tên):
+
+```bash
+node scripts/mock-sonde.mjs <token>                        # chuyến bay tổng hợp
+node scripts/replay-sonde-log.mjs <auto_rx.log> <token>    # phát lại log RS41 thật
+```
+
+Tài liệu đầy đủ: **[docs/vi/sensor-api.md](./docs/vi/sensor-api.md)**.
 
 ## Nơi lưu dữ liệu (macOS)
 

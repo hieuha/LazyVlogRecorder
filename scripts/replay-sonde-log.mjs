@@ -33,11 +33,13 @@ const header = lines[0].split(",");
 const idx = (name) => header.indexOf(name);
 const col = {
   ts: idx("timestamp"),
+  serial: idx("serial"),
   lat: idx("lat"),
   lon: idx("lon"),
   alt: idx("alt"),
   vv: idx("vel_v"),
   temp: idx("temp"),
+  type: idx("type"),
   sats: idx("sats"),
   batt: idx("batt_v"),
 };
@@ -105,6 +107,9 @@ async function pushRow(r) {
 
 async function run() {
   console.log(`Replay ${rows.length} rows → ${BASE}  (speed ${SPEED}x${LOOP ? ", looping" : ""}; Ctrl+C to stop)`);
+  // Announce the sonde name/serial as a typewriter caption.
+  const name = `${rows[0][col.type] || "SONDE"} · ${rows[0][col.serial] || "?"}`;
+  console.log(`[text] ${name} → ${await post("/text", { text: name })}`);
   do {
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];

@@ -69,6 +69,12 @@ export default function App() {
   const sensorsRef = useRef<{ items: SensorItem[]; at: number }>({ items: [], at: 0 });
   // Rolling per-label buffers for /series sparklines.
   const seriesRef = useRef<Map<string, SeriesBuf>>(new Map());
+  // Latest /text caption (typewriter widget).
+  const captionRef = useRef<{ text: string; at: number; typing: boolean }>({
+    text: "",
+    at: 0,
+    typing: true,
+  });
 
   const [status, setStatus] = useState<Status>("init");
   const [error, setError] = useState<string>("");
@@ -119,6 +125,9 @@ export default function App() {
       });
     });
     s.series = series.length ? series : undefined;
+
+    const cap = captionRef.current;
+    s.caption = cap.text ? { text: cap.text, typing: cap.typing, sinceMs: now - cap.at } : undefined;
     return s;
   }, []);
 
@@ -221,6 +230,11 @@ export default function App() {
       buf.unit = p.unit;
       buf.at = performance.now();
       map.set(p.label, buf);
+    }).then((fn) => unlisteners.push(fn));
+    void listen<{ text: string; typing: boolean }>("text", (e) => {
+      const p = e.payload;
+      if (!p) return;
+      captionRef.current = { text: p.text ?? "", at: performance.now(), typing: p.typing !== false };
     }).then((fn) => unlisteners.push(fn));
     return () => unlisteners.forEach((fn) => fn());
   }, [unlocked]);
@@ -412,6 +426,7 @@ export default function App() {
       } else {
         sensorsRef.current = { items: [], at: 0 };
         seriesRef.current.clear();
+        captionRef.current = { text: "", at: 0, typing: true };
         await invoke("stop_sensor_server");
       }
     } catch (err) {

@@ -78,11 +78,26 @@ curl -X POST http://<host>:1337/series \
   -d '{"label":"ALT","value":12345,"unit":"m"}'
 ```
 
-Try it with the bundled mock (simulates a weather-balloon flight — lat/lon, altitude, distance, battery):
+### Caption (typewriter)
+
+`POST /text` shows a free-text line near the bottom, revealed with a typewriter effect:
 
 ```bash
-node scripts/mock-sonde.mjs <token>            # → http://127.0.0.1:1337
+curl -X POST http://<host>:1337/text \
+  -H "Authorization: Bearer <token>" \
+  -d '{"text":"RS41 · Y0532363"}'
 ```
+
+### Try it with the bundled mock
+
+Simulates a weather-balloon flight (lat/lon, altitude sparkline, distance, battery, name caption):
+
+```bash
+node scripts/mock-sonde.mjs <token>                        # synthetic flight
+node scripts/replay-sonde-log.mjs <auto_rx.log> <token>    # replay a real RS41 log
+```
+
+Full reference: **[docs/sensor-api.md](./docs/sensor-api.md)**.
 
 ## Where things are stored (macOS)
 

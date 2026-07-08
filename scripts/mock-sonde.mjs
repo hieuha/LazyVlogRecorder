@@ -114,6 +114,7 @@ async function tick() {
 }
 
 console.log(`Mock sonde → ${BASE}  (every ${INTERVAL}ms; Ctrl+C to stop)`);
+console.log(`[text] → ${await post("/text", { text: "MOCK SONDE · HANOI" })}`);
 await tick();
 const timer = setInterval(tick, INTERVAL);
 process.on("SIGINT", () => {

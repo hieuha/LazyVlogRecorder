@@ -22,6 +22,7 @@ const MAX_ITEMS: usize = 6;
 const MAX_LABEL: usize = 12;
 const MAX_VALUE: usize = 10;
 const MAX_UNIT: usize = 6;
+const MAX_TEXT: usize = 120;
 
 #[derive(Deserialize)]
 struct Payload {
@@ -57,6 +58,19 @@ struct Point {
     label: String,
     value: f64,
     unit: String,
+}
+
+// Free-text caption (POST /text) shown with a typewriter effect.
+#[derive(Deserialize)]
+struct RawText {
+    text: String,
+    typing: Option<bool>,
+}
+
+#[derive(Serialize, Clone)]
+struct Caption {
+    text: String,
+    typing: bool,
 }
 
 struct Running {
@@ -117,7 +131,9 @@ pub fn stop_sensor_server() {
 fn handle(app: &AppHandle, mut request: tiny_http::Request, expected: Option<&str>) {
     // Routes: POST /sensors (scalar readouts) and POST /series (chart points).
     let path = request.url().split('?').next().unwrap_or("").to_string();
-    if *request.method() != Method::Post || (path != "/sensors" && path != "/series") {
+    if *request.method() != Method::Post
+        || (path != "/sensors" && path != "/series" && path != "/text")
+    {
         return json(request, 404, r#"{"ok":false,"error":"not found"}"#);
     }
 
@@ -165,7 +181,7 @@ fn handle(app: &AppHandle, mut request: tiny_http::Request, expected: Option<&st
         let count = items.len();
         let _ = app.emit("sensors", items);
         json(request, 200, &format!(r#"{{"ok":true,"count":{count}}}"#));
-    } else {
+    } else if path == "/series" {
         // /series — one numeric point appended to the label's sparkline buffer.
         let Ok(p) = serde_json::from_str::<RawPoint>(&body) else {
             return json(request, 400, r#"{"ok":false,"error":"bad json"}"#);
@@ -179,6 +195,17 @@ fn handle(app: &AppHandle, mut request: tiny_http::Request, expected: Option<&st
             unit: clip(&p.unit, MAX_UNIT),
         };
         let _ = app.emit("series", point);
+        json(request, 200, r#"{"ok":true}"#);
+    } else {
+        // /text — a free-text caption rendered with a typewriter effect.
+        let Ok(t) = serde_json::from_str::<RawText>(&body) else {
+            return json(request, 400, r#"{"ok":false,"error":"bad json"}"#);
+        };
+        let caption = Caption {
+            text: clip(&t.text, MAX_TEXT),
+            typing: t.typing.unwrap_or(true),
+        };
+        let _ = app.emit("text", caption);
         json(request, 200, r#"{"ok":true}"#);
     }
 }

@@ -33,6 +33,9 @@ export const martianLayout: LayoutConfig = {
     // separate from the gauge/environment column above it.
     { type: "location", anchor: "bottom-left", offset: { x: 4, y: -4 } },
 
+    // Free-text caption (POST /text), centered above the location line.
+    { type: "caption", anchor: "bottom-center", offset: { x: 0, y: -10 } },
+
     // Top-right clock (TIME + DATE) + log entry
     { type: "clock", anchor: "top-right", offset: { x: -4, y: 5 } },
     { type: "log-entry", anchor: "top-right", offset: { x: -4, y: 7.4 } },

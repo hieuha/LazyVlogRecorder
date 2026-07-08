@@ -15,6 +15,7 @@ import { drawColorGrade, drawCornerFrame, drawScanline } from "./widgets/frame-w
 import { drawSoundwave } from "./widgets/soundwave-widget";
 import { drawSensorPanel } from "./widgets/sensor-panel-widget";
 import { drawSeriesPanel } from "./widgets/series-panel-widget";
+import { drawCaption } from "./widgets/caption-widget";
 import type { LayerContext } from "../compositor/canvas-compositor";
 
 /**
@@ -71,6 +72,8 @@ function dispatch(c: WidgetRenderContext, spec: LayoutConfig["widgets"][number])
       return drawSensorPanel(c);
     case "series-panel":
       return drawSeriesPanel(c);
+    case "caption":
+      return drawCaption(c);
   }
 }
 
@@ -81,7 +84,11 @@ function resolveAnchor(
   height: number,
   u: number,
 ): Vec2 {
-  const baseX = anchor.includes("right") ? width : 0;
+  const baseX = anchor.includes("right")
+    ? width
+    : anchor.includes("center")
+      ? width / 2
+      : 0;
   const baseY = anchor.startsWith("mid")
     ? height / 2
     : anchor.includes("bottom")

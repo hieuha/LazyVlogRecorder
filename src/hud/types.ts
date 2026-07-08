@@ -6,10 +6,12 @@
 export type Anchor =
   | "top-left"
   | "top-right"
+  | "top-center"
   | "mid-left"
   | "mid-right"
   | "bottom-left"
-  | "bottom-right";
+  | "bottom-right"
+  | "bottom-center";
 
 /** Offsets and sizes are fractions of canvas width (keeps layouts resolution-independent). */
 export interface HudTheme {
@@ -45,6 +47,15 @@ export interface HudState {
   sensors?: SensorItem[];
   /** Time series pushed via POST /series, rendered as sparkline rows. */
   series?: SeriesItem[];
+  /** Free-text caption pushed via POST /text, drawn with a typewriter effect. */
+  caption?: CaptionState;
+}
+
+/** Caption line for the typewriter widget. `sinceMs` = time since it arrived. */
+export interface CaptionState {
+  text: string;
+  typing: boolean;
+  sinceMs: number;
 }
 
 /** One external sensor reading shown on the HUD; `stale` when not updated recently. */
@@ -89,7 +100,8 @@ export type WidgetSpec =
   | { type: "color-grade"; anchor: Anchor; offset: Vec2 }
   | { type: "soundwave"; anchor: Anchor; offset: Vec2; widthPct: number }
   | { type: "sensor-panel"; anchor: Anchor; offset: Vec2 }
-  | { type: "series-panel"; anchor: Anchor; offset: Vec2 };
+  | { type: "series-panel"; anchor: Anchor; offset: Vec2 }
+  | { type: "caption"; anchor: Anchor; offset: Vec2 };
 
 export interface Vec2 {
   x: number;

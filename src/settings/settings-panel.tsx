@@ -179,6 +179,10 @@ export function SettingsPanel(p: Props) {
                 http://{c.sensorApiLan ? "IP" : "127.0.0.1"}:{c.sensorApiPort}/series
                 {"  ·  sparkline"}
               </span>
+              <span className="settings-folder-path" style={{ whiteSpace: "nowrap" }}>
+                http://{c.sensorApiLan ? "IP" : "127.0.0.1"}:{c.sensorApiPort}/text
+                {"  ·  caption"}
+              </span>
             </div>
           </>
         )}

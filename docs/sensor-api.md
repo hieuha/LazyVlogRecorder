@@ -4,10 +4,11 @@ Push your own sensor data into the HUD over a local HTTP endpoint. Everything yo
 send is drawn on the right side of the HUD **and burned into the recorded MP4**
 (the panels are canvas widgets, same as the weather gauges).
 
-Two endpoints:
+Three endpoints:
 
 - `POST /sensors` — scalar readouts (a labelled value column, top‑right).
 - `POST /series` — numeric time series, drawn as a **sparkline** (mid‑right).
+- `POST /text` — a free‑text caption with a **typewriter** effect (bottom‑center).
 
 ## Enable
 
@@ -62,6 +63,19 @@ curl -X POST http://127.0.0.1:1337/series \
   min/max, with a dot on the latest point. Row shows `LABEL <line> VALUE unit`.
 - Keep POSTing the current value at your own cadence; the app builds the curve.
 
+## `POST /text` — caption (typewriter)
+
+```bash
+curl -X POST http://127.0.0.1:1337/text \
+  -H "Authorization: Bearer <token>" \
+  -d '{"text":"RS41 · Y0532363","typing":true}'
+```
+
+- Body: `{ "text": string, "typing"?: boolean }` (`typing` defaults to `true`).
+- Drawn centered near the bottom as a subtitle; characters reveal at ~25/sec with
+  a blinking cursor. A new push restarts the reveal. Set `"typing":false` to show
+  it instantly. Text is truncated to **120 chars**.
+
 ## Responses
 
 Every response is JSON:
@@ -80,6 +94,7 @@ Add `-i` to `curl` to also see the HTTP status line.
 
 - `/sensors`: ≤ **6 items**; `label`/`value`/`unit` truncated to **12 / 10 / 6** chars.
 - `/series`: ≤ **120 points** kept per label (older points drop off).
+- `/text`: caption truncated to **120 chars**.
 - Body ≤ **8 KB**. Values are display text only — **nothing is executed**.
 
 ## Simulation scripts (weather‑balloon concept)
@@ -99,7 +114,7 @@ SONDE_URL=http://192.168.1.20:1337 SONDE_INTERVAL=1000 \
   node scripts/mock-sonde.mjs <token>
 ```
 
-Pushes each second:
+Pushes a name caption once (`/text` → "MOCK SONDE · HANOI"), then each second:
 
 - `/sensors`: `LAT`, `LON`, `DIST` (km from launch), `BATT` (%).
 - `/series`: `ALT` (m), `SPD` (horizontal m/s).
@@ -118,7 +133,8 @@ SONDE_SPEED=20 node scripts/replay-sonde-log.mjs <logfile> <token>   # 20× fast
 SONDE_LOOP=1  node scripts/replay-sonde-log.mjs <logfile> <token>    # repeat
 ```
 
-Pushes per row:
+Pushes the sonde name once (`/text` → `<type> · <serial>`, e.g. "RS41 · Y0532363"),
+then per row:
 
 - `/sensors`: `LAT`, `LON`, `DIST` (from the first row = launch site), `TEMP`
   (`--` until the RS41 sensor boom deploys, i.e. while `temp` reads `-273`), `BATT`
