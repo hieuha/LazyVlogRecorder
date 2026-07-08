@@ -24,6 +24,7 @@ import { LibraryView } from "./library/library-view";
 import { addEntry, updateEntry } from "./library/entries-store";
 import { generateThumbnail } from "./library/library-client";
 import type { SavedFile } from "./recording/save-client";
+import { HudSelect } from "./components/hud-select";
 import "./App.css";
 
 type Status = "init" | "requesting" | "ready" | "error";
@@ -368,29 +369,19 @@ export default function App() {
           >
             ⚙
           </button>
-          <select
+          <HudSelect
             title="Camera"
             value={cameraId}
-            onChange={(e) => void onCameraChange(e.target.value)}
-          >
-            {cameras.map((c, i) => (
-              <option key={c.deviceId || i} value={c.deviceId}>
-                {c.label || `Camera ${i + 1}`}
-              </option>
-            ))}
-          </select>
-          <select
+            options={cameras.map((c, i) => ({ id: c.deviceId, label: c.label || `Camera ${i + 1}` }))}
+            onChange={(id) => void onCameraChange(id)}
+          />
+          <HudSelect
             title={rec.recording ? "Mic can't be changed while recording" : "Microphone"}
             value={micId}
             disabled={rec.recording || !config.audioEnabled}
-            onChange={(e) => void onMicChange(e.target.value)}
-          >
-            {mics.map((m, i) => (
-              <option key={m.deviceId || i} value={m.deviceId}>
-                {m.label || `Mic ${i + 1}`}
-              </option>
-            ))}
-          </select>
+            options={mics.map((m, i) => ({ id: m.deviceId, label: m.label || `Mic ${i + 1}` }))}
+            onChange={(id) => void onMicChange(id)}
+          />
           <button
             className="icon-btn"
             onClick={() => {
