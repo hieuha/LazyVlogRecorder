@@ -14,6 +14,10 @@
 | **Xử lý → MP4** | **Thư viện log** |
 | ![Overlay tiến trình transcode](./docs/screenshot/3-processing-video.webp) | ![Lưới thư viện log](./docs/screenshot/4-logs-library.webp) |
 
+Sensor API — số liệu ngoài + biểu đồ sparkline đẩy qua HTTP:
+
+![Số liệu sensor và biểu đồ sparkline trên HUD](./docs/screenshot/5-sensor-series-chart.webp)
+
 ## Tính năng
 
 - **HUD burned‑in** — webcam + HUD vẽ chung trên một `<canvas>` rồi ghi cùng nhau (không phải track overlay riêng).
