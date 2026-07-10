@@ -8,10 +8,10 @@ import { martianTheme, marsAmberTheme, greenHackerTheme, cryptTheme } from "./th
 export const DEFAULT_THEME_ID = "martian";
 
 const THEMES: Record<string, { name: string; theme: HudTheme }> = {
-  martian: { name: "Mars Teal (film)", theme: martianTheme },
-  amber: { name: "Mars Amber (CRT)", theme: marsAmberTheme },
-  green: { name: "Green Hacker", theme: greenHackerTheme },
-  crypt: { name: "Crypt (blood CRT)", theme: cryptTheme },
+  martian: { name: "Teal", theme: martianTheme },
+  amber: { name: "Amber", theme: marsAmberTheme },
+  green: { name: "Green", theme: greenHackerTheme },
+  crypt: { name: "Crypt", theme: cryptTheme },
 };
 
 export function getTheme(id: string): HudTheme {
