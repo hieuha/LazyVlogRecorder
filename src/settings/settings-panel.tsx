@@ -150,28 +150,26 @@ export function SettingsPanel(p: Props) {
 
         {c.sensorApiEnabled && (
           <>
-            <div className="settings-row">
-              <label className="settings-field" style={{ flex: 1 }}>
-                PORT
-                <input
-                  type="number"
-                  min={1}
-                  max={65535}
-                  value={c.sensorApiPort}
-                  onChange={(e) =>
-                    p.setField("sensorApiPort", Math.min(65535, Math.max(1, Number(e.target.value) || 1)))
-                  }
-                />
-              </label>
-              <label className="settings-check">
-                <input
-                  type="checkbox"
-                  checked={c.sensorApiLan}
-                  onChange={(e) => p.setField("sensorApiLan", e.target.checked)}
-                />
-                Allow LAN devices
-              </label>
-            </div>
+            <label className="settings-field">
+              PORT
+              <input
+                type="number"
+                min={1}
+                max={65535}
+                value={c.sensorApiPort}
+                onChange={(e) =>
+                  p.setField("sensorApiPort", Math.min(65535, Math.max(1, Number(e.target.value) || 1)))
+                }
+              />
+            </label>
+            <label className="settings-check">
+              <input
+                type="checkbox"
+                checked={c.sensorApiLan}
+                onChange={(e) => p.setField("sensorApiLan", e.target.checked)}
+              />
+              Allow LAN devices
+            </label>
 
             <div className="settings-field">
               TOKEN (Bearer)
