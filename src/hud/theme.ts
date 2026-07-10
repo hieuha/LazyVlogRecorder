@@ -74,3 +74,27 @@ export const greenHackerTheme: HudTheme = {
   panelInk: "rgba(128, 255, 158, 0.98)",
   panelGrid: "rgba(128, 255, 158, 0.13)",
 };
+
+// Crypt palette: blood-red CRT terminal — crimson-on-near-black with an ember
+// highlight and a hazard-amber alert, over a deep maroon color grade. Lit red
+// digits on a dark red LCD panel. Matches the "Crypt" blog theme.
+export const cryptTheme: HudTheme = {
+  accent: "rgba(230, 46, 40, 0.96)", // primary crimson lines / brackets
+  accentBright: "rgba(255, 122, 98, 1)", // glow core / gradient top (bright red)
+  accentDeep: "rgba(150, 24, 20, 0.95)", // gradient tail / dial track (blood red, lifted for bright footage)
+  text: "rgba(255, 222, 214, 0.98)", // warm red-white
+  textDim: "rgba(228, 98, 82, 0.94)", // deep-red gradient bottom for big numbers
+  muted: "rgba(210, 100, 88, 0.82)", // secondary labels — lifted for legibility on bright footage
+  warn: "rgba(255, 190, 60, 0.98)", // hazard amber — distinct from the ambient red
+  gold: "rgba(255, 146, 74, 0.95)", // highlighted-label ember orange
+  fontMono: "ui-monospace, 'SF Mono', Menlo, monospace",
+  fontCondensed:
+    "'Oswald', 'Bebas Neue', 'Arial Narrow', ui-sans-serif, system-ui, sans-serif",
+  gradeCool: "rgba(72, 12, 12, 0.40)", // maroon top wash (heavier)
+  gradeWarm: "rgba(56, 8, 10, 0.34)", // deep blood-red bottom wash
+  scanline: "#ff5a48",
+  panelBg: "rgba(46, 10, 10, 0.93)", // dark red LCD (lit red digits)
+  panelBgDeep: "rgba(24, 5, 6, 0.95)",
+  panelInk: "rgba(255, 100, 84, 0.98)",
+  panelGrid: "rgba(255, 100, 84, 0.13)",
+};

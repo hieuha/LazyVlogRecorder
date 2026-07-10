@@ -25,7 +25,7 @@ Sensor API — external readouts + live sparkline charts pushed over HTTP:
 - **Recording modes** — `FIXED` (countdown auto‑stop) and `FREE` (manual stop); pause/resume; camera switching mid‑recording keeps the take alive with a static + collapse transition.
 - **MP4 export** — records VP8/WebM at a fixed **720p or 1080p** (16:9), then transcodes to MP4 (H.264/AAC, CRF‑26, faststart) via a bundled static ffmpeg; streams to a temp file (flat memory) with a live progress overlay.
 - **Layouts** — data‑driven registry; ships `Martian`, `Minimal`, and `Recon` (horizontal telemetry strip along the bottom + right‑side sensor‑API rail) — add a layout = one file.
-- **Themes** — swappable HUD palette applied over any layout; ships `Mars Teal (film)`, `Mars Amber (CRT)` (80s orange‑on‑black terminal), and `Green Hacker` (Matrix phosphor green) — add a theme = one entry.
+- **Themes** — swappable HUD palette applied over any layout; ships `Mars Teal (film)`, `Mars Amber (CRT)` (80s orange‑on‑black terminal), `Green Hacker` (Matrix phosphor green), and `Crypt (blood CRT)` (crimson‑on‑black) — add a theme = one entry.
 - **Effects** — CRT grain overlay, cinematic color grade, camera mirror — all toggleable.
 - **Ship Vitals** — opt‑in strip that burns real machine telemetry (battery, CPU, RAM, uptime) into the HUD as tiny icons below the soundwave; polled ~every 2s, on all layouts, off by default. Battery hides on desktops without one.
 - **PIN lock** — 4‑digit gate on launch, change‑PIN flow, and a lock button.
