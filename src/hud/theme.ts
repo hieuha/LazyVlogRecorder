@@ -49,6 +49,7 @@ export const marsAmberTheme: HudTheme = {
   panelBgDeep: "rgba(32, 11, 3, 0.95)",
   panelInk: "rgba(255, 158, 66, 0.98)",
   panelGrid: "rgba(255, 140, 56, 0.13)",
+  panelBorder: "rgba(255, 104, 18, 0.97)", // deep-orange border to match the accent
 };
 
 // Green Hacker palette: Matrix/phosphor terminal — green-on-black with a lime
@@ -73,6 +74,7 @@ export const greenHackerTheme: HudTheme = {
   panelBgDeep: "rgba(5, 24, 13, 0.95)",
   panelInk: "rgba(128, 255, 158, 0.98)",
   panelGrid: "rgba(128, 255, 158, 0.13)",
+  panelBorder: "rgba(74, 232, 122, 0.95)", // phosphor-green border to match the accent
 };
 
 // Crypt palette: blood-red CRT terminal — crimson-on-near-black with an ember
