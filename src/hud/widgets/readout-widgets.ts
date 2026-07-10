@@ -18,7 +18,7 @@ export function drawMissionDay(c: WidgetRenderContext): void {
   });
 
   const boxY = origin.y + 3.4 * u; // clearer gap below the MISSION DAY label
-  const label = state.dateText;
+  const label = state.missionDayText?.trim() || state.dateText; // custom text or the date
   const size = 3.4 * u;
 
   ctx.save();

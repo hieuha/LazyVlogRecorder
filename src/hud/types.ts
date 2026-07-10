@@ -47,6 +47,7 @@ export interface HudState {
   logNo: number;
   clock: { h: number; m: number; s: number };
   dateText: string; // e.g. "2026.07.08"
+  missionDayText?: string; // MISSION DAY panel override (blank → dateText)
   environment: string; // weather-code text
   location: string; // place (left of ">"): geo city, "UNKNOWN" when unresolved
   cameraLabel: string; // camera name (right of ">"): FRONT CAM / REAR CAM / LAB CAM…

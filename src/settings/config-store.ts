@@ -13,6 +13,7 @@ export interface AppConfig {
   mirror: boolean;
   crtEffect: boolean; // CRT/analog grain overlay
   showVitals: boolean; // Ship Vitals strip (battery/CPU/RAM/uptime); off by default
+  missionDayText: string; // MISSION DAY panel override; "" = auto date (Y.M.D)
   layoutId: string;
   themeId: string; // HUD palette (theme registry): "martian" | "amber"
   cityOverride: string; // "" = auto (IP geolocation)
@@ -33,6 +34,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   mirror: true,
   crtEffect: true,
   showVitals: false,
+  missionDayText: "",
   layoutId: "martian",
   themeId: "martian",
   cityOverride: "",

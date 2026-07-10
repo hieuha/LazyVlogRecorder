@@ -53,6 +53,16 @@ export function SettingsPanel(p: Props) {
         </label>
 
         <label className="settings-field">
+          MISSION DAY (blank = date)
+          <input
+            value={c.missionDayText}
+            placeholder="auto (Y.M.D date)"
+            maxLength={24}
+            onChange={(e) => p.setField("missionDayText", e.target.value)}
+          />
+        </label>
+
+        <label className="settings-field">
           FIXED DURATION (min)
           <input
             type="number"

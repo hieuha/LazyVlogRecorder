@@ -61,6 +61,7 @@ export default function App() {
   const mimeTypeRef = useRef<string | null>(null);
   const personNameRef = useRef<string>(DEFAULT_CONFIG.personName);
   const logNoRef = useRef<number>(DEFAULT_CONFIG.logNo);
+  const missionDayTextRef = useRef<string>(DEFAULT_CONFIG.missionDayText);
   const outDirRef = useRef<string>(DEFAULT_CONFIG.outputDir);
   const audioEnabledRef = useRef<boolean>(DEFAULT_CONFIG.audioEnabled);
   const layoutIdRef = useRef<string>(DEFAULT_CONFIG.layoutId);
@@ -114,6 +115,7 @@ export default function App() {
     s.cameraLabel = cameraLabelRef.current;
     s.personName = personNameRef.current;
     s.logNo = logNoRef.current;
+    s.missionDayText = missionDayTextRef.current;
     const now = performance.now();
     const sr = sensorsRef.current;
     s.sensors = sr.items.length
@@ -278,6 +280,7 @@ export default function App() {
   function applyConfigToRefs(cfg: AppConfig) {
     personNameRef.current = cfg.personName;
     logNoRef.current = cfg.logNo;
+    missionDayTextRef.current = cfg.missionDayText;
     outDirRef.current = cfg.outputDir;
     audioEnabledRef.current = cfg.audioEnabled;
     layoutIdRef.current = cfg.layoutId;
