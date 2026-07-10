@@ -26,6 +26,7 @@ pub fn run() {
             commands::ffmpeg::generate_thumbnail,
             commands::sensor_server::start_sensor_server,
             commands::sensor_server::stop_sensor_server,
+            commands::system_vitals::get_system_vitals,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

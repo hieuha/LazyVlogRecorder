@@ -29,7 +29,9 @@ export const minimalLayout: LayoutConfig = {
     { type: "location", anchor: "bottom-left", offset: { x: 4, y: -5.5 } },
     { type: "caption", anchor: "bottom-left", offset: { x: 4, y: -3.5 } },
 
-    { type: "soundwave", anchor: "bottom-right", offset: { x: -4, y: -5.5 }, widthPct: 0.28 },
+    { type: "soundwave", anchor: "bottom-right", offset: { x: -4, y: -6.5 }, widthPct: 0.28 },
+    // Ship Vitals strip (battery/CPU/RAM/uptime), tucked below the soundwave.
+    { type: "vitals-strip", anchor: "bottom-right", offset: { x: -4, y: -4.2 } },
     { type: "corner-frame", anchor: "top-right", offset: { x: -2, y: 2 } },
     { type: "corner-frame", anchor: "bottom-left", offset: { x: 2, y: -2 } },
   ],

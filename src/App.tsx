@@ -16,6 +16,7 @@ import { createHudLayer } from "./hud/layout-engine";
 import { getLayout, listLayouts } from "./hud/layout-registry";
 import { getTheme, listThemes } from "./hud/theme-registry";
 import { createHudDataSource, type HudDataSource } from "./data/hud-data-source";
+import { createSystemVitalsSource, type SystemVitalsSource } from "./data/system-vitals-client";
 import { createAudioAnalyser, type AudioAnalyser } from "./hud/audio-analyser";
 import { useRecorder } from "./recording/use-recorder";
 import { RecordingControls } from "./recording/recording-controls";
@@ -53,6 +54,7 @@ export default function App() {
   const audioStreamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AudioAnalyser | null>(null);
   const dataSourceRef = useRef<HudDataSource | null>(null);
+  const vitalsSourceRef = useRef<SystemVitalsSource | null>(null);
   const hudUnsubRef = useRef<(() => void) | null>(null);
   const cameraLabelRef = useRef<string>("CAM");
   // Recorder / HUD inputs (refs so async code always reads current values).
@@ -133,6 +135,8 @@ export default function App() {
 
     const cap = captionRef.current;
     s.caption = cap.text ? { text: cap.text, typing: cap.typing, sinceMs: now - cap.at } : undefined;
+
+    s.vitals = vitalsSourceRef.current?.getVitals();
     return s;
   }, []);
 
@@ -175,6 +179,7 @@ export default function App() {
         savedConfigRef.current = cfg;
         rec.setDurationSec(cfg.durationMin * 60);
         dataSourceRef.current = createHudDataSource(cfg.cityOverride);
+        vitalsSourceRef.current = createSystemVitalsSource(cfg.showVitals);
 
         await requestPermission(cfg.audioEnabled);
         const devices = await enumerateDevices();
@@ -209,6 +214,8 @@ export default function App() {
       analyserRef.current = null;
       dataSourceRef.current?.dispose();
       dataSourceRef.current = null;
+      vitalsSourceRef.current?.dispose();
+      vitalsSourceRef.current = null;
       stopStream(videoStreamRef.current);
       stopStream(audioStreamRef.current);
       videoStreamRef.current = null;
@@ -423,6 +430,7 @@ export default function App() {
     if (!rec.recording) compositorRef.current?.setResolution(config.recordHeight);
     rec.setDurationSec(config.durationMin * 60);
     dataSourceRef.current?.setCityOverride(config.cityOverride);
+    vitalsSourceRef.current?.setEnabled(config.showVitals);
     registerHud(); // re-apply layout
 
     if (config.audioEnabled !== audioWas && !rec.recording) {

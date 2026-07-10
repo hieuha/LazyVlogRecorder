@@ -16,6 +16,7 @@ import { drawSoundwave } from "./widgets/soundwave-widget";
 import { drawSensorPanel } from "./widgets/sensor-panel-widget";
 import { drawSeriesPanel } from "./widgets/series-panel-widget";
 import { drawCaption } from "./widgets/caption-widget";
+import { drawVitalsStrip } from "./widgets/vitals-strip-widget";
 import type { LayerContext } from "../compositor/canvas-compositor";
 
 /**
@@ -78,6 +79,8 @@ function dispatch(c: WidgetRenderContext, spec: LayoutConfig["widgets"][number])
       return drawSeriesPanel(c);
     case "caption":
       return drawCaption(c);
+    case "vitals-strip":
+      return drawVitalsStrip(c);
   }
 }
 

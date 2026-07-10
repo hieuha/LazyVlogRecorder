@@ -45,7 +45,11 @@ export const martianLayout: LayoutConfig = {
     // Sensor time-series sparklines (POST /series), mid-right.
     { type: "series-panel", anchor: "mid-right", offset: { x: -4, y: -2 } },
 
-    // Live mic soundwave, bottom-right, level with HAB on the left
-    { type: "soundwave", anchor: "bottom-right", offset: { x: -4, y: -5.5 }, widthPct: 0.28 },
+    // Live mic soundwave, bottom-right, raised to leave a gap above the vitals strip
+    { type: "soundwave", anchor: "bottom-right", offset: { x: -4, y: -6.5 }, widthPct: 0.28 },
+
+    // Ship Vitals strip (battery/CPU/RAM/uptime), between the soundwave and the
+    // bottom bracket (raised off the corner arm for breathing room).
+    { type: "vitals-strip", anchor: "bottom-right", offset: { x: -4, y: -4.2 } },
   ],
 };

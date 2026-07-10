@@ -7,4 +7,5 @@ pub mod ffmpeg;
 pub mod geo;
 pub mod recording_fs;
 pub mod sensor_server;
+pub mod system_vitals;
 pub mod weather;

@@ -130,6 +130,14 @@ export function SettingsPanel(p: Props) {
             />
             CRT EFFECT
           </label>
+          <label className="settings-check">
+            <input
+              type="checkbox"
+              checked={c.showVitals}
+              onChange={(e) => p.setField("showVitals", e.target.checked)}
+            />
+            SHIP VITALS
+          </label>
         </div>
 
         <div className="settings-field">

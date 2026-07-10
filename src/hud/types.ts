@@ -57,6 +57,19 @@ export interface HudState {
   series?: SeriesItem[];
   /** Free-text caption pushed via POST /text, drawn with a typewriter effect. */
   caption?: CaptionState;
+  /** Machine telemetry (battery/CPU/RAM/uptime) for the Ship Vitals strip. */
+  vitals?: SystemVitals;
+}
+
+/** Real machine telemetry polled from the Rust `get_system_vitals` command.
+ *  `battery` is null on machines without one; `stale` dims the strip. */
+export interface SystemVitals {
+  battery: number | null; // 0–100, null when no battery
+  charging: boolean;
+  cpu: number; // 0–100
+  mem: number; // 0–100
+  uptime: number; // seconds since boot
+  stale?: boolean;
 }
 
 /** Caption line for the typewriter widget. `sinceMs` = time since it arrived. */
@@ -109,7 +122,8 @@ export type WidgetSpec =
   | { type: "soundwave"; anchor: Anchor; offset: Vec2; widthPct: number }
   | { type: "sensor-panel"; anchor: Anchor; offset: Vec2 }
   | { type: "series-panel"; anchor: Anchor; offset: Vec2 }
-  | { type: "caption"; anchor: Anchor; offset: Vec2 };
+  | { type: "caption"; anchor: Anchor; offset: Vec2 }
+  | { type: "vitals-strip"; anchor: Anchor; offset: Vec2 };
 
 export interface Vec2 {
   x: number;

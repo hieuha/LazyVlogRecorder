@@ -47,13 +47,18 @@ export const reconLayout: LayoutConfig = {
     // Bottom-left stack (top → bottom): horizontal telemetry strip of three
     // gauges, then the location title, then the free-text caption directly under
     // it. The whole group is lifted so the caption clears the corner bracket.
-    { type: "gauge-arc", anchor: "bottom-left", offset: { x: 4, y: -16.5 }, metric: "humidity", label: "Humidity", scale: 0.7 },
-    { type: "gauge-arc", anchor: "bottom-left", offset: { x: 16.5, y: -16.5 }, metric: "precip", label: "Rain", scale: 0.7 },
-    { type: "gauge-arc", anchor: "bottom-left", offset: { x: 29, y: -16.5 }, metric: "temp", label: "Temp", scale: 0.7 },
-    { type: "location", anchor: "bottom-left", offset: { x: 4, y: -7.5 } },
-    { type: "caption", anchor: "bottom-left", offset: { x: 4, y: -4.8 } },
+    { type: "gauge-arc", anchor: "bottom-left", offset: { x: 4, y: -14.9 }, metric: "humidity", label: "Humidity", scale: 0.7 },
+    { type: "gauge-arc", anchor: "bottom-left", offset: { x: 16.5, y: -14.9 }, metric: "precip", label: "Rain", scale: 0.7 },
+    { type: "gauge-arc", anchor: "bottom-left", offset: { x: 29, y: -14.9 }, metric: "temp", label: "Temp", scale: 0.7 },
+    { type: "location", anchor: "bottom-left", offset: { x: 4, y: -5.9 } },
+    { type: "caption", anchor: "bottom-left", offset: { x: 4, y: -3.2 } },
 
-    // Live mic soundwave closes the telemetry row on the right.
-    { type: "soundwave", anchor: "bottom-right", offset: { x: -4, y: -5 }, widthPct: 0.24 },
+    // Live mic soundwave + vitals strip form the bottom-right block. Vitals uses
+    // a middle baseline vs caption's alphabetic one, so it sits ~0.8u higher than
+    // the caption's offset to line up on the same visual row.
+    { type: "soundwave", anchor: "bottom-right", offset: { x: -4, y: -6.2 }, widthPct: 0.24 },
+
+    // Ship Vitals strip (battery/CPU/RAM/uptime), level with the caption row.
+    { type: "vitals-strip", anchor: "bottom-right", offset: { x: -4, y: -4 } },
   ],
 };

@@ -12,6 +12,7 @@ export interface AppConfig {
   audioEnabled: boolean;
   mirror: boolean;
   crtEffect: boolean; // CRT/analog grain overlay
+  showVitals: boolean; // Ship Vitals strip (battery/CPU/RAM/uptime); off by default
   layoutId: string;
   themeId: string; // HUD palette (theme registry): "martian" | "amber"
   cityOverride: string; // "" = auto (IP geolocation)
@@ -31,6 +32,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   audioEnabled: true,
   mirror: true,
   crtEffect: true,
+  showVitals: false,
   layoutId: "martian",
   themeId: "martian",
   cityOverride: "",
