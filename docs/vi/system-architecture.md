@@ -34,6 +34,7 @@
 
 - **HUD nằm trên canvas, không phải DOM.** MediaRecorder chỉ ghi được `<canvas>`/stream, nên webcam + HUD vẽ chung một canvas; canvas đó vừa là preview vừa là nguồn `captureStream()` → HUD được burned‑in.
 - **Layout data‑driven.** Layout là danh sách widget spec khai báo (`{type, anchor, offset, …}`). Engine giải anchor → điểm canvas rồi gọi hàm vẽ widget. Thêm layout = 1 file + 1 dòng registry.
+- **Theme tách khỏi layout.** Theme chỉ là bảng màu (`HudTheme`) trong registry riêng; theme đang chọn được áp lên bất kỳ layout nào (`createHudLayer(layout, getState, themeOverride)`) → theme nào cũng dùng được với layout nào. Layout và theme đổi **live** ngay trong Settings (không cần Save) và lưu tức thì.
 - **Tách stream audio và video.** Đổi camera chỉ thay video; track mic mà MediaRecorder đang giữ vẫn sống → recording tiếp tục (hiệu ứng nhiễu + thu tròn về tâm che khoảng chuyển).
 - **Ghi RAM phẳng.** Chunk MediaRecorder (1s) stream ra file tạm qua `append_temp_chunk`; không giữ toàn bộ clip trong RAM; bytes qua IPC dạng `ArrayBuffer` thô (không `Array.from`).
 

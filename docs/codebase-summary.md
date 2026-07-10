@@ -8,7 +8,8 @@
 | `compositor/canvas-compositor.ts` | Single‑canvas rAF loop (capped ~60fps): draws webcam (cover, mirror), runs HUD layers, CRT overlay, camera‑switch static/collapse transition; fixed 16:9 backing store via `setResolution` (720p/1080p); `captureStream` source |
 | `compositor/media-devices.ts` | Permissions, device enumeration, `openVideoStream` / `openAudioStream` (kept separate) |
 | `hud/layout-engine.ts` | Resolves widget anchors → canvas points (incl. top/bottom‑center), dispatches to widgets |
-| `hud/layouts/*.layout.ts` | Declarative layouts (`martian`, `minimal`) + `layout-registry.ts` |
+| `hud/layouts/*.layout.ts` | Declarative layouts (`martian`, `minimal`, `recon`) + `layout-registry.ts` |
+| `hud/theme.ts` · `hud/theme-registry.ts` | HUD palettes (`martianTheme` teal, `marsAmberTheme`, `greenHackerTheme`) + selectable-theme registry; a theme restyles any layout |
 | `hud/widgets/*` | Canvas2D widgets: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, and the sensor API widgets (`sensor-panel`, `series-panel` sparklines, `caption` typewriter + idle hex) |
 | `hud/audio-analyser.ts` | Web Audio analyser → rolling amplitude for the soundwave |
 | `data/*` | `geolocation-client`, `weather-client`, `metric-mapping`, `hud-data-source` (fetch + cache + geocode override) |

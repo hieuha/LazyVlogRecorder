@@ -4,7 +4,7 @@
 
 - **Display name:** Lazy Camera HUD
 - **Bundle id:** `com.hatrunghieu.lazycamhud`
-- **Version:** 0.4.1
+- **Version:** 0.5.0
 - **Targets:** macOS + Windows (Linux deferred)
 - **Stack:** Tauri 2 (Rust) + React 19 + TypeScript + Vite
 
@@ -20,13 +20,13 @@
 |------|--------------|
 | Recording | FIXED (auto‑stop) / FREE modes, pause/resume, mid‑recording camera switch with a static/collapse transition |
 | Export | VP8/WebM (720p or 1080p, 16:9) → MP4 (H.264/AAC, CRF‑26, faststart) via bundled ffmpeg; streamed to temp file; progress overlay |
-| HUD | Data‑driven layout registry (Martian, Minimal); gauges (humidity, rain, temp), environment, location, SOL date, clock, log entry, live mic soundwave |
+| HUD | Data‑driven layout registry (Martian, Minimal, Recon) + swappable themes (Mars Teal, Mars Amber, Green Hacker); gauges (humidity, rain, temp), environment, location, SOL date, clock, log entry, live mic soundwave |
 | Effects | CRT grain, color grade, mirror — toggleable |
 | Data | IP geolocation + Open‑Meteo weather; city override is forward‑geocoded |
 | Sensor API | Local HTTP endpoint (`/sensors`, `/series`, `/text`) pushes custom readouts, sparkline charts, and a typewriter caption onto the HUD; token + LAN bind; weather‑balloon simulators bundled |
 | Auth | 4‑digit PIN gate, change PIN, lock button |
 | Library | Indexed recordings with thumbnails; grid, in‑app player, reveal, delete |
-| Settings | Persisted via Tauri Store (name, log #, folder, duration, resolution, layout, audio, mirror, CRT, city) |
+| Settings | Persisted via Tauri Store (name, log #, folder, duration, resolution, layout, theme, audio, mirror, CRT, city) |
 
 ## Non‑goals (current)
 

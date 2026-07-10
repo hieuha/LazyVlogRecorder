@@ -8,7 +8,8 @@
 | `compositor/canvas-compositor.ts` | Vòng rAF một canvas (giới hạn ~60fps): vẽ webcam (cover, mirror), chạy HUD layer, overlay CRT, hiệu ứng nhiễu/thu tròn khi đổi camera; backing store 16:9 cố định qua `setResolution` (720p/1080p); nguồn `captureStream` |
 | `compositor/media-devices.ts` | Quyền, liệt kê thiết bị, `openVideoStream` / `openAudioStream` (tách riêng) |
 | `hud/layout-engine.ts` | Giải anchor widget → điểm canvas (gồm top/bottom‑center), gọi widget |
-| `hud/layouts/*.layout.ts` | Layout khai báo (`martian`, `minimal`) + `layout-registry.ts` |
+| `hud/layouts/*.layout.ts` | Layout khai báo (`martian`, `minimal`, `recon`) + `layout-registry.ts` |
+| `hud/theme.ts` · `hud/theme-registry.ts` | Bảng màu HUD (`martianTheme` teal, `marsAmberTheme`, `greenHackerTheme`) + registry theme chọn được; theme restyle mọi layout |
 | `hud/widgets/*` | Widget Canvas2D: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, và các widget sensor API (`sensor-panel`, `series-panel` sparkline, `caption` typewriter + idle hex) |
 | `hud/audio-analyser.ts` | Web Audio analyser → biên độ cuộn cho soundwave |
 | `data/*` | `geolocation-client`, `weather-client`, `metric-mapping`, `hud-data-source` (fetch + cache + geocode override) |

@@ -34,6 +34,7 @@
 
 - **HUD lives on the canvas, not the DOM.** MediaRecorder can only record a `<canvas>`/stream, so webcam + HUD are composited on one canvas; that same canvas is both the preview and the `captureStream()` source → the HUD is burned in.
 - **Layout is data‑driven.** A layout is a declarative list of widget specs (`{type, anchor, offset, …}`). The engine resolves anchors → canvas points and dispatches to widget draw functions. Adding a layout is one file + one registry entry.
+- **Theme is decoupled from layout.** A theme is just a palette (`HudTheme`) in its own registry; the selected theme is applied over whichever layout is active (`createHudLayer(layout, getState, themeOverride)`), so any theme works with any layout. Layout and theme both apply live from Settings (no Save) and persist immediately.
 - **Audio and video streams are separate.** Switching the camera swaps only the video stream; the mic track held by MediaRecorder stays live, so recording continues (a static + collapse‑to‑center transition covers the gap).
 - **Flat memory recording.** MediaRecorder chunks (1s) stream to a temp file via `append_temp_chunk`; the whole clip is never held in RAM, and bytes cross IPC as raw `ArrayBuffer` (never `Array.from`).
 

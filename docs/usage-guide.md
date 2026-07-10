@@ -24,7 +24,8 @@ All buttons live in a black bar under the video (nothing overlays the camera). R
 
 ## Settings (⚙)
 
-- Log entry name, log number (auto‑increments), city override, FIXED duration, **Record resolution** (720p = smaller files / 1080p = higher quality), HUD layout (`Martian` / `Minimal`), output folder, **Record audio**, **Mirror camera**, **CRT effect**, and **Change PIN**.
+- Log entry name, log number (auto‑increments), city override, FIXED duration, **Record resolution** (720p = smaller files / 1080p = higher quality), **HUD layout** (`Martian` / `Minimal` / `Recon`), **HUD theme** (`Mars Teal` / `Mars Amber` / `Green Hacker`), output folder, **Record audio**, **Mirror camera**, **CRT effect**, and **Change PIN**.
+- Layout and theme apply **live** as you pick them — no Save needed (they persist immediately); other settings apply on Save.
 - Recording is VP8/WebM at the chosen 16:9 resolution, transcoded to H.264 MP4 (CRF‑26). For smoother recording / smaller files, pick 720p or turn off **CRT effect**.
 - **Sensor API** — enable a local HTTP endpoint to push your own sensor readings onto the right side of the HUD (port, LAN access, and bearer token configurable). See the Sensor API section in the README for the request format.
 

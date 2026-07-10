@@ -80,7 +80,7 @@ curl -X POST http://127.0.0.1:1337/text \
 
 ```bash
 curl http://127.0.0.1:1337/healthz
-# → 200 {"ok":true,"app":"LazyCamHUD","version":"0.4.1"}
+# → 200 {"ok":true,"app":"LazyCamHUD","version":"0.5.0"}
 ```
 
 Không cần token — dùng để xác nhận server tới được (đúng IP/port, firewall) trước
