@@ -26,8 +26,6 @@ interface Props {
   destination: Destination;
   setDestination: (d: Destination) => void;
   streamConfigured: boolean;
-  saveLocalWhileLive: boolean;
-  setSaveLocalWhileLive: (v: boolean) => void;
   onStart: () => void;
   onStop: () => void;
   onPause: () => void;
@@ -104,16 +102,6 @@ export function RecordingControls(p: Props) {
           >
             {p.streamConfigured ? "◉ GO LIVE" : "◉ SET UP"}
           </button>
-        )}
-        {idle && p.destination === "live" && (
-          <label className="rec-save-local">
-            <input
-              type="checkbox"
-              checked={p.saveLocalWhileLive}
-              onChange={(e) => p.setSaveLocalWhileLive(e.target.checked)}
-            />
-            SAVE LOCAL
-          </label>
         )}
 
         {/* Local recording in progress. */}

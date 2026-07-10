@@ -651,11 +651,6 @@ export default function App() {
               streaming.reset(); // clear any stale LIVE ERROR / message when switching tabs
             }}
             streamConfigured={streamConfigured}
-            saveLocalWhileLive={config.saveLocalWhileLive}
-            setSaveLocalWhileLive={(v) => {
-              setField("saveLocalWhileLive", v);
-              saveLocalWhileLiveRef.current = v;
-            }}
             onStart={rec.start}
             onStop={() => void rec.stop()}
             onPause={rec.pause}

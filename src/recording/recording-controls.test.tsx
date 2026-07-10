@@ -25,8 +25,6 @@ function props(overrides: Record<string, unknown> = {}) {
     destination: "local" as const,
     setDestination: vi.fn(),
     streamConfigured: false,
-    saveLocalWhileLive: true,
-    setSaveLocalWhileLive: vi.fn(),
     onStart: vi.fn(),
     onStop: vi.fn(),
     onPause: vi.fn(),
@@ -67,13 +65,6 @@ describe("RecordingControls — Go Live", () => {
     fireEvent.click(screen.getByText("◉ GO LIVE"));
     expect(p.onGoLive).toHaveBeenCalledOnce();
     expect(p.onOpenSettings).not.toHaveBeenCalled();
-  });
-
-  it("toggles save-local on the LIVE destination", () => {
-    const p = props({ destination: "live", streamConfigured: true });
-    render(<RecordingControls {...p} />);
-    fireEvent.click(screen.getByLabelText(/SAVE LOCAL/));
-    expect(p.setSaveLocalWhileLive).toHaveBeenCalledWith(false);
   });
 
   it("shows END LIVE and no pause while broadcasting", () => {
