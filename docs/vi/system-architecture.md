@@ -51,7 +51,8 @@
 - `geo_locate` (ip‑api.com) → toạ độ + city.
 - `get_weather` (Open‑Meteo) → nhiệt độ, độ ẩm, khả năng mưa giờ hiện tại, weather code.
 - `geocode_city` (Open‑Meteo geocoding) → toạ độ cho city override để thời tiết theo đúng nơi đó.
-- Refresh ~10 phút; cache last‑good; offline lần đầu hiện `UNKNOWN` / `--`.
+- `get_system_vitals` (Rust: `sysinfo` + `starship-battery`) → % pin, trạng thái sạc, CPU %, RAM %, uptime máy (giây). Poll ~2s (không phải per-frame) và cache với timeout stale ~6s; tắt khi `showVitals` false.
+- Refresh ~10 phút (thời tiết); cache last‑good; offline lần đầu hiện `UNKNOWN` / `--`.
 
 ## Độ phân giải & codec
 

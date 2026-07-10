@@ -16,6 +16,7 @@
 ## HUD
 
 - Gauges: **Humidity**, **Rain** (current‑hour chance), **Temp**; plus **Environment**, **HAB > CAMERA**, **MISSION DAY** date, **TIME**, **LOG ENTRY**, and a live **mic soundwave**.
+- **Ship Vitals** (opt‑in): battery % (on supported machines), CPU %, RAM %, machine uptime (HH:MM, or Dd HH:MM past 24h), displayed as a compact strip in the bottom‑right corner. Enable in Settings → **SHIP VITALS**.
 - Location + weather follow your IP; set **City override** in Settings to pin a place (weather follows it).
 
 ## Control bar (below the video)
@@ -24,7 +25,7 @@ All buttons live in a black bar under the video (nothing overlays the camera). R
 
 ## Settings (⚙)
 
-- Log entry name, log number (auto‑increments), city override, FIXED duration, **Record resolution** (720p = smaller files / 1080p = higher quality), **HUD layout** (`Martian` / `Minimal` / `Recon`), **HUD theme** (`Mars Teal` / `Mars Amber` / `Green Hacker`), output folder, **Record audio**, **Mirror camera**, **CRT effect**, and **Change PIN**.
+- Log entry name, log number (auto‑increments), city override, FIXED duration, **Record resolution** (720p = smaller files / 1080p = higher quality), **HUD layout** (`Martian` / `Minimal` / `Recon`), **HUD theme** (`Teal` / `Amber` / `Green` / `Crypt`), **Ship Vitals** (battery, CPU, RAM, uptime strip), output folder, **Record audio**, **Mirror camera**, **CRT effect**, and **Change PIN**.
 - Layout and theme apply **live** as you pick them — no Save needed (they persist immediately); other settings apply on Save.
 - Recording is VP8/WebM at the chosen 16:9 resolution, transcoded to H.264 MP4 (CRF‑26). For smoother recording / smaller files, pick 720p or turn off **CRT effect**.
 - **Sensor API** — enable a local HTTP endpoint to push your own sensor readings onto the right side of the HUD (port, LAN access, and bearer token configurable). See the Sensor API section in the README for the request format.

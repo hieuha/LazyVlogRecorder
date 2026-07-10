@@ -20,13 +20,13 @@
 |------|--------|
 | Quay | Chế độ FIXED (tự dừng) / FREE, pause/resume, đổi camera giữa chừng kèm hiệu ứng nhiễu/thu tròn |
 | Xuất | VP8/WebM (720p hoặc 1080p, 16:9) → MP4 (H.264/AAC, CRF‑26, faststart) qua ffmpeg bundle; stream ra file tạm; overlay tiến trình |
-| HUD | Layout registry data‑driven (Martian, Minimal, Recon) + theme đổi được (Mars Teal, Mars Amber, Green Hacker); gauge (độ ẩm, mưa, nhiệt độ), environment, vị trí, ngày SOL, đồng hồ, log entry, soundwave mic |
+| HUD | Layout registry data‑driven (Martian, Minimal, Recon) + theme đổi được (Teal, Amber, Green, Crypt); gauge (độ ẩm, mưa, nhiệt độ), environment, vị trí, ngày SOL, đồng hồ, log entry, soundwave mic; tuỳ chọn Ship Vitals strip (pin, CPU, RAM, uptime) |
 | Hiệu ứng | Grain CRT, color grade, mirror — bật/tắt |
 | Dữ liệu | IP geolocation + Open‑Meteo; override city được geocode |
 | Sensor API | Endpoint HTTP nội bộ (`/sensors`, `/series`, `/text`) đẩy readouts, biểu đồ sparkline, và caption typewriter lên HUD; token + bind LAN; kèm script mô phỏng bóng thám không |
 | Auth | Khoá PIN 4 số, đổi PIN, nút lock |
 | Library | Bản quay được index kèm thumbnail; lưới, player trong app, mở thư mục, xoá |
-| Settings | Lưu qua Tauri Store (tên, số log, thư mục, thời lượng, độ phân giải, layout, theme, audio, mirror, CRT, city) |
+| Settings | Lưu qua Tauri Store (tên, số log, thư mục, thời lượng, độ phân giải, layout, theme, Ship Vitals toggle, audio, mirror, CRT, city) |
 
 ## Không nằm trong phạm vi (hiện tại)
 

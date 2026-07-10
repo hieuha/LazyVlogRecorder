@@ -9,8 +9,8 @@
 | `compositor/media-devices.ts` | Quyền, liệt kê thiết bị, `openVideoStream` / `openAudioStream` (tách riêng) |
 | `hud/layout-engine.ts` | Giải anchor widget → điểm canvas (gồm top/bottom‑center), gọi widget |
 | `hud/layouts/*.layout.ts` | Layout khai báo (`martian`, `minimal`, `recon`) + `layout-registry.ts` |
-| `hud/theme.ts` · `hud/theme-registry.ts` | Bảng màu HUD (`martianTheme` teal, `marsAmberTheme`, `greenHackerTheme`) + registry theme chọn được; theme restyle mọi layout |
-| `hud/widgets/*` | Widget Canvas2D: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, và các widget sensor API (`sensor-panel`, `series-panel` sparkline, `caption` typewriter + idle hex) |
+| `hud/theme.ts` · `hud/theme-registry.ts` | Bảng màu HUD (`martianTheme` teal, `marsAmberTheme`, `greenHackerTheme`, `cryptTheme` đỏ huyết) + registry theme chọn được; theme restyle mọi layout |
+| `hud/widgets/*` | Widget Canvas2D: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, và các widget sensor API (`sensor-panel`, `series-panel` sparkline, `caption` typewriter + idle hex); `vitals-strip-widget` (icon pin, CPU, RAM, uptime) |
 | `hud/audio-analyser.ts` | Web Audio analyser → biên độ cuộn cho soundwave |
 | `data/*` | `geolocation-client`, `weather-client`, `metric-mapping`, `hud-data-source` (fetch + cache + geocode override) |
 | `recording/*` | `recorder` (MediaRecorder + stream chunk), `use-recorder` (mode, timer, pause/resume, transcode + progress), `recording-controls`, `save-client`, `output-naming` |
@@ -30,6 +30,7 @@
 | `src/commands/recording_fs.rs` | `start_temp_recording`, `append_temp_chunk`, `move_temp`, `delete_files`, `resolve_out_dir` |
 | `src/commands/ffmpeg.rs` | `transcode_to_mp4` (H.264 CRF‑26, sự kiện progress), `generate_thumbnail`; tự tìm path ffmpeg (`.exe` trên Windows) |
 | `src/commands/sensor_server.rs` | `start_sensor_server` / `stop_sensor_server`: server tiny_http cho `POST /sensors` (readouts), `/series` (sparkline), `/text` (caption); bearer token, bind localhost/LAN, emit event lên HUD |
+| `src/commands/system_vitals.rs` | `get_system_vitals`: % pin, trạng thái sạc, CPU %, RAM %, uptime (qua `sysinfo` + `starship-battery`); pin null trên máy không có |
 | `tauri.conf.json` | productName, window, bundle (icon, ffmpeg `externalBin`, entitlements), asset protocol |
 | `binaries/` | ffmpeg bundle theo target (git‑ignore, qua `scripts/fetch-ffmpeg.sh`) |
 

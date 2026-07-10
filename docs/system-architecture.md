@@ -51,7 +51,8 @@
 - `geo_locate` (ip‑api.com) → coordinates + city.
 - `get_weather` (Open‑Meteo) → temperature, humidity, current‑hour precipitation probability, weather code.
 - `geocode_city` (Open‑Meteo geocoding) → coordinates for a city override so weather follows the chosen place.
-- Refreshes every ~10 min; caches last‑good; offline first‑launch shows `UNKNOWN` / `--`.
+- `get_system_vitals` (Rust: `sysinfo` + `starship-battery`) → battery %, charging state, CPU %, memory %, machine uptime (seconds). Polled every ~2s (not per-frame) and cached with a ~6s stale timeout; disabled when `showVitals` is false.
+- Refreshes every ~10 min (weather); caches last‑good; offline first‑launch shows `UNKNOWN` / `--`.
 
 ## Recording resolution & codec
 

@@ -9,8 +9,8 @@
 | `compositor/media-devices.ts` | Permissions, device enumeration, `openVideoStream` / `openAudioStream` (kept separate) |
 | `hud/layout-engine.ts` | Resolves widget anchors → canvas points (incl. top/bottom‑center), dispatches to widgets |
 | `hud/layouts/*.layout.ts` | Declarative layouts (`martian`, `minimal`, `recon`) + `layout-registry.ts` |
-| `hud/theme.ts` · `hud/theme-registry.ts` | HUD palettes (`martianTheme` teal, `marsAmberTheme`, `greenHackerTheme`) + selectable-theme registry; a theme restyles any layout |
-| `hud/widgets/*` | Canvas2D widgets: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, and the sensor API widgets (`sensor-panel`, `series-panel` sparklines, `caption` typewriter + idle hex) |
+| `hud/theme.ts` · `hud/theme-registry.ts` | HUD palettes (`martianTheme` teal, `marsAmberTheme`, `greenHackerTheme`, `cryptTheme` crimson) + selectable-theme registry; a theme restyles any layout |
+| `hud/widgets/*` | Canvas2D widgets: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, and the sensor API widgets (`sensor-panel`, `series-panel` sparklines, `caption` typewriter + idle hex); `vitals-strip-widget` (battery, CPU, RAM, uptime icons) |
 | `hud/audio-analyser.ts` | Web Audio analyser → rolling amplitude for the soundwave |
 | `data/*` | `geolocation-client`, `weather-client`, `metric-mapping`, `hud-data-source` (fetch + cache + geocode override) |
 | `recording/*` | `recorder` (MediaRecorder + chunk streaming), `use-recorder` (modes, timer, pause/resume, transcode + progress), `recording-controls`, `save-client`, `output-naming` |
@@ -30,6 +30,7 @@
 | `src/commands/recording_fs.rs` | `start_temp_recording`, `append_temp_chunk`, `move_temp`, `delete_files`, `resolve_out_dir` |
 | `src/commands/ffmpeg.rs` | `transcode_to_mp4` (H.264 CRF‑26, progress events), `generate_thumbnail`; self‑resolves the ffmpeg path (`.exe` on Windows) |
 | `src/commands/sensor_server.rs` | `start_sensor_server` / `stop_sensor_server`: tiny_http server for `POST /sensors` (readouts), `/series` (sparklines), `/text` (caption); bearer token, localhost/LAN bind, emits events to the HUD |
+| `src/commands/system_vitals.rs` | `get_system_vitals`: battery %, charging state, CPU %, memory %, uptime (via `sysinfo` + `starship-battery`); battery is null on machines without one |
 | `tauri.conf.json` | productName, window, bundle (icons, ffmpeg `externalBin`, entitlements), asset protocol |
 | `binaries/` | Bundled ffmpeg per target (git‑ignored, via `scripts/fetch-ffmpeg.sh`) |
 
