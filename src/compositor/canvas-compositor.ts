@@ -27,7 +27,16 @@ export class CanvasCompositor {
   // Cap the redraw rate (~60fps) so ProMotion 120Hz displays don't run the
   // expensive HUD/CRT compositing twice per captured frame during recording.
   private lastDrawAt = 0;
-  private readonly minFrameMs = 1000 / 60 - 2;
+  // Redraw cap. Idle preview runs ~60fps; while capturing we drop to the capture
+  // rate (setMaxFps) so the main thread isn't spending half its compositing budget
+  // on frames the recorder/stream never samples — that headroom prevents the rAF
+  // stalls that froze the capture while also encoding for a live stream.
+  private minFrameMs = 1000 / 60 - 2;
+  // Rolling actual render FPS (draws/sec) — dips when the main thread stalls, so
+  // it doubles as a smoothness readout for recording/streaming.
+  private fps = 0;
+  private fpsCount = 0;
+  private fpsWindowStart = 0;
   // While `now < transitionUntil` the frame is filled with TV static — used as a
   // "signal loss" transition when the camera is switched mid-recording.
   private transitionUntil = 0;
@@ -76,6 +85,19 @@ export class CanvasCompositor {
     return this.canvas;
   }
 
+  /** Actual render rate (draws/sec, ~1s window). Drops when the main thread
+   *  stalls — shown in the REC/LIVE badge as a smoothness readout. */
+  getFps(): number {
+    return this.fps;
+  }
+
+  /** Cap the redraw rate. Called with the capture fps while recording/streaming
+   *  (so the compositor doesn't over-draw), and 60 when idle. */
+  setMaxFps(fps: number): void {
+    const clamped = Math.max(15, Math.min(60, fps));
+    this.minFrameMs = 1000 / clamped - 2;
+  }
+
   /** Show a static + collapse-to-center transition for `ms` (camera switch). */
   triggerSwitchTransition(ms = 700): void {
     this.transitionMs = ms;
@@ -116,6 +138,15 @@ export class CanvasCompositor {
     const now = performance.now();
     if (now - this.lastDrawAt < this.minFrameMs) return; // throttle to ~60fps
     this.lastDrawAt = now;
+
+    // Measure actual draws/sec over a ~1s window.
+    this.fpsCount++;
+    if (this.fpsWindowStart === 0) this.fpsWindowStart = now;
+    else if (now - this.fpsWindowStart >= 1000) {
+      this.fps = Math.round((this.fpsCount * 1000) / (now - this.fpsWindowStart));
+      this.fpsCount = 0;
+      this.fpsWindowStart = now;
+    }
 
     const { width, height } = this.canvas;
     const videoReady = this.video.readyState >= 2 && this.video.videoWidth > 0;

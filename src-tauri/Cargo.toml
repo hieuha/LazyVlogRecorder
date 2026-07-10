@@ -31,3 +31,8 @@ tiny_http = "0.12"
 sysinfo = "0.33"
 starship-battery = "0.10"
 
+# SIGTERM the streaming ffmpeg so it finalizes the local MP4 before exiting
+# (SIGKILL truncates it). Unix only; Windows falls back to TerminateProcess.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+

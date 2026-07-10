@@ -17,6 +17,14 @@ export interface RecorderOptions {
   mimeType: string;
   onChunk: (chunk: Blob) => Promise<void>;
   fps?: number;
+  /** Chunk cadence in ms. Local recording uses 1000; live streaming uses a
+   *  shorter slice (~500) to trade a little overhead for lower latency and
+   *  finer backpressure granularity. */
+  timesliceMs?: number;
+  /** Cap the intermediate encoder bitrate (bits/s). Live streaming sets this so
+   *  the throwaway VP8 isn't encoded far above the target, reducing CPU (and thus
+   *  capture stutter). Local recording leaves it unset for full quality. */
+  videoBitsPerSecond?: number;
 }
 
 export function createRecorder({
@@ -25,6 +33,8 @@ export function createRecorder({
   mimeType,
   onChunk,
   fps = 30,
+  timesliceMs = 1000,
+  videoBitsPerSecond,
 }: RecorderOptions): Recorder {
   const videoStream = canvas.captureStream(fps);
   const tracks: MediaStreamTrack[] = [videoStream.getVideoTracks()[0]];
@@ -32,16 +42,29 @@ export function createRecorder({
   if (audioTrack) tracks.push(audioTrack);
 
   const combined = new MediaStream(tracks);
-  const recorder = new MediaRecorder(combined, { mimeType });
-  const pending: Promise<void>[] = [];
+  const recorder = new MediaRecorder(
+    combined,
+    videoBitsPerSecond ? { mimeType, videoBitsPerSecond } : { mimeType },
+  );
+  // Chunks are processed strictly in order via a promise chain: chunk N+1 never
+  // starts writing until chunk N finishes, so the temp file's byte order (and the
+  // WebM stream) can't be corrupted by overlapping writes under load. `pending`
+  // tracks the tail so stop() can flush the last write. Each link catches its own
+  // error so one failed write doesn't break the chain for the rest.
+  const pending = new Set<Promise<void>>();
+  let tail: Promise<void> = Promise.resolve();
   recorder.ondataavailable = (e) => {
-    if (e.data.size > 0) pending.push(onChunk(e.data));
+    if (e.data.size === 0) return;
+    const p = tail.then(() => onChunk(e.data)).catch(() => {});
+    tail = p;
+    pending.add(p);
+    void p.finally(() => pending.delete(p));
   };
 
   return {
     mimeType,
     start() {
-      recorder.start(1000); // emit a chunk every second
+      recorder.start(timesliceMs); // emit a chunk every timesliceMs
     },
     pause() {
       if (recorder.state === "recording") recorder.pause();

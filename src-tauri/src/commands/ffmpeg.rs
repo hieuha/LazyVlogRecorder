@@ -18,6 +18,7 @@ pub async fn transcode_to_mp4(
     filename: String,
     out_dir: Option<String>,
     duration_sec: f64,
+    hardware: bool,
 ) -> Result<SavedFile, String> {
     let out = resolve_out_dir(&app, out_dir)?.join(&filename);
     let out_path = out.to_string_lossy().into_owned();
@@ -25,10 +26,16 @@ pub async fn transcode_to_mp4(
 
     let temp = temp_path.clone();
     let app2 = app.clone();
-    let ok =
-        tauri::async_runtime::spawn_blocking(move || run_ffmpeg(&app2, &ffmpeg, &temp, &out_path, duration_sec))
-            .await
-            .map_err(|e| e.to_string())??;
+    let ok = tauri::async_runtime::spawn_blocking(move || {
+        // Hardware first (Apple Media Engine via VideoToolbox — fast, cool). If it
+        // fails (no HW encoder), fall back to software libx264 so a take is never lost.
+        if hardware && run_ffmpeg(&app2, &ffmpeg, &temp, &out_path, duration_sec, true)? {
+            return Ok(true);
+        }
+        run_ffmpeg(&app2, &ffmpeg, &temp, &out_path, duration_sec, false)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
 
     if !ok {
         // Keep the temp file so the caller can fall back to saving it raw.
@@ -45,11 +52,23 @@ fn run_ffmpeg(
     input: &str,
     output: &str,
     duration_sec: f64,
+    hardware: bool,
 ) -> Result<bool, String> {
+    // Video codec args: hardware VideoToolbox (constant quality) vs software x264.
+    let video: &[&str] = if hardware {
+        &["-c:v", "h264_videotoolbox", "-q:v", "60"]
+    } else {
+        &["-c:v", "libx264", "-preset", "medium", "-crf", "26"]
+    };
     let mut child = Command::new(ffmpeg)
+        .args(["-y", "-i", input])
+        .args(video)
         .args([
-            "-y", "-i", input, "-c:v", "libx264", "-preset", "medium", "-crf", "26",
-            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+            // Tag as full-range BT.709 to match the browser canvas (full-range sRGB).
+            // Without this ffmpeg mislabels it limited-range BT.601 → washed-out colors.
+            "-pix_fmt", "yuv420p", "-color_range", "pc",
+            "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709",
+            "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
             "-progress", "pipe:1", "-nostats", output,
         ])
         .stdout(Stdio::piped())
@@ -70,6 +89,40 @@ fn run_ffmpeg(
         }
     }
     Ok(child.wait().map_err(|e| e.to_string())?.success())
+}
+
+/// Remux an already-H.264 recording (the fragmented MP4 the webview produced in
+/// the streaming copy path) to a normal faststart MP4 — no re-encode, so it's
+/// fast and keeps full quality. Falls back handled by the caller.
+#[tauri::command]
+pub async fn remux_to_mp4(
+    app: tauri::AppHandle,
+    temp_path: String,
+    filename: String,
+    out_dir: Option<String>,
+) -> Result<SavedFile, String> {
+    let out = resolve_out_dir(&app, out_dir)?.join(&filename);
+    let out_path = out.to_string_lossy().into_owned();
+    let ffmpeg = ffmpeg_path().ok_or("bundled ffmpeg binary not found")?;
+
+    let temp = temp_path.clone();
+    let ok = tauri::async_runtime::spawn_blocking(move || {
+        Command::new(&ffmpeg)
+            .args(["-y", "-i", &temp, "-c", "copy", "-movflags", "+faststart", &out_path])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|s| s.success())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())?;
+
+    if !ok {
+        return Err("remux failed".into());
+    }
+    let _ = std::fs::remove_file(&temp_path);
+    Ok(SavedFile::at(out))
 }
 
 /// Extract a JPEG thumbnail (~1s in) for a recording into the app cache dir.
@@ -100,7 +153,7 @@ pub async fn generate_thumbnail(
     Ok(thumb)
 }
 
-fn ffmpeg_path() -> Option<PathBuf> {
+pub(crate) fn ffmpeg_path() -> Option<PathBuf> {
     // Windows sidecars keep the .exe extension; std::process::Command with a full
     // path does not append it, so include it in the candidate file names.
     let bundled = format!("ffmpeg{EXE_SUFFIX}"); // next to the app exe (triple stripped)

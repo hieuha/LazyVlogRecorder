@@ -24,13 +24,14 @@ Sensor API — external readouts + live sparkline charts pushed over HTTP:
 - **Live data HUD** — humidity, rain probability, temperature, weather condition, and location from Open‑Meteo + IP geolocation; city can be overridden (forward‑geocoded so weather follows the place).
 - **Recording modes** — `FIXED` (countdown auto‑stop) and `FREE` (manual stop); pause/resume; camera switching mid‑recording keeps the take alive with a static + collapse transition.
 - **MP4 export** — records VP8/WebM at a fixed **720p or 1080p** (16:9), then transcodes to MP4 (H.264/AAC, CRF‑26, faststart) via a bundled static ffmpeg; streams to a temp file (flat memory) with a live progress overlay.
+- **Go Live (RTMP/RTMPS)** — broadcast the burned‑in canvas + mic to any generic RTMP(S) endpoint (YouTube/Facebook/Twitch). The capture is piped to a long‑lived ffmpeg (H.264 via `h264_videotoolbox`, AAC) for RTMP. **Optionally save a local MP4 at the same time** — captured **separately** from the raw chunks (full quality, transcoded on stop via the same pipeline as normal recording), so a laggy network degrades only the broadcast, never the local take. Config‑gated GO LIVE button (disabled + hint→Settings until RTMP URL + key are set), confirm‑before‑broadcast, and a LIVE badge with connecting/unstable/dropped status. **Tunable quality (OBS‑style):** stream resolution (720p default, separate from record), FPS, and video bitrate — CBR + VideoToolbox realtime for a smooth feed. Bounded‑buffer backpressure auto‑stops on a sustained slow network instead of growing memory; software‑encoder machines clamp to 720p. The stream key is stored locally and never logged. mac‑first (Windows path coded but unverified).
 - **Layouts** — data‑driven registry; ships `Martian`, `Minimal`, and `Recon` (horizontal telemetry strip along the bottom + right‑side sensor‑API rail) — add a layout = one file.
 - **Themes** — swappable HUD palette applied over any layout; ships `Teal` (film), `Amber` (80s orange‑on‑black CRT), `Green` (Matrix phosphor), and `Crypt` (crimson‑on‑black CRT) — add a theme = one entry.
 - **Effects** — CRT grain overlay, cinematic color grade, camera mirror — all toggleable.
 - **Ship Vitals** — opt‑in strip that burns real machine telemetry (battery, CPU, RAM, uptime) into the HUD as tiny icons below the soundwave; polled ~every 2s, on all layouts, off by default. Battery hides on desktops without one.
 - **PIN lock** — 4‑digit gate on launch, change‑PIN flow, and a lock button.
 - **Library** — every recording is indexed with a thumbnail; grid view, in‑app player, reveal‑in‑folder, delete.
-- **Persistent settings** — name, log number (auto‑increment), output folder, duration, resolution (720p/1080p), layout, theme, audio, mirror, CRT, Ship Vitals, city, MISSION DAY override.
+- **Persistent settings** — name, log number (auto‑increment), output folder, duration, resolution (720p/1080p), layout, theme, audio, mirror, CRT, Ship Vitals, city, MISSION DAY override, streaming RTMP URL + key + save‑local‑while‑live.
 
 ## Quick start (dev)
 

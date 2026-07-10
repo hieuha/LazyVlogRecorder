@@ -19,8 +19,10 @@ import { createHudDataSource, type HudDataSource } from "./data/hud-data-source"
 import { createSystemVitalsSource, type SystemVitalsSource } from "./data/system-vitals-client";
 import { createAudioAnalyser, type AudioAnalyser } from "./hud/audio-analyser";
 import { useRecorder } from "./recording/use-recorder";
-import { RecordingControls } from "./recording/recording-controls";
+import { RecordingControls, type Destination } from "./recording/recording-controls";
+import { useStreaming } from "./streaming/use-streaming";
 import { SettingsPanel } from "./settings/settings-panel";
+import { isStreamConfigured } from "./settings/is-stream-configured";
 import { loadConfig, saveConfig, generateToken, DEFAULT_CONFIG, type AppConfig } from "./settings/config-store";
 import { PinGate } from "./auth/pin-gate";
 import { hasPin } from "./auth/auth-client";
@@ -28,7 +30,7 @@ import { LibraryView } from "./library/library-view";
 import { addEntry, updateEntry } from "./library/entries-store";
 import { generateThumbnail } from "./library/library-client";
 import type { SavedFile } from "./recording/save-client";
-import type { SensorItem } from "./hud/types";
+import type { SensorItem, SeriesItem } from "./hud/types";
 import { HudSelect } from "./components/hud-select";
 import "./App.css";
 
@@ -69,11 +71,25 @@ export default function App() {
   const mirrorRef = useRef<boolean>(DEFAULT_CONFIG.mirror);
   const crtRef = useRef<boolean>(DEFAULT_CONFIG.crtEffect);
   const recordHeightRef = useRef<number>(DEFAULT_CONFIG.recordHeight);
+  // Streaming inputs (refs so useStreaming reads current values at start()).
+  const rtmpUrlRef = useRef<string>(DEFAULT_CONFIG.rtmpUrl);
+  const streamKeyRef = useRef<string>(DEFAULT_CONFIG.streamKey);
+  const saveLocalWhileLiveRef = useRef<boolean>(DEFAULT_CONFIG.saveLocalWhileLive);
+  const streamHeightRef = useRef<number>(DEFAULT_CONFIG.streamHeight);
+  const streamFpsRef = useRef<number>(DEFAULT_CONFIG.streamFps);
+  const streamBitrateKbpsRef = useRef<number>(DEFAULT_CONFIG.streamBitrateKbps);
+  const streamEncoderRef = useRef(DEFAULT_CONFIG.streamEncoder);
   const genRef = useRef(0);
   // Latest external sensor readings + when they arrived (for staleness).
   const sensorsRef = useRef<{ items: SensorItem[]; at: number }>({ items: [], at: 0 });
   // Rolling per-label buffers for /series sparklines.
   const seriesRef = useRef<Map<string, SeriesBuf>>(new Map());
+  // Render-ready caches, rebuilt on each push (not per frame). getState only
+  // flips the time-based `stale` flag in place — no per-frame allocation, so
+  // pushing many sensor/series labels doesn't create GC pressure that stutters
+  // the video. `series` points reference the live buffers (widgets read-only).
+  const sensorsRenderRef = useRef<SensorItem[]>([]);
+  const seriesRenderRef = useRef<SeriesItem[]>([]);
   // Latest /text caption (typewriter widget).
   const captionRef = useRef<{ text: string; at: number; typing: boolean }>({
     text: "",
@@ -94,6 +110,9 @@ export default function App() {
   const savedConfigRef = useRef<AppConfig>(DEFAULT_CONFIG);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [destination, setDestination] = useState<Destination>("local");
+  const [confirmLive, setConfirmLive] = useState(false);
+  const [renderFps, setRenderFps] = useState(0); // live compositor draw rate for the badge
   const [authReady, setAuthReady] = useState(false);
   const [pinMode, setPinMode] = useState<"set" | "enter">("enter");
   const [unlocked, setUnlocked] = useState(false);
@@ -105,8 +124,28 @@ export default function App() {
     personNameRef,
     logNoRef,
     outDirRef,
+    encoderPrefRef: streamEncoderRef,
     onSaved: handleSaved,
   });
+
+  const streaming = useStreaming({
+    canvasRef,
+    micStreamRef: audioStreamRef,
+    mimeTypeRef,
+    personNameRef,
+    logNoRef,
+    outDirRef,
+    rtmpUrlRef,
+    streamKeyRef,
+    saveLocalRef: saveLocalWhileLiveRef,
+    streamHeightRef,
+    streamFpsRef,
+    streamBitrateKbpsRef,
+    streamEncoderRef,
+    onSaved: handleSaved, // index the saved live take like a normal recording
+  });
+
+  const streamConfigured = isStreamConfigured(config);
 
   // Stable per-frame HUD state provider (reads refs, so it never goes stale).
   const getState = useCallback(() => {
@@ -117,23 +156,28 @@ export default function App() {
     s.logNo = logNoRef.current;
     s.missionDayText = missionDayTextRef.current;
     const now = performance.now();
-    const sr = sensorsRef.current;
-    s.sensors = sr.items.length
-      ? sr.items.map((it) => ({ ...it, stale: now - sr.at > SENSOR_STALE_MS }))
-      : undefined;
+    // Sensors + series render arrays are built on push (see the event listeners);
+    // per frame we only refresh the time-based `stale` flag in place. This keeps
+    // the hot path allocation-free so heavy sensor pushing can't stutter capture.
+    const sensorsRender = sensorsRenderRef.current;
+    if (sensorsRender.length) {
+      const stale = now - sensorsRef.current.at > SENSOR_STALE_MS;
+      for (const it of sensorsRender) it.stale = stale;
+      s.sensors = sensorsRender;
+    } else {
+      s.sensors = undefined;
+    }
 
-    const series: NonNullable<typeof s.series> = [];
-    seriesRef.current.forEach((buf, label) => {
-      if (!buf.points.length) return;
-      series.push({
-        label,
-        value: fmtSeriesValue(buf.value),
-        unit: buf.unit,
-        points: buf.points.slice(),
-        stale: now - buf.at > SENSOR_STALE_MS,
-      });
-    });
-    s.series = series.length ? series : undefined;
+    const seriesRender = seriesRenderRef.current;
+    if (seriesRender.length) {
+      for (const item of seriesRender) {
+        const buf = seriesRef.current.get(item.label);
+        item.stale = buf ? now - buf.at > SENSOR_STALE_MS : true;
+      }
+      s.series = seriesRender;
+    } else {
+      s.series = undefined;
+    }
 
     const cap = captionRef.current;
     s.caption = cap.text ? { text: cap.text, typing: cap.typing, sinceMs: now - cap.at } : undefined;
@@ -195,8 +239,7 @@ export default function App() {
         await startAudio(mic);
         await startVideo(cam, false);
         if (!cancelled) {
-          void applySensorServer(cfg);
-          setStatus("ready");
+          setStatus("ready"); // a dedicated effect starts the sensor server on ready
         }
       } catch (err) {
         if (cancelled) return;
@@ -223,6 +266,7 @@ export default function App() {
       videoStreamRef.current = null;
       audioStreamRef.current = null;
       void invoke("stop_sensor_server");
+      void streaming.stop(); // release the live recorder + close ffmpeg on lock/unmount
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlocked]);
@@ -232,7 +276,10 @@ export default function App() {
     if (!unlocked) return;
     const unlisteners: Array<() => void> = [];
     void listen<SensorItem[]>("sensors", (e) => {
-      sensorsRef.current = { items: e.payload ?? [], at: performance.now() };
+      const items = e.payload ?? [];
+      sensorsRef.current = { items, at: performance.now() };
+      // Rebuild the render array here (on push, ~1×/s) not per frame.
+      sensorsRenderRef.current = items.map((it) => ({ ...it }));
     }).then((fn) => unlisteners.push(fn));
     void listen<{ label: string; value: number; unit: string }>("series", (e) => {
       const p = e.payload;
@@ -245,6 +292,15 @@ export default function App() {
       buf.unit = p.unit;
       buf.at = performance.now();
       map.set(p.label, buf);
+      // Rebuild the render array on push; entries reference the LIVE points
+      // buffers (widgets only read them), so no per-frame copy is needed.
+      const render: SeriesItem[] = [];
+      map.forEach((b, label) => {
+        if (b.points.length) {
+          render.push({ label, value: fmtSeriesValue(b.value), unit: b.unit, points: b.points });
+        }
+      });
+      seriesRenderRef.current = render;
     }).then((fn) => unlisteners.push(fn));
     void listen<{ text: string; typing: boolean }>("text", (e) => {
       const p = e.payload;
@@ -260,6 +316,33 @@ export default function App() {
     if (cam?.label) cameraLabelRef.current = cam.label;
   }, [cameraId, cameras]);
 
+  // Start the sensor API server once the app is READY (if enabled in config).
+  // Its own effect — NOT the camera-init IIFE — so StrictMode's mount→cleanup→
+  // mount can't leave it stopped on a fresh launch (the inline call raced the
+  // cleanup's stop). Keyed on `status` only, so it doesn't fire on config edits
+  // (those still apply on SAVE, preserving the confirm-dialog behavior).
+  useEffect(() => {
+    if (status !== "ready") return;
+    void applySensorServer(config);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
+  // Poll the actual compositor render FPS while capturing (REC/LIVE badge).
+  useEffect(() => {
+    if (!rec.recording && streaming.state === "idle") return;
+    const id = window.setInterval(() => setRenderFps(compositorRef.current?.getFps() ?? 0), 500);
+    return () => clearInterval(id);
+  }, [rec.recording, streaming.state]);
+
+  // While capturing, cap the compositor to the capture rate so it doesn't spend
+  // half the main thread on frames the recorder/stream never samples (that spare
+  // budget is what stops the rAF stalls that froze the recording during a stream).
+  useEffect(() => {
+    const capturing = rec.recording || streaming.state !== "idle";
+    const captureFps = streaming.state !== "idle" ? config.streamFps : 30;
+    compositorRef.current?.setMaxFps(capturing ? captureFps : 60);
+  }, [rec.recording, streaming.state, config.streamFps]);
+
   // Space toggles record/stop (ignored while typing or a modal is open).
   useEffect(() => {
     if (!unlocked || status !== "ready" || settingsOpen || libraryOpen) return;
@@ -268,14 +351,16 @@ export default function App() {
       const tag = (e.target as HTMLElement)?.tagName;
       if (/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(tag)) return;
       e.preventDefault();
-      if (rec.saving) return;
+      // Space toggles LOCAL recording only; live is button-only (avoids an
+      // accidental broadcast) and never mixes with a local take.
+      if (destination !== "local" || streaming.live || rec.saving) return;
       if (rec.recording) void rec.stop();
       else void rec.start();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unlocked, status, settingsOpen, libraryOpen, rec.recording, rec.saving]);
+  }, [unlocked, status, settingsOpen, libraryOpen, rec.recording, rec.saving, destination, streaming.live]);
 
   function applyConfigToRefs(cfg: AppConfig) {
     personNameRef.current = cfg.personName;
@@ -288,6 +373,13 @@ export default function App() {
     mirrorRef.current = cfg.mirror;
     crtRef.current = cfg.crtEffect;
     recordHeightRef.current = cfg.recordHeight;
+    rtmpUrlRef.current = cfg.rtmpUrl;
+    streamKeyRef.current = cfg.streamKey;
+    saveLocalWhileLiveRef.current = cfg.saveLocalWhileLive;
+    streamHeightRef.current = cfg.streamHeight;
+    streamFpsRef.current = cfg.streamFps;
+    streamBitrateKbpsRef.current = cfg.streamBitrateKbps;
+    streamEncoderRef.current = cfg.streamEncoder;
   }
 
   // Swap the camera video only (open-before-close + generation guard). A static
@@ -466,7 +558,9 @@ export default function App() {
         });
       } else {
         sensorsRef.current = { items: [], at: 0 };
+        sensorsRenderRef.current = [];
         seriesRef.current.clear();
+        seriesRenderRef.current = [];
         captionRef.current = { text: "", at: 0, typing: true };
         await invoke("stop_sensor_server");
       }
@@ -495,12 +589,27 @@ export default function App() {
             <span className="rec-dot" />
             {rec.mode === "fixed" ? "-" : ""}
             {fmtClock(rec.mode === "fixed" ? Math.max(0, rec.durationSec - rec.elapsedSec) : rec.elapsedSec)}
+            <span className="live-spec">
+              {` · ${renderFps} fps · ${config.streamEncoder === "software" ? "sw" : "hw"}`}
+            </span>
+          </span>
+        ) : streaming.state !== "idle" ? (
+          <span className={`cap-badge live ${streaming.state}`}>
+            <span className="rec-dot" />
+            {liveLabel(streaming.state)}
+            {streaming.state === "connecting" ? "" : ` ${fmtClock(streaming.elapsedSec)}`}
+            <span className="live-spec">
+              {/* Copy path streams the canvas resolution (no ffmpeg downscale); the
+                  re-encode path uses the configured stream height (or 720 clamp). */}
+              {` · ${streaming.copyActive ? config.recordHeight : streaming.clamped ? 720 : config.streamHeight}p${config.streamFps} · ${config.streamBitrateKbps}k${streaming.copyActive ? " · hw" : ""} · ${renderFps} fps`}
+              {streaming.dropped > 0 ? ` · drop ${streaming.dropped}` : ""}
+            </span>
           </span>
         ) : (
           capability && (
             <span className={`cap-badge ${capability.ok ? "ok" : "warn"}`}>
               {capability.ok
-                ? `REC READY · ${shortMime(capability.supportedMimeType)}`
+                ? `REC READY · ${config.recordHeight}p · ${shortMime(capability.supportedMimeType)} · ${config.streamEncoder === "software" ? "SW" : "HW"}`
                 : "REC UNSUPPORTED"}
             </span>
           )
@@ -512,21 +621,33 @@ export default function App() {
       {status === "ready" && (
         <div className="control-bar">
           <RecordingControls
-            mode={rec.mode}
-            setMode={rec.setMode}
-            durationSec={rec.durationSec}
-            setDurationSec={rec.setDurationSec}
+            mode={destination === "live" ? streaming.mode : rec.mode}
+            setMode={destination === "live" ? streaming.setMode : rec.setMode}
+            durationSec={destination === "live" ? streaming.durationSec : rec.durationSec}
+            setDurationSec={destination === "live" ? streaming.setDurationSec : rec.setDurationSec}
             recording={rec.recording}
+            live={streaming.live}
             paused={rec.paused}
-            savedFile={rec.savedFile}
-            saving={rec.saving}
-            transcodeProgress={rec.transcodeProgress}
-            error={rec.error}
+            savedFile={rec.savedFile ?? streaming.savedFile}
+            saving={rec.saving || streaming.saving}
+            transcodeProgress={rec.saving ? rec.transcodeProgress : streaming.transcodeProgress}
+            error={rec.error ?? streaming.error}
             disabled={!capability?.ok}
+            destination={destination}
+            setDestination={setDestination}
+            streamConfigured={streamConfigured}
+            saveLocalWhileLive={config.saveLocalWhileLive}
+            setSaveLocalWhileLive={(v) => {
+              setField("saveLocalWhileLive", v);
+              saveLocalWhileLiveRef.current = v;
+            }}
             onStart={rec.start}
             onStop={() => void rec.stop()}
             onPause={rec.pause}
             onResume={rec.resume}
+            onGoLive={() => setConfirmLive(true)}
+            onStopLive={() => void streaming.stop()}
+            onOpenSettings={() => setSettingsOpen(true)}
           />
 
           <div className="controls">
@@ -547,9 +668,9 @@ export default function App() {
               onChange={(id) => void onCameraChange(id)}
             />
             <HudSelect
-              title={rec.recording ? "Mic can't be changed while recording" : "Microphone"}
+              title={rec.recording || streaming.live ? "Mic can't be changed while capturing" : "Microphone"}
               value={micId}
-              disabled={rec.recording || !config.audioEnabled}
+              disabled={rec.recording || streaming.live || !config.audioEnabled}
               options={mics.map((m, i) => ({ id: m.deviceId, label: m.label || `Mic ${i + 1}` }))}
               onChange={(id) => void onMicChange(id)}
             />
@@ -582,6 +703,34 @@ export default function App() {
         />
       )}
 
+      {confirmLive && (
+        <div className="settings-backdrop" onClick={() => setConfirmLive(false)}>
+          <div className="settings-modal settings-confirm" onClick={(e) => e.stopPropagation()}>
+            <div className="settings-head">
+              <span>GO LIVE?</span>
+            </div>
+            <p className="settings-confirm-body">
+              Start broadcasting publicly to {liveHost(config.rtmpUrl)}?
+              {config.saveLocalWhileLive ? " A local MP4 copy will be saved alongside." : ""}
+            </p>
+            <div className="settings-actions">
+              <button className="settings-cancel" onClick={() => setConfirmLive(false)}>
+                CANCEL
+              </button>
+              <button
+                className="settings-save"
+                onClick={() => {
+                  setConfirmLive(false);
+                  void streaming.start();
+                }}
+              >
+                GO LIVE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {status === "requesting" && (
         <div className="overlay">Requesting camera &amp; microphone…</div>
       )}
@@ -592,17 +741,21 @@ export default function App() {
         </div>
       )}
 
-      {rec.saving && (
+      {(rec.saving || streaming.saving) && (
         <div className="processing-overlay">
           <div className="processing-title">PROCESSING</div>
-          <div className="processing-sub">TRANSCODING → MP4</div>
+          <div className="processing-sub">
+            {streaming.saving ? "SAVING LIVE COPY → MP4" : "TRANSCODING → MP4"}
+          </div>
           <div className="processing-bar">
             <div
               className="processing-fill"
-              style={{ width: `${Math.round(rec.transcodeProgress * 100)}%` }}
+              style={{ width: `${Math.round((rec.saving ? rec.transcodeProgress : streaming.transcodeProgress) * 100)}%` }}
             />
           </div>
-          <div className="processing-pct">{Math.round(rec.transcodeProgress * 100)}%</div>
+          <div className="processing-pct">
+            {Math.round((rec.saving ? rec.transcodeProgress : streaming.transcodeProgress) * 100)}%
+          </div>
         </div>
       )}
     </div>
@@ -618,6 +771,30 @@ function fmtClock(sec: number): string {
 // Compact display of a numeric series value (integers as-is, else 1 decimal).
 function fmtSeriesValue(v: number): string {
   return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+
+// Short label for the LIVE badge per streaming state. No leading dot — the badge
+// already renders the animated rec-dot circle.
+function liveLabel(state: string): string {
+  switch (state) {
+    case "connecting":
+      return "CONNECTING…";
+    case "unstable":
+      return "UNSTABLE";
+    case "error":
+      return "LIVE ERROR";
+    default:
+      return "LIVE";
+  }
+}
+
+// Host shown in the Go-Live confirm dialog (best-effort parse of the RTMP URL).
+function liveHost(url: string): string {
+  try {
+    return new URL(url).host || url;
+  } catch {
+    return url || "your RTMP destination";
+  }
 }
 
 function shortMime(mime: string | null): string {

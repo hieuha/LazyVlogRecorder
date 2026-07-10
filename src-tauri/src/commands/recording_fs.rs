@@ -52,15 +52,21 @@ pub fn start_temp_recording(ext: String) -> Result<String, String> {
     Ok(path.to_string_lossy().into_owned())
 }
 
-/// Append a recorded chunk to the temp file.
+/// Append a recorded chunk to the temp file. Async + spawn_blocking so the disk
+/// write runs off the main thread — a sync command would block the UI thread on
+/// every chunk and starve the compositor's render loop (frozen capture/recording),
+/// which is especially visible while also streaming.
 #[tauri::command]
-pub fn append_temp_chunk(path: String, bytes: Vec<u8>) -> Result<(), String> {
-    let mut f = std::fs::OpenOptions::new()
-        .append(true)
-        .open(&path)
-        .map_err(|e| e.to_string())?;
-    f.write_all(&bytes).map_err(|e| e.to_string())?;
-    Ok(())
+pub async fn append_temp_chunk(path: String, bytes: Vec<u8>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut f = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .map_err(|e| e.to_string())?;
+        f.write_all(&bytes).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Delete files (e.g. a recording + its thumbnail). Best-effort per path.
