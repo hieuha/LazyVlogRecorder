@@ -12,6 +12,8 @@ export interface TextStyle {
   baseline?: CanvasTextBaseline;
   letterSpacing?: number; // px
   glow?: number; // shadow blur px
+  /** Halo color for the glow; defaults to the fill (gradient top when gradient-filled). */
+  glowColor?: string;
 }
 
 export function drawText(
@@ -32,7 +34,10 @@ export function drawText(
       `${s.letterSpacing}px`;
   }
   if (s.glow) {
-    ctx.shadowColor = s.color;
+    // Match the glyph tone: prefer an explicit glow color, else the gradient
+    // top, else the solid fill — so a gradient-filled number never haloes with
+    // its unused base `color`.
+    ctx.shadowColor = s.glowColor ?? (s.gradient ? s.gradient[0] : s.color);
     ctx.shadowBlur = s.glow;
   }
   ctx.fillText(text, x, y);

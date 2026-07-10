@@ -2,7 +2,7 @@
 // to the matching widget draw function. This file is layout-agnostic — a new
 // layout is just a different LayoutConfig; adding a widget TYPE adds one case.
 
-import type { Anchor, LayoutConfig, HudState, Vec2, WidgetRenderContext } from "./types";
+import type { Anchor, HudTheme, LayoutConfig, HudState, Vec2, WidgetRenderContext } from "./types";
 import { drawGaugeArc } from "./widgets/gauge-arc";
 import {
   drawClock,
@@ -21,11 +21,15 @@ import type { LayerContext } from "../compositor/canvas-compositor";
 /**
  * Build a compositor layer that renders the given layout with live state.
  * `getState` is called each frame so the HUD reflects the latest values.
+ * `themeOverride` restyles the layout with a selected palette (theme registry);
+ * when omitted the layout's own theme is used.
  */
 export function createHudLayer(
   layout: LayoutConfig,
   getState: () => HudState,
+  themeOverride?: HudTheme,
 ): (layer: LayerContext) => void {
+  const theme = themeOverride ?? layout.theme;
   return ({ ctx, width, height }: LayerContext) => {
     const baseU = width / 100; // positions use the real unit
     const sizeU = baseU * (layout.fontScale ?? 1); // widget text/size unit
@@ -38,7 +42,7 @@ export function createHudLayer(
         width,
         height,
         u: sizeU,
-        theme: layout.theme,
+        theme,
         state,
       };
       dispatch(c, spec);

@@ -8,6 +8,7 @@ interface Props {
   config: AppConfig;
   setField: <K extends keyof AppConfig>(key: K, value: AppConfig[K]) => void;
   layouts: Array<{ id: string; name: string }>;
+  themes: Array<{ id: string; name: string }>;
   onBrowse: () => void;
   onClose: () => void;
   onSave: () => void;
@@ -79,6 +80,17 @@ export function SettingsPanel(p: Props) {
             {p.layouts.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="settings-field">
+          HUD THEME
+          <select value={c.themeId} onChange={(e) => p.setField("themeId", e.target.value)}>
+            {p.themes.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
               </option>
             ))}
           </select>

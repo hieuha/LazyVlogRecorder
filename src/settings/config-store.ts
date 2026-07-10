@@ -13,6 +13,7 @@ export interface AppConfig {
   mirror: boolean;
   crtEffect: boolean; // CRT/analog grain overlay
   layoutId: string;
+  themeId: string; // HUD palette (theme registry): "martian" | "amber"
   cityOverride: string; // "" = auto (IP geolocation)
   // External sensor HTTP API (right-side HUD panel).
   sensorApiEnabled: boolean;
@@ -31,6 +32,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   mirror: true,
   crtEffect: true,
   layoutId: "martian",
+  themeId: "martian",
   cityOverride: "",
   sensorApiEnabled: false,
   sensorApiPort: 1337,

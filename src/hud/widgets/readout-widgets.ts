@@ -26,10 +26,11 @@ export function drawMissionDay(c: WidgetRenderContext): void {
   const w = ctx.measureText(label).width + 2.4 * u;
   const h = size + 1.4 * u;
 
-  // Backlit panel fill (cool white, slightly darker toward the bottom).
+  // Backlit panel fill (theme-driven; cool white in the film, dark amber in the
+  // CRT theme), slightly darker toward the bottom.
   const bg = ctx.createLinearGradient(origin.x, boxY, origin.x, boxY + h);
-  bg.addColorStop(0, "rgba(216, 228, 230, 0.95)");
-  bg.addColorStop(1, "rgba(180, 197, 201, 0.95)");
+  bg.addColorStop(0, theme.panelBg ?? "rgba(216, 228, 230, 0.95)");
+  bg.addColorStop(1, theme.panelBgDeep ?? "rgba(180, 197, 201, 0.95)");
   ctx.fillStyle = bg;
   ctx.fillRect(origin.x, boxY, w, h);
 
@@ -38,7 +39,7 @@ export function drawMissionDay(c: WidgetRenderContext): void {
   ctx.beginPath();
   ctx.rect(origin.x, boxY, w, h);
   ctx.clip();
-  ctx.strokeStyle = "rgba(38, 58, 68, 0.20)";
+  ctx.strokeStyle = theme.panelGrid ?? "rgba(38, 58, 68, 0.20)";
   ctx.lineWidth = Math.max(1, 0.05 * u);
   ctx.beginPath();
   const step = 0.32 * u;
@@ -59,11 +60,11 @@ export function drawMissionDay(c: WidgetRenderContext): void {
   ctx.strokeRect(origin.x, boxY, w, h);
   ctx.restore();
 
-  // Dark digits, as if the matrix cells over the text are switched off.
+  // Panel digits (dark on the film's light panel; lit amber on the CRT panel).
   drawText(ctx, label, origin.x + 1.2 * u, boxY + h / 2, {
     font: theme.fontCondensed,
     size,
-    color: "rgba(14, 28, 40, 0.96)",
+    color: theme.panelInk ?? "rgba(14, 28, 40, 0.96)",
     weight: 700,
     baseline: "middle",
   });

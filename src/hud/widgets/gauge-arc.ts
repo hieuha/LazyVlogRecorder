@@ -38,6 +38,7 @@ export function drawGaugeArc(
     weight: 500,
     baseline: "top",
     glow: 0.7 * u,
+    glowColor: theme.accent, // halo matches the number's tone, not the base text color
   });
   const valueW = measure(ctx, valueText, `500 ${5.4 * u}px ${theme.fontCondensed}`);
   const unitX = ox + valueW + 0.8 * u;

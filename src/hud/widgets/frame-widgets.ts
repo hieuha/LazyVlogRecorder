@@ -23,11 +23,11 @@ export function drawCornerFrame(c: WidgetRenderContext, anchor: string): void {
 
 // Full-canvas horizontal scanlines (very subtle).
 export function drawScanline(c: WidgetRenderContext): void {
-  const { ctx, width, height, u } = c;
+  const { ctx, width, height, u, theme } = c;
   const gap = Math.max(2, Math.round(0.35 * u));
   ctx.save();
   ctx.globalAlpha = 0.05;
-  ctx.fillStyle = "#bfe9ee";
+  ctx.fillStyle = theme.scanline ?? "#bfe9ee";
   for (let y = 0; y < height; y += gap * 2) {
     ctx.fillRect(0, y, width, gap);
   }

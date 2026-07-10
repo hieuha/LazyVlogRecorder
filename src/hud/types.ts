@@ -28,6 +28,14 @@ export interface HudTheme {
   /** Cinematic color-grade stops applied over the webcam (cool → warm). */
   gradeCool: string;
   gradeWarm: string;
+  /** Faint full-frame scanline tint. Falls back to a cool white when unset. */
+  scanline?: string;
+  /** MISSION DAY LCD panel: gradient top/bottom, digit ink, grid mesh. When
+   *  unset, widgets fall back to the film's cool-white backlit panel. */
+  panelBg?: string;
+  panelBgDeep?: string;
+  panelInk?: string;
+  panelGrid?: string;
 }
 
 /** Live values the HUD renders. Phase 2 feeds mock data; Phase 3 feeds real data. */

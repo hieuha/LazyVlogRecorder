@@ -14,6 +14,7 @@ import {
 import { probeRecordingCapability, type RecordingCapability } from "./recording/capability";
 import { createHudLayer } from "./hud/layout-engine";
 import { getLayout, listLayouts } from "./hud/layout-registry";
+import { getTheme, listThemes } from "./hud/theme-registry";
 import { createHudDataSource, type HudDataSource } from "./data/hud-data-source";
 import { createAudioAnalyser, type AudioAnalyser } from "./hud/audio-analyser";
 import { useRecorder } from "./recording/use-recorder";
@@ -61,6 +62,7 @@ export default function App() {
   const outDirRef = useRef<string>(DEFAULT_CONFIG.outputDir);
   const audioEnabledRef = useRef<boolean>(DEFAULT_CONFIG.audioEnabled);
   const layoutIdRef = useRef<string>(DEFAULT_CONFIG.layoutId);
+  const themeIdRef = useRef<string>(DEFAULT_CONFIG.themeId);
   const mirrorRef = useRef<boolean>(DEFAULT_CONFIG.mirror);
   const crtRef = useRef<boolean>(DEFAULT_CONFIG.crtEffect);
   const recordHeightRef = useRef<number>(DEFAULT_CONFIG.recordHeight);
@@ -84,6 +86,9 @@ export default function App() {
   const [micId, setMicId] = useState<string>("");
   const [capability, setCapability] = useState<RecordingCapability | null>(null);
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
+  // Last config actually persisted to disk. Lets layout/theme live-apply persist
+  // just their own field without committing other unsaved edits in the panel.
+  const savedConfigRef = useRef<AppConfig>(DEFAULT_CONFIG);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [authReady, setAuthReady] = useState(false);
@@ -136,7 +141,7 @@ export default function App() {
     if (!compositorRef.current) return;
     hudUnsubRef.current?.();
     hudUnsubRef.current = compositorRef.current.registerLayer(
-      createHudLayer(getLayout(layoutIdRef.current), getState),
+      createHudLayer(getLayout(layoutIdRef.current), getState, getTheme(themeIdRef.current)),
     );
   }, [getState]);
 
@@ -167,6 +172,7 @@ export default function App() {
         if (cancelled) return;
         applyConfigToRefs(cfg);
         setConfig(cfg);
+        savedConfigRef.current = cfg;
         rec.setDurationSec(cfg.durationMin * 60);
         dataSourceRef.current = createHudDataSource(cfg.cityOverride);
 
@@ -268,6 +274,7 @@ export default function App() {
     outDirRef.current = cfg.outputDir;
     audioEnabledRef.current = cfg.audioEnabled;
     layoutIdRef.current = cfg.layoutId;
+    themeIdRef.current = cfg.themeId;
     mirrorRef.current = cfg.mirror;
     crtRef.current = cfg.crtEffect;
     recordHeightRef.current = cfg.recordHeight;
@@ -386,6 +393,17 @@ export default function App() {
 
   function setField<K extends keyof AppConfig>(key: K, value: AppConfig[K]) {
     setConfig((c) => ({ ...c, [key]: value }));
+    // Layout & theme are HUD-look toggles: apply live (no Save needed) and
+    // persist just this field over the last-saved config, so unsaved edits to
+    // other fields in the panel aren't committed early.
+    if (key === "layoutId" || key === "themeId") {
+      if (key === "layoutId") layoutIdRef.current = value as string;
+      else themeIdRef.current = value as string;
+      registerHud();
+      const persisted = { ...savedConfigRef.current, [key]: value };
+      savedConfigRef.current = persisted;
+      void saveConfig(persisted);
+    }
   }
 
   async function browseFolder() {
@@ -395,6 +413,7 @@ export default function App() {
 
   async function applySettings() {
     await saveConfig(config);
+    savedConfigRef.current = config;
     const audioWas = audioEnabledRef.current;
     applyConfigToRefs(config);
     compositorRef.current?.setMirror(config.mirror);
@@ -533,6 +552,7 @@ export default function App() {
           config={config}
           setField={setField}
           layouts={listLayouts()}
+          themes={listThemes()}
           onBrowse={() => void browseFolder()}
           onClose={() => setSettingsOpen(false)}
           onSave={() => void applySettings()}
