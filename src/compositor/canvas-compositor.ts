@@ -136,8 +136,12 @@ export class CanvasCompositor {
     this.rafId = requestAnimationFrame(this.loop);
 
     const now = performance.now();
-    if (now - this.lastDrawAt < this.minFrameMs) return; // throttle to ~60fps
-    this.lastDrawAt = now;
+    if (now - this.lastDrawAt < this.minFrameMs) return; // throttle to the capture fps
+    // Advance by whole frame steps so scheduling jitter doesn't accumulate into
+    // an irregular cadence (which capture-on-change would faithfully record). If
+    // we fell far behind (tab/CPU stall), resync to now instead of catching up.
+    this.lastDrawAt += this.minFrameMs;
+    if (now - this.lastDrawAt > this.minFrameMs) this.lastDrawAt = now;
 
     // Measure actual draws/sec over a ~1s window.
     this.fpsCount++;

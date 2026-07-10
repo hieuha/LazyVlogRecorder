@@ -540,6 +540,13 @@ body,
   background: #b58cff;
 }
 
+/* Top-right badge shown when the LIVE tab is selected but not yet broadcasting —
+   the live settings read-out (magenta, matching the LIVE badge family). */
+.cap-badge.live-ready {
+  color: #b58cff;
+  border-color: rgba(181, 140, 255, 0.6);
+}
+
 /* "Save copy locally while live" inline checkbox in the control bar. */
 .rec-save-local {
   display: inline-flex;

@@ -222,21 +222,21 @@ export function useStreaming(refs: UseStreamingRefs) {
       canvas,
       micStream: refs.micStreamRef.current,
       mimeType: mime,
-      fps, // capture at the stream frame rate — fewer frames to encode
       timesliceMs: LIVE_TIMESLICE_MS,
       // Cap the throwaway VP8 near the target so it isn't over-encoded (CPU).
       videoBitsPerSecond: bitrateKbps * 1000,
       onChunk: async (blob) => {
         const bytes = new Uint8Array(await blob.arrayBuffer());
-        // Local append + RTMP write run CONCURRENTLY so a local-disk spike can't
-        // stall the RTMP feed (bursty delivery). Ordering is still safe: the
-        // recorder serializes chunks, and the Rust writer thread orders RTMP.
-        await Promise.all([
-          sessionSaveLocalRef.current && tempPathRef.current
-            ? appendTempChunk(tempPathRef.current, bytes)
-            : Promise.resolve(),
-          writeStreamChunk(bytes).catch(() => {}),
-        ]);
+        // RTMP write is FIRE-AND-FORGET: never await it here, so a stalled/dropped
+        // network can't block the recorder chain and freeze the LOCAL recording.
+        // Order is still fine — onChunk runs serialized, so writes are issued in
+        // order, and the Rust writer thread feeds ffmpeg in receive order.
+        void writeStreamChunk(bytes).catch(() => {});
+        // Local append IS awaited → serialized by the chain → correct file order,
+        // and it only touches local disk, so it's independent of the network.
+        if (sessionSaveLocalRef.current && tempPathRef.current) {
+          await appendTempChunk(tempPathRef.current, bytes);
+        }
       },
     });
     recRef.current.start();
@@ -262,7 +262,17 @@ export function useStreaming(refs: UseStreamingRefs) {
     await saveLocalTake(duration); // transcode the local take (shows the saving overlay)
   }
 
+  // Clear a terminal state (e.g. a lingering LIVE ERROR + its message) so it
+  // doesn't persist after the user switches away. No-op while actively capturing.
+  function reset(): void {
+    if (recRef.current) return;
+    setState("idle");
+    setError(null);
+    setDropped(0);
+  }
+
   return {
+    reset,
     mode,
     setMode,
     durationSec,

@@ -35,6 +35,7 @@ import { HudSelect } from "./components/hud-select";
 import "./App.css";
 
 const SENSOR_STALE_MS = 10_000; // dim sensor rows not refreshed within this window
+const SENSOR_HIDE_MS = 30_000; // fully hide sensor/series after this much silence
 const SERIES_MAX_POINTS = 120; // rolling window kept per sparkline series
 
 interface SeriesBuf {
@@ -160,24 +161,29 @@ export default function App() {
     // per frame we only refresh the time-based `stale` flag in place. This keeps
     // the hot path allocation-free so heavy sensor pushing can't stutter capture.
     const sensorsRender = sensorsRenderRef.current;
-    if (sensorsRender.length) {
-      const stale = now - sensorsRef.current.at > SENSOR_STALE_MS;
+    const sensorsAge = now - sensorsRef.current.at;
+    if (sensorsRender.length && sensorsAge <= SENSOR_HIDE_MS) {
+      const stale = sensorsAge > SENSOR_STALE_MS; // dim before hiding
       for (const it of sensorsRender) it.stale = stale;
       s.sensors = sensorsRender;
     } else {
-      s.sensors = undefined;
+      s.sensors = undefined; // no data / silent too long → hide the panel
     }
 
     const seriesRender = seriesRenderRef.current;
+    // Show series only while at least one buffer is within the hide window (find
+    // the newest last-update; cheap, allocation-free).
+    let newestSeriesAt = 0;
     if (seriesRender.length) {
       for (const item of seriesRender) {
         const buf = seriesRef.current.get(item.label);
-        item.stale = buf ? now - buf.at > SENSOR_STALE_MS : true;
+        const at = buf ? buf.at : 0;
+        if (at > newestSeriesAt) newestSeriesAt = at;
+        item.stale = now - at > SENSOR_STALE_MS;
       }
-      s.series = seriesRender;
-    } else {
-      s.series = undefined;
     }
+    s.series =
+      seriesRender.length && now - newestSeriesAt <= SENSOR_HIDE_MS ? seriesRender : undefined;
 
     const cap = captionRef.current;
     s.caption = cap.text ? { text: cap.text, typing: cap.typing, sinceMs: now - cap.at } : undefined;
@@ -605,6 +611,12 @@ export default function App() {
               {streaming.dropped > 0 ? ` · drop ${streaming.dropped}` : ""}
             </span>
           </span>
+        ) : destination === "live" ? (
+          // LIVE tab selected (not yet broadcasting): show the live settings here,
+          // compact, so they're easy to eyeball before going live.
+          <span className="cap-badge live-ready">
+            {`LIVE READY · ${config.streamHeight}p · ${config.streamFps}fps · ${config.streamBitrateKbps}k · ${config.streamEncoder === "software" ? "SW" : "HW"}`}
+          </span>
         ) : (
           capability && (
             <span className={`cap-badge ${capability.ok ? "ok" : "warn"}`}>
@@ -634,7 +646,10 @@ export default function App() {
             error={rec.error ?? streaming.error}
             disabled={!capability?.ok}
             destination={destination}
-            setDestination={setDestination}
+            setDestination={(d) => {
+              setDestination(d);
+              streaming.reset(); // clear any stale LIVE ERROR / message when switching tabs
+            }}
             streamConfigured={streamConfigured}
             saveLocalWhileLive={config.saveLocalWhileLive}
             setSaveLocalWhileLive={(v) => {
