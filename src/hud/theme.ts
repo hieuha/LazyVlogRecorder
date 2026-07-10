@@ -97,4 +97,5 @@ export const cryptTheme: HudTheme = {
   panelBgDeep: "rgba(24, 5, 6, 0.95)",
   panelInk: "rgba(255, 100, 84, 0.98)",
   panelGrid: "rgba(255, 100, 84, 0.13)",
+  panelBorder: "rgba(230, 46, 40, 0.96)", // crimson border to match the accent
 };

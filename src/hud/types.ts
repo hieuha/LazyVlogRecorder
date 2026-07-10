@@ -36,6 +36,8 @@ export interface HudTheme {
   panelBgDeep?: string;
   panelInk?: string;
   panelGrid?: string;
+  /** MISSION DAY panel border. Falls back to `text` (the film's light border). */
+  panelBorder?: string;
 }
 
 /** Live values the HUD renders. Phase 2 feeds mock data; Phase 3 feeds real data. */

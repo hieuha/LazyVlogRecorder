@@ -54,8 +54,8 @@ export function drawMissionDay(c: WidgetRenderContext): void {
   ctx.stroke();
   ctx.restore();
 
-  // Panel border.
-  ctx.strokeStyle = theme.text;
+  // Panel border (theme-overridable; defaults to the film's light border).
+  ctx.strokeStyle = theme.panelBorder ?? theme.text;
   ctx.lineWidth = 0.22 * u;
   ctx.strokeRect(origin.x, boxY, w, h);
   ctx.restore();
