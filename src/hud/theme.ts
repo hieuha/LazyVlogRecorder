@@ -50,3 +50,27 @@ export const marsAmberTheme: HudTheme = {
   panelInk: "rgba(255, 158, 66, 0.98)",
   panelGrid: "rgba(255, 140, 56, 0.13)",
 };
+
+// Green Hacker palette: Matrix/phosphor terminal — green-on-black with a lime
+// highlight and a red alert, over a faint green CRT grade. Lit green digits on
+// a dark LCD panel.
+export const greenHackerTheme: HudTheme = {
+  accent: "rgba(74, 232, 122, 0.95)", // primary phosphor-green lines / brackets
+  accentBright: "rgba(200, 255, 210, 1)", // glow core / gradient top (pale green)
+  accentDeep: "rgba(40, 168, 88, 0.95)", // gradient tail / dial track (lifted for bright footage)
+  text: "rgba(224, 255, 232, 0.98)", // pale green-white
+  textDim: "rgba(120, 226, 150, 0.94)", // green gradient bottom for big numbers
+  muted: "rgba(110, 190, 134, 0.8)",
+  warn: "rgba(255, 86, 66, 0.98)", // red alert (contrast against the green)
+  gold: "rgba(190, 255, 108, 0.96)", // highlighted-label lime
+  fontMono: "ui-monospace, 'SF Mono', Menlo, monospace",
+  fontCondensed:
+    "'Oswald', 'Bebas Neue', 'Arial Narrow', ui-sans-serif, system-ui, sans-serif",
+  gradeCool: "rgba(18, 74, 40, 0.40)", // green top wash (stronger Matrix cast)
+  gradeWarm: "rgba(12, 56, 30, 0.34)", // deep green bottom wash
+  scanline: "#8effb0",
+  panelBg: "rgba(10, 40, 22, 0.93)", // dark green LCD (lit green digits)
+  panelBgDeep: "rgba(5, 24, 13, 0.95)",
+  panelInk: "rgba(128, 255, 158, 0.98)",
+  panelGrid: "rgba(128, 255, 158, 0.13)",
+};
