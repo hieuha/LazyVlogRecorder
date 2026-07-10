@@ -29,7 +29,7 @@ Sensor API — số liệu ngoài + biểu đồ sparkline đẩy qua HTTP:
 - **Ship Vitals** — dải nhỏ (opt‑in) đốt telemetry máy thật (pin, CPU, RAM, uptime) vào HUD dạng icon dưới soundwave; poll ~2s/lần, có ở mọi layout, mặc định tắt. Máy bàn không pin thì ẩn icon pin.
 - **Khoá PIN** — mã 4 số khi mở app, luồng đổi PIN, nút lock.
 - **Library** — mỗi bản quay được index kèm thumbnail; xem dạng lưới, player trong app, mở thư mục, xoá.
-- **Settings bền** — tên, số log (tự tăng), thư mục lưu, thời lượng, độ phân giải (720p/1080p), layout, audio, mirror, CRT, Ship Vitals, city.
+- **Settings bền** — tên, số log (tự tăng), thư mục lưu, thời lượng, độ phân giải (720p/1080p), layout, audio, mirror, CRT, Ship Vitals, city, tuỳ chỉnh MISSION DAY.
 
 ## Chạy nhanh (dev)
 
@@ -59,7 +59,7 @@ Kết quả ở `src-tauri/target/release/bundle/` (`.app` + `.dmg` trên macOS)
 
 ## Sensor API
 
-Bật **Settings → Sensor API** để đẩy dữ liệu cảm biến của bạn lên góc phải HUD (burn vào video). App chạy một endpoint HTTP nhỏ:
+Bật **Settings → API Service** để đẩy dữ liệu cảm biến của bạn lên góc phải HUD (burn vào video). App chạy một endpoint HTTP nhỏ:
 
 ```bash
 curl -X POST http://<host>:1337/sensors \

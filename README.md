@@ -30,7 +30,7 @@ Sensor API — external readouts + live sparkline charts pushed over HTTP:
 - **Ship Vitals** — opt‑in strip that burns real machine telemetry (battery, CPU, RAM, uptime) into the HUD as tiny icons below the soundwave; polled ~every 2s, on all layouts, off by default. Battery hides on desktops without one.
 - **PIN lock** — 4‑digit gate on launch, change‑PIN flow, and a lock button.
 - **Library** — every recording is indexed with a thumbnail; grid view, in‑app player, reveal‑in‑folder, delete.
-- **Persistent settings** — name, log number (auto‑increment), output folder, duration, resolution (720p/1080p), layout, theme, audio, mirror, CRT, Ship Vitals, city.
+- **Persistent settings** — name, log number (auto‑increment), output folder, duration, resolution (720p/1080p), layout, theme, audio, mirror, CRT, Ship Vitals, city, MISSION DAY override.
 
 ## Quick start (dev)
 
@@ -60,7 +60,7 @@ Outputs to `src-tauri/target/release/bundle/` (`.app` + `.dmg` on macOS). See [d
 
 ## Sensor API
 
-Enable **Settings → Sensor API** to push your own sensor readings onto the right side of the HUD (burned into the video). The app runs a small HTTP endpoint:
+Enable **Settings → API Service** to push your own sensor readings onto the right side of the HUD (burned into the video). The app runs a small HTTP endpoint:
 
 ```bash
 curl -X POST http://<host>:1337/sensors \

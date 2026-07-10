@@ -12,7 +12,7 @@ Ba endpoint:
 
 ## Bật
 
-**Settings → Sensor API → Enable HTTP endpoint.** Rồi cấu hình:
+**Settings → API Service → Enable API Service.** Rồi cấu hình:
 
 | Cài đặt | Ý nghĩa |
 |---|---|
@@ -20,7 +20,7 @@ Ba endpoint:
 | **Allow LAN devices** | Bật → bind `0.0.0.0` (thiết bị khác trong mạng gọi được). Tắt → bind `127.0.0.1` (chỉ máy này). |
 | **Token** | Bearer token, tự sinh; **Regenerate** để tạo mới. |
 
-Server chạy khi bạn bật + Save, khởi động lại khi đổi cấu hình, và dừng khi khoá app hoặc thoát.
+Bật/tắt service và tạo lại token hiện dialog xác nhận. Server chạy khi bật, khởi động lại khi đổi port hoặc LAN access, và dừng khi khoá app hoặc thoát. **Regenerate token** lưu và khởi động lại service tức thì (không cần Save).
 
 ## Xác thực
 

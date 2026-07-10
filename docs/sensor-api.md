@@ -12,7 +12,7 @@ Three endpoints:
 
 ## Enable
 
-**Settings → Sensor API → Enable HTTP endpoint.** Then configure:
+**Settings → API Service → Enable API Service.** Then configure:
 
 | Setting | Meaning |
 |---|---|
@@ -20,8 +20,7 @@ Three endpoints:
 | **Allow LAN devices** | On → bind `0.0.0.0` (reachable from other devices on the network). Off → bind `127.0.0.1` (this machine only). |
 | **Token** | Bearer token, auto‑generated; **Regenerate** makes a new one. |
 
-The server starts when you save and enable, restarts when you change these, and
-stops when the app is locked or closed.
+Enabling or disabling the service, and regenerating the token, show a confirmation modal first. The server starts when enabled, restarts when port or LAN access changes, and stops when the app is locked or closed. **Regenerate token** persists and restarts the service immediately (no Save needed).
 
 ## Authentication
 

@@ -25,10 +25,10 @@ Tất cả nút nằm trong thanh đen dưới video (không đè lên camera). 
 
 ## Settings (⚙)
 
-- Tên log entry, số log (tự tăng), city override, thời lượng FIXED, **Record resolution** (720p = file nhỏ / 1080p = chất lượng cao), **HUD layout** (`Martian` / `Minimal` / `Recon`), **HUD theme** (`Teal` / `Amber` / `Green` / `Crypt`), **Ship Vitals** (strip pin, CPU, RAM, uptime), thư mục lưu, **Record audio**, **Mirror camera**, **CRT effect**, và **Change PIN**.
+- Tên log entry, số log (tự tăng), city override, **MISSION DAY** (để trống = auto Y.M.D; text tuỳ chỉnh tự co dãn panel), thời lượng FIXED, **Record resolution** (720p = file nhỏ / 1080p = chất lượng cao), **HUD layout** (`Martian` / `Minimal` / `Recon`), **HUD theme** (`Teal` / `Amber` / `Green` / `Crypt`), **Ship Vitals** (strip pin, CPU, RAM, uptime), thư mục lưu (mặc định: `Movies/LazyCamHUD`), **Record audio**, **Mirror camera**, **CRT effect**, và **Change PIN**.
 - Layout và theme áp **live** ngay khi chọn — không cần Save (lưu tức thì); các cài đặt khác áp khi Save.
 - Quay ở VP8/WebM theo độ phân giải 16:9 đã chọn, rồi transcode sang H.264 MP4 (CRF‑26). Muốn quay mượt hơn / file nhỏ hơn: chọn 720p hoặc tắt **CRT effect**.
-- **Sensor API** — bật endpoint HTTP nội bộ để đẩy dữ liệu cảm biến của bạn lên góc phải HUD (port, cho phép LAN, và token đều chỉnh được). Xem mục Sensor API trong README để biết định dạng request.
+- **API Service** — bật endpoint HTTP nội bộ để đẩy dữ liệu cảm biến lên góc phải HUD. Bật/tắt service và tạo lại token hiện dialog xác nhận. **Regenerate token** lưu và khởi động lại service tức thì (không cần Save). Port và cho phép LAN đều chỉnh được. Xem mục Sensor API trong README để biết định dạng request.
 
 ## Library (▤)
 
