@@ -10,9 +10,12 @@ const ARC_SWEEP = (270 * Math.PI) / 180; // 270° dial
 
 export function drawGaugeArc(
   c: WidgetRenderContext,
-  spec: { metric: GaugeMetric; label: string },
+  spec: { metric: GaugeMetric; label: string; scale?: number },
 ): void {
-  const { ctx, origin, u, theme, state } = c;
+  const { ctx, origin, theme, state } = c;
+  // Uniform per-gauge size (all measurements below are in `u`); `scale` shrinks
+  // or grows the whole gauge anchored at its origin. Default 1 = unchanged.
+  const u = c.u * (spec.scale ?? 1);
   const g = state.gauges[spec.metric];
   const ox = origin.x;
   const oy = origin.y;

@@ -100,7 +100,7 @@ export type WidgetSpec =
   | { type: "mission-day"; anchor: Anchor; offset: Vec2 }
   | { type: "log-entry"; anchor: Anchor; offset: Vec2 }
   | { type: "clock"; anchor: Anchor; offset: Vec2 }
-  | { type: "gauge-arc"; anchor: Anchor; offset: Vec2; metric: GaugeMetric; label: string }
+  | { type: "gauge-arc"; anchor: Anchor; offset: Vec2; metric: GaugeMetric; label: string; scale?: number }
   | { type: "environment"; anchor: Anchor; offset: Vec2 }
   | { type: "location"; anchor: Anchor; offset: Vec2 }
   | { type: "corner-frame"; anchor: Anchor; offset: Vec2 }
