@@ -4,7 +4,7 @@
 
 - **Display name:** Lazy Camera HUD
 - **Bundle id:** `com.hatrunghieu.lazycamhud`
-- **Version:** 0.6.0
+- **Version:** 0.6.1
 - **Targets:** macOS + Windows (Linux deferred)
 - **Stack:** Tauri 2 (Rust) + React 19 + TypeScript + Vite
 
