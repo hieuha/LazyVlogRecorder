@@ -21,7 +21,7 @@ import { createAudioAnalyser, type AudioAnalyser } from "./hud/audio-analyser";
 import { useRecorder } from "./recording/use-recorder";
 import { RecordingControls } from "./recording/recording-controls";
 import { SettingsPanel } from "./settings/settings-panel";
-import { loadConfig, saveConfig, DEFAULT_CONFIG, type AppConfig } from "./settings/config-store";
+import { loadConfig, saveConfig, generateToken, DEFAULT_CONFIG, type AppConfig } from "./settings/config-store";
 import { PinGate } from "./auth/pin-gate";
 import { hasPin } from "./auth/auth-client";
 import { LibraryView } from "./library/library-view";
@@ -444,6 +444,17 @@ export default function App() {
     setSettingsOpen(false);
   }
 
+  // Regenerate the API token, persist it immediately (over the last-saved
+  // config, like layout/theme), and restart the server so it takes effect now.
+  function regenerateToken() {
+    const token = generateToken();
+    setConfig((cfg) => ({ ...cfg, sensorApiToken: token }));
+    const persisted = { ...savedConfigRef.current, sensorApiToken: token };
+    savedConfigRef.current = persisted;
+    void saveConfig(persisted);
+    if (persisted.sensorApiEnabled) void applySensorServer(persisted);
+  }
+
   // Start/stop the sensor HTTP server to match the current config.
   async function applySensorServer(cfg: AppConfig) {
     try {
@@ -567,6 +578,7 @@ export default function App() {
           onBrowse={() => void browseFolder()}
           onClose={() => setSettingsOpen(false)}
           onSave={() => void applySettings()}
+          onRegenerateToken={regenerateToken}
         />
       )}
 

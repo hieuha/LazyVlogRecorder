@@ -217,6 +217,18 @@ body,
   color: #cfe6ea;
 }
 
+.settings-confirm {
+  width: min(420px, 90vw);
+  border-color: rgba(226, 78, 60, 0.6);
+}
+
+.settings-confirm-body {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #cfe6ea;
+}
+
 .settings-head {
   display: flex;
   align-items: center;

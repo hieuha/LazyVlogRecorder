@@ -12,12 +12,40 @@ interface Props {
   onBrowse: () => void;
   onClose: () => void;
   onSave: () => void;
+  onRegenerateToken: () => void; // regenerates + persists + restarts the server immediately
 }
 
 export function SettingsPanel(p: Props) {
   const c = p.config;
   const [changingPin, setChangingPin] = useState(false);
   const [pinMsg, setPinMsg] = useState("");
+  // Confirm dialog for network-facing / destructive API Service actions.
+  const [confirm, setConfirm] = useState<
+    null | { title: string; body: string; onYes: () => void }
+  >(null);
+
+  // Enabling/disabling the API Service opens a network endpoint — warn first.
+  function askToggleApi(on: boolean) {
+    setConfirm({
+      title: on ? "ENABLE API SERVICE?" : "DISABLE API SERVICE?",
+      body: on
+        ? "Opens a local HTTP service so other apps or devices can push readings, sparklines and captions onto the HUD. With “Allow LAN devices” on, anyone on your network who has the token can reach it. Applies when you press SAVE."
+        : "Stops the API Service; externally‑pushed sensor data will no longer appear on the HUD. Applies when you press SAVE.",
+      onYes: () => {
+        p.setField("sensorApiEnabled", on);
+        if (on && !c.sensorApiToken) p.setField("sensorApiToken", generateToken());
+      },
+    });
+  }
+
+  // Regenerating invalidates the current token immediately.
+  function askRegenerate() {
+    setConfirm({
+      title: "REGENERATE TOKEN?",
+      body: "Creates a new bearer token and applies it immediately. Any client still using the old token will be rejected until you update it.",
+      onYes: () => p.onRegenerateToken(),
+    });
+  }
   return (
     <div className="settings-backdrop" onClick={p.onClose}>
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
@@ -109,7 +137,7 @@ export function SettingsPanel(p: Props) {
         <div className="settings-field">
           OUTPUT FOLDER
           <div className="settings-folder">
-            <span className="settings-folder-path">{c.outputDir || "Movies/LazyVlogRecorder (default)"}</span>
+            <span className="settings-folder-path">{c.outputDir || "Movies/LazyCamHUD (default)"}</span>
             <button onClick={p.onBrowse}>Browse</button>
             {c.outputDir && <button onClick={() => p.setField("outputDir", "")}>Reset</button>}
           </div>
@@ -156,13 +184,9 @@ export function SettingsPanel(p: Props) {
             <input
               type="checkbox"
               checked={c.sensorApiEnabled}
-              onChange={(e) => {
-                const on = e.target.checked;
-                p.setField("sensorApiEnabled", on);
-                if (on && !c.sensorApiToken) p.setField("sensorApiToken", generateToken());
-              }}
+              onChange={(e) => askToggleApi(e.target.checked)}
             />
-            Enable HTTP endpoint
+            Enable API Service
           </label>
         </div>
 
@@ -193,7 +217,7 @@ export function SettingsPanel(p: Props) {
               TOKEN (Bearer)
               <div className="settings-folder">
                 <span className="settings-folder-path">{c.sensorApiToken || "(none)"}</span>
-                <button onClick={() => p.setField("sensorApiToken", generateToken())}>Regenerate</button>
+                <button onClick={askRegenerate}>Regenerate</button>
               </div>
             </div>
 
@@ -227,6 +251,40 @@ export function SettingsPanel(p: Props) {
           </button>
         </div>
       </div>
+
+      {confirm && (
+        <div
+          className="settings-backdrop"
+          onClick={(e) => {
+            e.stopPropagation();
+            setConfirm(null);
+          }}
+        >
+          <div
+            className="settings-modal settings-confirm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="settings-head">
+              <span>{confirm.title}</span>
+            </div>
+            <p className="settings-confirm-body">{confirm.body}</p>
+            <div className="settings-actions">
+              <button className="settings-cancel" onClick={() => setConfirm(null)}>
+                CANCEL
+              </button>
+              <button
+                className="settings-save"
+                onClick={() => {
+                  confirm.onYes();
+                  setConfirm(null);
+                }}
+              >
+                CONFIRM
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { LazyStore } from "@tauri-apps/plugin-store";
 export interface AppConfig {
   personName: string; // LOG ENTRY name
   logNo: number; // auto-incremented after each save
-  outputDir: string; // "" = default (Movies/LazyVlogRecorder)
+  outputDir: string; // "" = default (Movies/LazyCamHUD)
   durationMin: number; // FIXED-mode default
   recordHeight: number; // output frame height (720 or 1080); width is 16:9
   audioEnabled: boolean;
