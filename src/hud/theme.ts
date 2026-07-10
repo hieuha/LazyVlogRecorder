@@ -81,12 +81,12 @@ export const greenHackerTheme: HudTheme = {
 // highlight and a hazard-amber alert, over a deep maroon color grade. Lit red
 // digits on a dark red LCD panel. Matches the "Crypt" blog theme.
 export const cryptTheme: HudTheme = {
-  accent: "rgba(230, 46, 40, 0.96)", // primary crimson lines / brackets
-  accentBright: "rgba(255, 122, 98, 1)", // glow core / gradient top (bright red)
-  accentDeep: "rgba(150, 24, 20, 0.95)", // gradient tail / dial track (blood red, lifted for bright footage)
-  text: "rgba(255, 222, 214, 0.98)", // warm red-white
-  textDim: "rgba(228, 98, 82, 0.94)", // deep-red gradient bottom for big numbers
-  muted: "rgba(210, 100, 88, 0.82)", // secondary labels — lifted for legibility on bright footage
+  accent: "rgba(242, 54, 44, 0.98)", // primary crimson lines / brackets (punchier)
+  accentBright: "rgba(255, 134, 110, 1)", // glow core / gradient top (bright red)
+  accentDeep: "rgba(158, 26, 20, 0.96)", // gradient tail / dial track (blood red, lifted for bright footage)
+  text: "rgba(255, 158, 140, 1)", // vivid coral-red readouts (was pale, washed out on bright footage)
+  textDim: "rgba(240, 92, 74, 0.97)", // deep-red gradient bottom for big numbers
+  muted: "rgba(236, 108, 92, 0.96)", // secondary labels — saturated so they read on bright footage
   warn: "rgba(255, 190, 60, 0.98)", // hazard amber — distinct from the ambient red
   gold: "rgba(255, 146, 74, 0.95)", // highlighted-label ember orange
   fontMono: "ui-monospace, 'SF Mono', Menlo, monospace",
@@ -99,5 +99,5 @@ export const cryptTheme: HudTheme = {
   panelBgDeep: "rgba(24, 5, 6, 0.95)",
   panelInk: "rgba(255, 100, 84, 0.98)",
   panelGrid: "rgba(255, 100, 84, 0.13)",
-  panelBorder: "rgba(230, 46, 40, 0.96)", // crimson border to match the accent
+  panelBorder: "rgba(242, 54, 44, 0.98)", // crimson border to match the accent
 };
