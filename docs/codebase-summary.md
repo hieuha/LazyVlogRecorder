@@ -13,9 +13,9 @@
 | `hud/widgets/*` | Canvas2D widgets: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, and the sensor API widgets (`sensor-panel`, `series-panel` sparklines, `caption` typewriter + idle hex); `vitals-strip-widget` (battery, CPU, RAM, uptime icons) |
 | `hud/audio-analyser.ts` | Web Audio analyser → rolling amplitude for the soundwave |
 | `data/*` | `geolocation-client`, `weather-client`, `metric-mapping`, `hud-data-source` (fetch + cache + geocode override) |
-| `recording/*` | `recorder` (MediaRecorder + chunk streaming, `timesliceMs`), `use-capture-timer` (shared elapsed/pause/FIXED-auto-stop), `use-recorder` (modes, transcode + progress), `recording-controls` (LOCAL/LIVE toggle + REC/GO LIVE), `save-client`, `output-naming` |
-| `streaming/*` | `stream-client` (RTMP invoke wrappers + `stream-status` type), `use-streaming` (live state machine; taps the recorder, RTMP via `write_stream_chunk`, local MP4 captured separately + transcoded on stop) |
-| `settings/*` | `config-store` (Tauri Store; record resolution, sensor API, streaming rtmpUrl/streamKey/saveLocalWhileLive + quality streamHeight/streamFps/streamBitrateKbps), `settings-panel`, `is-stream-configured` (LIVE gate) |
+| `recording/*` | `recorder` (MediaRecorder + chunk streaming, `timesliceMs`), `use-capture-timer` (shared elapsed/pause/FIXED-auto-stop), `use-recorder` (modes, remux or transcode + progress), `recording-controls` (LOCAL/LIVE toggle + REC/GO LIVE), `save-client`, `output-naming` |
+| `streaming/*` | `stream-client` (RTMP invoke wrappers + `stream-status` type), `use-streaming` (live state machine; taps the recorder, RTMP via `write_stream_chunk`, local MP4 captured separately + remuxed or transcoded on stop) |
+| `settings/*` | `config-store` (Tauri Store; record resolution, sensor API, streaming rtmpUrl/streamKey/saveLocalWhileLive + quality streamFps/streamBitrateKbps; no streamHeight), `settings-panel`, `is-stream-configured` (LIVE gate) |
 | `auth/*` | `pin-gate`, `pin-pad`, `change-pin-flow`, `auth-client` |
 | `library/*` | `entries-store`, `library-client`, `library-view` (grid, player, delete) |
 | `components/hud-select.tsx` | Custom themed dropdown (replaces native `<select>`) |
@@ -29,8 +29,8 @@
 | `src/commands/geo.rs` | `geo_locate` (IP), `geocode_city` (Open‑Meteo geocoding) |
 | `src/commands/weather.rs` | `get_weather` (Open‑Meteo current + hourly precip probability) |
 | `src/commands/recording_fs.rs` | `start_temp_recording`, `append_temp_chunk`, `move_temp`, `delete_files`, `resolve_out_dir` |
-| `src/commands/ffmpeg.rs` | `transcode_to_mp4` (H.264 CRF‑26, progress events), `generate_thumbnail`; self‑resolves the ffmpeg path (`.exe` on Windows), `pub(crate) ffmpeg_path` reused by streaming |
-| `src/commands/streaming.rs` | `start_stream` / `write_stream_chunk` / `stop_stream`: RTMP‑only ffmpeg (H.264/AAC → FLV), pure `build_ffmpeg_stream_args`, bounded‑buffer backpressure, `stream-status` events, SIGTERM‑then‑SIGKILL teardown; single managed session |
+| `src/commands/ffmpeg.rs` | `transcode_to_mp4` (H.264 CRF‑26 or remux, progress events), `remux_to_mp4` (faststart remux), `generate_thumbnail`; self‑resolves the ffmpeg path (`.exe` on Windows), `pub(crate) ffmpeg_path` reused by streaming |
+| `src/commands/streaming.rs` | `start_stream` / `write_stream_chunk` / `stop_stream`: RTMP‑only ffmpeg (H.264/AAC → FLV), constant bitrate CBR, pure `build_ffmpeg_stream_args`, bounded‑buffer backpressure, `stream-status` events, SIGTERM‑then‑SIGKILL teardown; single managed session |
 | `src/commands/sensor_server.rs` | `start_sensor_server` / `stop_sensor_server`: tiny_http server for `POST /sensors` (readouts), `/series` (sparklines), `/text` (caption); bearer token, localhost/LAN bind, emits events to the HUD |
 | `src/commands/system_vitals.rs` | `get_system_vitals`: battery %, charging state, CPU %, memory %, uptime (via `sysinfo` + `starship-battery`); battery is null on machines without one |
 | `tauri.conf.json` | productName, window, bundle (icons, ffmpeg `externalBin`, entitlements), asset protocol |

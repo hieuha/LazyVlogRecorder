@@ -11,7 +11,7 @@
 - **Record / Stop:** click `● REC` / `■ STOP`, or press **Space**.
 - **Pause / Resume:** `❚❚ PAUSE` / `▶ RESUME` while recording (paused time is excluded from the timer and from the FIXED auto‑stop).
 - **Switch camera while recording:** pick another camera in the dropdown — recording continues; a short static + collapse transition is baked in. (Mic can't be changed while recording.)
-- After stop, a centered **PROCESSING** overlay shows transcode progress; the MP4 lands in your output folder and a `SAVED ▸ size · filename` pill appears next to `● REC` in the control bar (click it to reveal in folder).
+- After stop, a brief **PROCESSING** overlay shows progress (usually near-instant for hardware H.264 remux, or longer for transcode); the MP4 lands in your output folder and a `SAVED ▸ size · filename` pill appears next to `● REC` in the control bar (click it to reveal in folder).
 
 ## HUD
 
@@ -27,7 +27,8 @@ All buttons live in a black bar under the video (nothing overlays the camera). R
 
 - Log entry name, log number (auto‑increments), city override, **MISSION DAY** (leave blank for auto Y.M.D date; custom text auto‑sizes the panel), FIXED duration, **Record resolution** (720p = smaller files / 1080p = higher quality), **HUD layout** (`Martian` / `Minimal` / `Recon`), **HUD theme** (`Teal` / `Amber` / `Green` / `Crypt`), **Ship Vitals** (battery, CPU, RAM, uptime strip), output folder (default: `Movies/LazyCamHUD`), **Record audio**, **Mirror camera**, **CRT effect**, and **Change PIN**.
 - Layout and theme apply **live** as you pick them — no Save needed (they persist immediately); other settings apply on Save.
-- Recording is VP8/WebM at the chosen 16:9 resolution, transcoded to H.264 MP4 (CRF‑26). For smoother recording / smaller files, pick 720p or turn off **CRT effect**.
+- Recording prefers hardware H.264 (fast remux to MP4) when available; falls back to VP8/WebM transcode to H.264 (CRF‑26) on older browsers or with software encoding. Both at the chosen 16:9 resolution. For smoother recording / smaller files, pick 720p or turn off **CRT effect**.
+- **Streaming settings (Streaming tab):** FPS (default 30) and video bitrate (default 4500k); stream resolution now follows the record resolution (no separate stream height, since hardware remux cannot downscale). Constant bitrate for smooth RTMP. Software-encoder machines clamp to 720p.
 - **API Service** — enable a local HTTP endpoint to push your own sensor readings onto the right side of the HUD. Enabling/disabling and regenerating the token show a confirmation dialog first. **Regenerate token** persists and restarts the service immediately (no Save needed). Port and LAN access are configurable. See the Sensor API section in the README for the request format.
 
 ## Library (▤)

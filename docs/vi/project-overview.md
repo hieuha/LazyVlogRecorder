@@ -19,7 +19,7 @@
 | Mảng | Làm gì |
 |------|--------|
 | Quay | Chế độ FIXED (tự dừng) / FREE, pause/resume, đổi camera giữa chừng kèm hiệu ứng nhiễu/thu tròn |
-| Xuất | VP8/WebM (720p hoặc 1080p, 16:9) → MP4 (H.264/AAC, CRF‑26, faststart) qua ffmpeg bundle; stream ra file tạm; overlay tiến trình |
+| Xuất | Hardware H.264 (nếu hỗ trợ, capped 12 Mbps) → remux nhanh sang MP4 (faststart); fallback VP8/WebM → transcode H.264 (CRF‑26, faststart) trên browser cũ; cố định 720p hoặc 1080p 16:9; stream ra file tạm; overlay tiến trình |
 | HUD | Layout registry data‑driven (Martian, Minimal, Recon) + theme đổi được (Teal, Amber, Green, Crypt); gauge (độ ẩm, mưa, nhiệt độ), environment, vị trí, ngày SOL, đồng hồ, log entry, soundwave mic; tuỳ chọn Ship Vitals strip (pin, CPU, RAM, uptime) |
 | Hiệu ứng | Grain CRT, color grade, mirror — bật/tắt |
 | Dữ liệu | IP geolocation + Open‑Meteo; override city được geocode |

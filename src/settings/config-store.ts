@@ -26,8 +26,9 @@ export interface AppConfig {
   rtmpUrl: string; // base publish URL, e.g. rtmp://a.rtmp.youtube.com/live2
   streamKey: string; // secret; composed onto rtmpUrl in the backend, never logged
   saveLocalWhileLive: boolean; // also save a local MP4 while streaming
-  // Stream quality (OBS-style knobs; tune to your machine + upload speed).
-  streamHeight: number; // broadcast height (720/1080); downscaled from the canvas
+  // Stream quality (OBS-style knobs; tune to your machine + upload speed). The
+  // broadcast resolution follows recordHeight — the hardware path copies the
+  // canvas (no downscale), so a separate stream height couldn't be honored there.
   streamFps: number; // broadcast frame rate (24/30/60)
   streamBitrateKbps: number; // video bitrate — match your upload speed
   // Encoder preference for BOTH streaming and local recording. "auto"/"hardware"
@@ -60,7 +61,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   rtmpUrl: "",
   streamKey: "",
   saveLocalWhileLive: true,
-  streamHeight: 720, // 720p streams far smoother than 1080p; local save can still be 1080p
   streamFps: 30,
   streamBitrateKbps: 4500,
   streamEncoder: "auto",

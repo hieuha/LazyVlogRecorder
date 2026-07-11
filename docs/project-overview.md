@@ -19,7 +19,7 @@
 | Area | What it does |
 |------|--------------|
 | Recording | FIXED (auto‑stop) / FREE modes, pause/resume, mid‑recording camera switch with a static/collapse transition |
-| Export | VP8/WebM (720p or 1080p, 16:9) → MP4 (H.264/AAC, CRF‑26, faststart) via bundled ffmpeg; streamed to temp file; progress overlay |
+| Export | Hardware H.264 (when available, capped 12 Mbps) → fast remux to MP4 (faststart); fallback to VP8/WebM → H.264 transcode (CRF‑26, faststart) on older browsers; fixed 720p or 1080p 16:9; streamed to temp file; progress overlay |
 | HUD | Data‑driven layout registry (Martian, Minimal, Recon) + swappable themes (Teal, Amber, Green, Crypt); gauges (humidity, rain, temp), environment, location, SOL date, clock, log entry, live mic soundwave; opt‑in Ship Vitals strip (battery, CPU, RAM, uptime) |
 | Effects | CRT grain, color grade, mirror — toggleable |
 | Data | IP geolocation + Open‑Meteo weather; city override is forward‑geocoded |

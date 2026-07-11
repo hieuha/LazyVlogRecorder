@@ -73,7 +73,7 @@ function makeRefs(overrides: Partial<Record<string, unknown>> = {}): UseStreamin
     rtmpUrlRef: ref("rtmp://live.example/app"),
     streamKeyRef: ref("SECRET"),
     saveLocalRef: ref(false),
-    streamHeightRef: ref(720),
+    recordHeightRef: ref(1080),
     streamFpsRef: ref(30),
     streamBitrateKbpsRef: ref(4500),
     streamEncoderRef: ref("auto"),

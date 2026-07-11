@@ -23,7 +23,7 @@ Sensor API — số liệu ngoài + biểu đồ sparkline đẩy qua HTTP:
 - **HUD burned‑in** — webcam + HUD vẽ chung trên một `<canvas>` rồi ghi cùng nhau (không phải track overlay riêng).
 - **HUD dữ liệu thật** — độ ẩm, khả năng mưa, nhiệt độ, tình trạng thời tiết, vị trí lấy từ Open‑Meteo + IP geolocation; có thể override city (geocode để thời tiết theo đúng nơi đó).
 - **Chế độ quay** — `FIXED` (đếm ngược tự dừng) và `FREE` (dừng thủ công); pause/resume; đổi camera giữa chừng vẫn giữ recording, chèn hiệu ứng nhiễu + thu tròn về tâm.
-- **Xuất MP4** — quay VP8/WebM ở **720p hoặc 1080p** cố định (16:9), rồi transcode sang MP4 (H.264/AAC, CRF‑26, faststart) qua ffmpeg static bundle; ghi stream ra file tạm (RAM phẳng) kèm overlay tiến trình.
+- **Xuất MP4** — quay hardware H.264 (nếu hỗ trợ, capped 12 Mbps) rồi remux sang MP4 (faststart) — "processing" khi save gần như tức thì. Fallback sang VP8/WebM quay + transcode đầy đủ sang H.264 (CRF‑26, faststart) trên trình duyệt cũ hoặc khi buộc software encode. Cố định **720p hoặc 1080p** (16:9); ghi stream ra file tạm (RAM phẳng) kèm overlay tiến trình.
 - **Layout** — registry data‑driven; có sẵn `Martian` và `Minimal` (thêm layout = thêm 1 file).
 - **Hiệu ứng** — lớp grain CRT, color grade điện ảnh, lật gương camera — bật/tắt được.
 - **Ship Vitals** — dải nhỏ (opt‑in) đốt telemetry máy thật (pin, CPU, RAM, uptime) vào HUD dạng icon dưới soundwave; poll ~2s/lần, có ở mọi layout, mặc định tắt. Máy bàn không pin thì ẩn icon pin.

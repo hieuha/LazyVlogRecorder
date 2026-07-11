@@ -11,7 +11,7 @@
 - **Record / Stop:** bấm `● REC` / `■ STOP`, hoặc nhấn **Space**.
 - **Pause / Resume:** `❚❚ PAUSE` / `▶ RESUME` khi đang quay (thời gian pause bị trừ khỏi đồng hồ và khỏi auto‑stop của FIXED).
 - **Đổi camera khi đang quay:** chọn camera khác ở dropdown — recording vẫn tiếp tục; một đoạn nhiễu + thu tròn được chèn vào. (Không đổi mic khi đang quay.)
-- Sau khi stop, overlay **PROCESSING** giữa màn hình hiện tiến trình transcode; MP4 vào thư mục lưu và hiện pill `SAVED ▸ dung lượng · tên file` ngay cạnh `● REC` trong thanh điều khiển (bấm để mở thư mục).
+- Sau khi stop, overlay **PROCESSING** ngắn hiện tiến trình (thường gần tức thì cho remux H.264 hardware, hoặc lâu hơn khi transcode); MP4 vào thư mục lưu và hiện pill `SAVED ▸ dung lượng · tên file` ngay cạnh `● REC` trong thanh điều khiển (bấm để mở thư mục).
 
 ## HUD
 
@@ -27,7 +27,8 @@ Tất cả nút nằm trong thanh đen dưới video (không đè lên camera). 
 
 - Tên log entry, số log (tự tăng), city override, **MISSION DAY** (để trống = auto Y.M.D; text tuỳ chỉnh tự co dãn panel), thời lượng FIXED, **Record resolution** (720p = file nhỏ / 1080p = chất lượng cao), **HUD layout** (`Martian` / `Minimal` / `Recon`), **HUD theme** (`Teal` / `Amber` / `Green` / `Crypt`), **Ship Vitals** (strip pin, CPU, RAM, uptime), thư mục lưu (mặc định: `Movies/LazyCamHUD`), **Record audio**, **Mirror camera**, **CRT effect**, và **Change PIN**.
 - Layout và theme áp **live** ngay khi chọn — không cần Save (lưu tức thì); các cài đặt khác áp khi Save.
-- Quay ở VP8/WebM theo độ phân giải 16:9 đã chọn, rồi transcode sang H.264 MP4 (CRF‑26). Muốn quay mượt hơn / file nhỏ hơn: chọn 720p hoặc tắt **CRT effect**.
+- Quay ưu tiên hardware H.264 (remux nhanh sang MP4) khi hỗ trợ; fallback VP8/WebM transcode sang H.264 (CRF‑26) trên browser cũ hoặc encode software. Cả hai ở độ phân giải 16:9 đã chọn. Muốn quay mượt hơn / file nhỏ hơn: chọn 720p hoặc tắt **CRT effect**.
+- **Streaming tab (cài đặt stream):** FPS (default 30) và video bitrate (default 4500k); stream resolution giờ theo record resolution (không separate stream height, vì remux hardware không downscale). Constant bitrate cho RTMP mượt. Machine software-encoder clamp to 720p.
 - **API Service** — bật endpoint HTTP nội bộ để đẩy dữ liệu cảm biến lên góc phải HUD. Bật/tắt service và tạo lại token hiện dialog xác nhận. **Regenerate token** lưu và khởi động lại service tức thì (không cần Save). Port và cho phép LAN đều chỉnh được. Xem mục Sensor API trong README để biết định dạng request.
 
 ## Library (▤)

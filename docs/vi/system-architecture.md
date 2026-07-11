@@ -36,7 +36,8 @@
 - **Layout data‑driven.** Layout là danh sách widget spec khai báo (`{type, anchor, offset, …}`). Engine giải anchor → điểm canvas rồi gọi hàm vẽ widget. Thêm layout = 1 file + 1 dòng registry.
 - **Theme tách khỏi layout.** Theme chỉ là bảng màu (`HudTheme`) trong registry riêng; theme đang chọn được áp lên bất kỳ layout nào (`createHudLayer(layout, getState, themeOverride)`) → theme nào cũng dùng được với layout nào. Layout và theme đổi **live** ngay trong Settings (không cần Save) và lưu tức thì.
 - **Tách stream audio và video.** Đổi camera chỉ thay video; track mic mà MediaRecorder đang giữ vẫn sống → recording tiếp tục (hiệu ứng nhiễu + thu tròn về tâm che khoảng chuyển).
-- **Ghi RAM phẳng.** Chunk MediaRecorder (1s) stream ra file tạm qua `append_temp_chunk`; không giữ toàn bộ clip trong RAM; bytes qua IPC dạng `ArrayBuffer` thô (không `Array.from`).
+- **Ghi RAM phẳng.** Chunk MediaRecorder (1s) stream ra file tạm qua `append_temp_chunk`; không giữ toàn bộ clip trong RAM; bytes qua IPC dạng **binary octet-stream thô** (không JSON array), giảm tải main-thread. Quay cục bộ giữ **một handle file append mỗi take** (server-side, đóng trước export) thay vì mở lại mỗi chunk.
+- **Lỗi write được báo cáo.** Lỗi write đánh dấu bản quay lưu là possibly-incomplete thay vì im lặng; queue write quay bị giới hạn và tự dừng take nếu ổ đĩa tụt lại.
 
 ## Pipeline quay → xuất
 
@@ -57,8 +58,19 @@
 ## Độ phân giải & codec
 
 - Backing store của canvas là **khung 16:9 cố định** (720p hoặc 1080p theo settings), không theo kích thước cửa sổ — nên output ổn định và nhẹ. Preview letterbox cho vừa.
-- `MediaRecorder` ưu tiên **VP8** hơn VP9 (macOS không có hardware encode VP9; VP8 nhẹ hơn nhiều cho realtime), rồi transcode sang **H.264 CRF‑26 (preset medium)** cho MP4 nhỏ.
+- **Đường dẫn quay (auto):** nếu webview hỗ trợ hardware H.264 codec, `MediaRecorder` phát H.264 (capped 12 Mbps) và export là remux nhanh sang MP4 (faststart) — không transcode. Fallback sang VP8/WebM quay trên trình duyệt cũ hoặc khi buộc software encode, rồi transcode sang **H.264 CRF‑26 (preset medium)** cho MP4 nhỏ.
 - Vòng vẽ compositor giới hạn ~60fps để màn ProMotion 120Hz không vẽ HUD gấp đôi mỗi frame quay.
+
+## Go Live (RTMP/RTMPS)
+
+- `streaming.rs` spawn ONE long-lived **RTMP-only** ffmpeg mỗi session (Tauri managed state `Mutex<Option<StreamSession>>`, single-session). **Cùng** compositor canvas + mic `MediaRecorder` dùng cho quay local được tái sử dụng (500ms timeslice) — không recorder riêng.
+- **Đường dẫn encode (auto):** nếu webview record **H.264 trực tiếp** (`pickStreamH264Mime` — VideoToolbox macOS), recorder phát H.264 (capped 12 Mbps) và ffmpeg làm **`-c copy`** (remux chỉ, không decode/encode) — một encode hardware tránh đôi encode nặng (VP8 encode → decode → H.264) gây giật/đông capture. Nếu không fallback đọc WebM rồi **re-encode** sang H.264. Chế độ copy: stream là canvas resolution (không ffmpeg scale); local save là remux nhanh (`remux_to_mp4`) thay vì transcode. Phát **FLV trên RTMP(S)**. Xây arg là pure, unit-tested fn (`build_ffmpeg_stream_args`).
+- **Chất lượng user-tunable (OBS-style):** **FPS** (default 30, buộc bằng `-r`) và **video bitrate** (default 4500k) trong Settings → Streaming. Stream resolution theo record resolution (không separate stream resolution, vì đường `–c copy` remux không downscale được). Encode **constant bitrate (CBR)** (`-b:v` = `-maxrate`, 2s `-bufsize`) kèm `-realtime 1` (VideoToolbox) / `-tune zerolatency` (x264) cho live low-latency mượt, nên broadcaster thấy bitrate ổn định thay VBR tụt. GOP = `2×fps`. Machine software-encoder **clamp to 720p** (status flag `clamped`). Để giảm chi phí VP8 trung gian (browser software encode), live recorder cũng capture tại stream FPS và cap `videoBitsPerSecond` gần target.
+- **Save-local tách khỏi mạng.** Mỗi recorder chunk ghi hai cách độc lập trong `use-streaming.ts`: `append_temp_chunk` → file tạm local (full quality, mỗi chunk), và `write_stream_chunk` → RTMP ffmpeg (dropped dưới backpressure). Khi stop file tạm được remux hoặc transcode sang MP4 qua **cùng `transcode_to_mp4` / `remux_to_mp4` pipeline như quay local** và index trong library. Nên mạng lag/drop chỉ ảnh hưởng broadcast — không bao giờ bản lưu — và hai cái không chia encode nào throttled. (Thiết kế single-ffmpeg `tee` trước bị drop: nó corrupt H.264 extradata MP4 và làm file local bị mạng làm con tin.)
+- **Backpressure:** RTMP chunk chảy qua bounded channel (buffer ~8s) tới writer thread. Khi mạng không kịp buffer saturate → `stream-status: unstable` (kèm drop count); nếu saturate quá ~15s **while live** session **tự dừng** (`error`) thay vì RAM tăng vô hạn. Saturate khi connect handshake không tính (tránh false "network too slow").
+- **Status:** stderr parse local (`-progress pipe:2` → `frame=` đầu ⇒ `live`) thành `stream-status` event (`connecting|live|unstable|ended|error` + dropped + clamped). Raw stderr không bao giờ forward.
+- **Teardown:** `stop_stream` async + offload blocking wait/signal tới `spawn_blocking` (no UI freeze). `StreamSession::Drop` đóng stdin (clean EOF), escalate **SIGTERM** (graceful RTMP disconnect), rồi SIGKILL last resort — kill child trước join writer nên write parked backpressure không hang shutdown, no zombie.
+- **Secret:** stream key ở `config.json` (plaintext, same posture sensor API token). Compose vào RTMP URL **chỉ trong ffmpeg argv** — never logged, never event/stderr payload. Config-gated `GO LIVE` button (disabled + hint→Settings đến khi URL+key set) + confirm dialog guard accidental broadcast.
 
 ## Sensor API
 

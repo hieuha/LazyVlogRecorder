@@ -261,16 +261,6 @@ export function SettingsPanel(p: Props) {
 
         <div className="settings-row">
           <label className="settings-field">
-            STREAM RES
-            <select
-              value={c.streamHeight}
-              onChange={(e) => p.setField("streamHeight", Number(e.target.value))}
-            >
-              <option value={720}>720p (smoother)</option>
-              <option value={1080}>1080p (heavier)</option>
-            </select>
-          </label>
-          <label className="settings-field">
             STREAM FPS
             <select
               value={c.streamFps}
@@ -311,8 +301,9 @@ export function SettingsPanel(p: Props) {
           </select>
         </label>
         <div className="settings-hint">
-          Lower resolution / FPS / bitrate if the stream stutters. Match bitrate to your
-          upload speed (720p≈4500, 1080p≈6000). The local copy stays full quality.
+          The stream uses your record resolution. Lower FPS / bitrate (or record at 720p)
+          if the stream stutters. Match bitrate to your upload speed (720p≈4500,
+          1080p≈6000). The local copy stays full quality.
         </div>
 
         <div className="settings-field">

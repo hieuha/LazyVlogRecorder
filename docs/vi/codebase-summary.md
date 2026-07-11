@@ -13,8 +13,8 @@
 | `hud/widgets/*` | Widget Canvas2D: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, và các widget sensor API (`sensor-panel`, `series-panel` sparkline, `caption` typewriter + idle hex); `vitals-strip-widget` (icon pin, CPU, RAM, uptime) |
 | `hud/audio-analyser.ts` | Web Audio analyser → biên độ cuộn cho soundwave |
 | `data/*` | `geolocation-client`, `weather-client`, `metric-mapping`, `hud-data-source` (fetch + cache + geocode override) |
-| `recording/*` | `recorder` (MediaRecorder + stream chunk), `use-recorder` (mode, timer, pause/resume, transcode + progress), `recording-controls`, `save-client`, `output-naming` |
-| `settings/*` | `config-store` (Tauri Store; gồm độ phân giải quay + sensor API port/LAN/token), `settings-panel` |
+| `recording/*` | `recorder` (MediaRecorder + stream chunk), `use-recorder` (mode, timer, pause/resume, remux hoặc transcode + progress), `recording-controls`, `save-client`, `output-naming` |
+| `settings/*` | `config-store` (Tauri Store; gồm độ phân giải quay + sensor API port/LAN/token; không streamHeight), `settings-panel` |
 | `auth/*` | `pin-gate`, `pin-pad`, `change-pin-flow`, `auth-client` |
 | `library/*` | `entries-store`, `library-client`, `library-view` (lưới, player, xoá) |
 | `components/hud-select.tsx` | Dropdown tuỳ biến theo theme (thay `<select>` native) |
@@ -28,8 +28,8 @@
 | `src/commands/geo.rs` | `geo_locate` (IP), `geocode_city` (Open‑Meteo geocoding) |
 | `src/commands/weather.rs` | `get_weather` (Open‑Meteo current + hourly precip) |
 | `src/commands/recording_fs.rs` | `start_temp_recording`, `append_temp_chunk`, `move_temp`, `delete_files`, `resolve_out_dir` |
-| `src/commands/ffmpeg.rs` | `transcode_to_mp4` (H.264 CRF‑26, sự kiện progress), `generate_thumbnail`; tự tìm path ffmpeg (`.exe` trên Windows) |
-| `src/commands/sensor_server.rs` | `start_sensor_server` / `stop_sensor_server`: server tiny_http cho `POST /sensors` (readouts), `/series` (sparkline), `/text` (caption); bearer token, bind localhost/LAN, emit event lên HUD |
+| `src/commands/ffmpeg.rs` | `transcode_to_mp4` (H.264 CRF‑26 hoặc remux, sự kiện progress), `remux_to_mp4` (faststart remux), `generate_thumbnail`; tự tìm path ffmpeg (`.exe` trên Windows) |
+| `src/commands/streaming.rs` | `start_stream` / `write_stream_chunk` / `stop_stream`: RTMP-only ffmpeg (H.264/AAC → FLV), constant bitrate CBR, pure `build_ffmpeg_stream_args`, bounded-buffer backpressure, `stream-status` events, SIGTERM-then-SIGKILL teardown; single managed session |
 | `src/commands/system_vitals.rs` | `get_system_vitals`: % pin, trạng thái sạc, CPU %, RAM %, uptime (qua `sysinfo` + `starship-battery`); pin null trên máy không có |
 | `tauri.conf.json` | productName, window, bundle (icon, ffmpeg `externalBin`, entitlements), asset protocol |
 | `binaries/` | ffmpeg bundle theo target (git‑ignore, qua `scripts/fetch-ffmpeg.sh`) |

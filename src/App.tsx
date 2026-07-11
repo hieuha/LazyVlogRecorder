@@ -76,7 +76,6 @@ export default function App() {
   const rtmpUrlRef = useRef<string>(DEFAULT_CONFIG.rtmpUrl);
   const streamKeyRef = useRef<string>(DEFAULT_CONFIG.streamKey);
   const saveLocalWhileLiveRef = useRef<boolean>(DEFAULT_CONFIG.saveLocalWhileLive);
-  const streamHeightRef = useRef<number>(DEFAULT_CONFIG.streamHeight);
   const streamFpsRef = useRef<number>(DEFAULT_CONFIG.streamFps);
   const streamBitrateKbpsRef = useRef<number>(DEFAULT_CONFIG.streamBitrateKbps);
   const streamEncoderRef = useRef(DEFAULT_CONFIG.streamEncoder);
@@ -140,7 +139,7 @@ export default function App() {
     rtmpUrlRef,
     streamKeyRef,
     saveLocalRef: saveLocalWhileLiveRef,
-    streamHeightRef,
+    recordHeightRef,
     streamFpsRef,
     streamBitrateKbpsRef,
     streamEncoderRef,
@@ -398,7 +397,6 @@ export default function App() {
     rtmpUrlRef.current = cfg.rtmpUrl;
     streamKeyRef.current = cfg.streamKey;
     saveLocalWhileLiveRef.current = cfg.saveLocalWhileLive;
-    streamHeightRef.current = cfg.streamHeight;
     streamFpsRef.current = cfg.streamFps;
     streamBitrateKbpsRef.current = cfg.streamBitrateKbps;
     streamEncoderRef.current = cfg.streamEncoder;
@@ -623,7 +621,7 @@ export default function App() {
             <span className="live-spec">
               {/* Copy path streams the canvas resolution (no ffmpeg downscale); the
                   re-encode path uses the configured stream height (or 720 clamp). */}
-              {` · ${streaming.copyActive ? config.recordHeight : streaming.clamped ? 720 : config.streamHeight}p${config.streamFps} · ${config.streamBitrateKbps}k${streaming.copyActive ? " · hw" : ""} · ${renderFps} fps · ${renderMs}ms`}
+              {` · ${streaming.clamped ? 720 : config.recordHeight}p${config.streamFps} · ${config.streamBitrateKbps}k${streaming.copyActive ? " · hw" : ""} · ${renderFps} fps · ${renderMs}ms`}
               {streaming.dropped > 0 ? ` · drop ${streaming.dropped}` : ""}
             </span>
           </span>
@@ -631,7 +629,7 @@ export default function App() {
           // LIVE tab selected (not yet broadcasting): show the live settings here,
           // compact, so they're easy to eyeball before going live.
           <span className="cap-badge live-ready">
-            {`LIVE READY · ${config.streamHeight}p · ${config.streamFps}fps · ${config.streamBitrateKbps}k · ${config.streamEncoder === "software" ? "SW" : "HW"}`}
+            {`LIVE READY · ${config.recordHeight}p · ${config.streamFps}fps · ${config.streamBitrateKbps}k · ${config.streamEncoder === "software" ? "SW" : "HW"}`}
           </span>
         ) : (
           capability && (

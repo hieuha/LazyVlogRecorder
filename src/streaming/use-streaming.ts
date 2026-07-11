@@ -44,7 +44,7 @@ export interface UseStreamingRefs {
   rtmpUrlRef: React.MutableRefObject<string>;
   streamKeyRef: React.MutableRefObject<string>;
   saveLocalRef: React.MutableRefObject<boolean>;
-  streamHeightRef: React.MutableRefObject<number>;
+  recordHeightRef: React.MutableRefObject<number>; // stream res follows the record res
   streamFpsRef: React.MutableRefObject<number>;
   streamBitrateKbpsRef: React.MutableRefObject<number>;
   streamEncoderRef: React.MutableRefObject<StreamEncoderPref>;
@@ -218,7 +218,7 @@ export function useStreaming(refs: UseStreamingRefs) {
     const fps = refs.streamFpsRef.current;
     const bitrateKbps = refs.streamBitrateKbpsRef.current;
     try {
-      await startStream({ url, key, height: refs.streamHeightRef.current, fps, bitrateKbps, copy });
+      await startStream({ url, key, height: refs.recordHeightRef.current, fps, bitrateKbps, copy });
     } catch (err) {
       setError(String(err));
       setState("error");
@@ -233,6 +233,10 @@ export function useStreaming(refs: UseStreamingRefs) {
       timesliceMs: LIVE_TIMESLICE_MS,
       // Cap the throwaway VP8 near the target so it isn't over-encoded (CPU).
       videoBitsPerSecond: bitrateKbps * 1000,
+      // Constant bitrate: the hardware H.264 encoder otherwise runs VBR and
+      // undershoots the target on low-motion footage, so RTMP platforms (YouTube)
+      // see a bitrate far below the setting. CBR holds the target.
+      bitrateMode: "constant",
       onChunk: async (blob) => {
         const bytes = new Uint8Array(await blob.arrayBuffer());
         // RTMP write is FIRE-AND-FORGET: never await it here, so a stalled/dropped

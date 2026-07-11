@@ -42,6 +42,11 @@ export interface RecorderOptions {
   /** Fired once when the write queue overflows `maxPendingChunks`, so the
    *  controller can stop the take cleanly (the disk can't keep up). */
   onOverflow?: () => void;
+  /** Encoder rate-control mode. Streaming sets "constant" so the hardware encoder
+   *  holds `videoBitsPerSecond` instead of undershooting it on low-motion footage
+   *  (the default VBR treats the rate as a ceiling → RTMP platforms see a bitrate
+   *  far below the target). Local recording leaves it VBR for smaller files. */
+  bitrateMode?: "constant" | "variable";
 }
 
 export function createRecorder({
@@ -54,6 +59,7 @@ export function createRecorder({
   videoBitsPerSecond,
   maxPendingChunks = Infinity,
   onOverflow,
+  bitrateMode,
 }: RecorderOptions): Recorder {
   // Fixed capture rate: the browser resamples our rAF-throttled draws to a
   // constant output cadence, which delivers smoother than capture-on-change
@@ -64,10 +70,11 @@ export function createRecorder({
   if (audioTrack) tracks.push(audioTrack);
 
   const combined = new MediaStream(tracks);
-  const recorder = new MediaRecorder(
-    combined,
-    videoBitsPerSecond ? { mimeType, videoBitsPerSecond } : { mimeType },
-  );
+  // bitrateMode isn't in every lib.dom typings yet, so extend the options type.
+  const recOpts: MediaRecorderOptions & { bitrateMode?: "constant" | "variable" } = { mimeType };
+  if (videoBitsPerSecond) recOpts.videoBitsPerSecond = videoBitsPerSecond;
+  if (bitrateMode) recOpts.bitrateMode = bitrateMode;
+  const recorder = new MediaRecorder(combined, recOpts);
   // Chunks are processed strictly in order via a promise chain: chunk N+1 never
   // starts writing until chunk N finishes, so the temp file's byte order (and the
   // WebM stream) can't be corrupted by overlapping writes under load. `pending`
