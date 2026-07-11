@@ -16,6 +16,10 @@ export interface RecorderOptions {
   micStream: MediaStream | null;
   mimeType: string;
   onChunk: (chunk: Blob) => Promise<void>;
+  /** Capture rate for captureStream. A fixed rate lets the browser resample our
+   *  (rAF-jittered) draws to a constant output cadence — smoother for streaming
+   *  than capture-on-change, which propagates the draw jitter to viewers. */
+  fps?: number;
   /** Chunk cadence in ms. Local recording uses 1000; live streaming uses a
    *  shorter slice (~500) to trade a little overhead for lower latency and
    *  finer backpressure granularity. */
@@ -31,15 +35,14 @@ export function createRecorder({
   micStream,
   mimeType,
   onChunk,
+  fps = 30,
   timesliceMs = 1000,
   videoBitsPerSecond,
 }: RecorderOptions): Recorder {
-  // No frameRate arg → the browser captures a frame on each canvas *change*,
-  // i.e. exactly once per compositor draw (the compositor is capped to the
-  // capture fps while recording/streaming). This makes capture 1:1 with draws
-  // and removes the captureStream-vs-rAF two-clock race that duplicated/dropped
-  // frames and caused the live stutter.
-  const videoStream = canvas.captureStream();
+  // Fixed capture rate: the browser resamples our rAF-throttled draws to a
+  // constant output cadence, which delivers smoother than capture-on-change
+  // (that would carry the compositor's frame-timing jitter through to viewers).
+  const videoStream = canvas.captureStream(fps);
   const tracks: MediaStreamTrack[] = [videoStream.getVideoTracks()[0]];
   const audioTrack = micStream?.getAudioTracks()[0];
   if (audioTrack) tracks.push(audioTrack);

@@ -222,6 +222,7 @@ export function useStreaming(refs: UseStreamingRefs) {
       canvas,
       micStream: refs.micStreamRef.current,
       mimeType: mime,
+      fps, // fixed capture rate = the stream fps
       timesliceMs: LIVE_TIMESLICE_MS,
       // Cap the throwaway VP8 near the target so it isn't over-encoded (CPU).
       videoBitsPerSecond: bitrateKbps * 1000,

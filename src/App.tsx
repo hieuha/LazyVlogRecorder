@@ -114,6 +114,7 @@ export default function App() {
   const [destination, setDestination] = useState<Destination>("local");
   const [confirmLive, setConfirmLive] = useState(false);
   const [renderFps, setRenderFps] = useState(0); // live compositor draw rate for the badge
+  const [renderMs, setRenderMs] = useState(0); // per-frame draw time (render-cost readout)
   const [authReady, setAuthReady] = useState(false);
   const [pinMode, setPinMode] = useState<"set" | "enter">("enter");
   const [unlocked, setUnlocked] = useState(false);
@@ -336,7 +337,10 @@ export default function App() {
   // Poll the actual compositor render FPS while capturing (REC/LIVE badge).
   useEffect(() => {
     if (!rec.recording && streaming.state === "idle") return;
-    const id = window.setInterval(() => setRenderFps(compositorRef.current?.getFps() ?? 0), 500);
+    const id = window.setInterval(() => {
+      setRenderFps(compositorRef.current?.getFps() ?? 0);
+      setRenderMs(compositorRef.current?.getDrawMs() ?? 0);
+    }, 500);
     return () => clearInterval(id);
   }, [rec.recording, streaming.state]);
 
@@ -596,7 +600,7 @@ export default function App() {
             {rec.mode === "fixed" ? "-" : ""}
             {fmtClock(rec.mode === "fixed" ? Math.max(0, rec.durationSec - rec.elapsedSec) : rec.elapsedSec)}
             <span className="live-spec">
-              {` · ${renderFps} fps · ${config.streamEncoder === "software" ? "sw" : "hw"}`}
+              {` · ${renderFps} fps · ${renderMs}ms · ${config.streamEncoder === "software" ? "sw" : "hw"}`}
             </span>
           </span>
         ) : streaming.state !== "idle" ? (
@@ -607,7 +611,7 @@ export default function App() {
             <span className="live-spec">
               {/* Copy path streams the canvas resolution (no ffmpeg downscale); the
                   re-encode path uses the configured stream height (or 720 clamp). */}
-              {` · ${streaming.copyActive ? config.recordHeight : streaming.clamped ? 720 : config.streamHeight}p${config.streamFps} · ${config.streamBitrateKbps}k${streaming.copyActive ? " · hw" : ""} · ${renderFps} fps`}
+              {` · ${streaming.copyActive ? config.recordHeight : streaming.clamped ? 720 : config.streamHeight}p${config.streamFps} · ${config.streamBitrateKbps}k${streaming.copyActive ? " · hw" : ""} · ${renderFps} fps · ${renderMs}ms`}
               {streaming.dropped > 0 ? ` · drop ${streaming.dropped}` : ""}
             </span>
           </span>

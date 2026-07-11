@@ -37,6 +37,9 @@ export class CanvasCompositor {
   private fps = 0;
   private fpsCount = 0;
   private fpsWindowStart = 0;
+  // Smoothed per-frame draw time (ms). If this approaches the frame budget
+  // (1000/fps), the HUD/CRT compositing is the bottleneck, not capture/network.
+  private drawMs = 0;
   // While `now < transitionUntil` the frame is filled with TV static — used as a
   // "signal loss" transition when the camera is switched mid-recording.
   private transitionUntil = 0;
@@ -89,6 +92,11 @@ export class CanvasCompositor {
    *  stalls — shown in the REC/LIVE badge as a smoothness readout. */
   getFps(): number {
     return this.fps;
+  }
+
+  /** Smoothed per-frame draw time in ms (HUD + CRT compositing cost). */
+  getDrawMs(): number {
+    return Math.round(this.drawMs);
   }
 
   /** Cap the redraw rate. Called with the capture fps while recording/streaming
@@ -152,6 +160,7 @@ export class CanvasCompositor {
       this.fpsWindowStart = now;
     }
 
+    const drawStart = now;
     const { width, height } = this.canvas;
     const videoReady = this.video.readyState >= 2 && this.video.videoWidth > 0;
 
@@ -171,6 +180,9 @@ export class CanvasCompositor {
     // CRT grain over everything — skipped during a transition (the static burst
     // already provides grain, and this avoids generating two noise tiles/frame).
     if (this.crt && !inTransition) drawCrtOverlay(this.ctx, width, height);
+
+    // Smoothed draw-time (EMA) for the perf readout.
+    this.drawMs = this.drawMs * 0.9 + (performance.now() - drawStart) * 0.1;
   };
 
   // Full-frame grayscale static with slight jitter (signal-loss transition).
