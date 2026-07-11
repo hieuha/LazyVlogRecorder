@@ -53,6 +53,14 @@ export function drawGaugeArc(
   const cx = ox + valueW + 1.4 * u + r; // gap between the value and the ring
   const frac = fraction(g.value, g.min, g.max);
   drawDial(c, cx, cy, r, frac, 0.5 * u);
+  // Small solid circle behind the unit — a faint filled disc inside the ring.
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = theme.accent;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.74, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
   drawText(ctx, g.unit, cx, cy, {
     font: theme.fontMono,
     size: 2.0 * u, // fills the ring (r = 2.3u)
@@ -60,8 +68,6 @@ export function drawGaugeArc(
     weight: 600,
     align: "center",
     baseline: "middle",
-    glow: 0.3 * u,
-    glowColor: theme.accent,
   });
 }
 
