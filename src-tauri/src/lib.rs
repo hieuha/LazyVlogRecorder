@@ -10,6 +10,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_os::init())
         // Open append handles for in-progress recordings (one per temp file).
         .manage(commands::recording_fs::TempWriters::default());
 
@@ -38,6 +39,7 @@ pub fn run() {
             commands::ffmpeg::remux_to_mp4,
             commands::sensor_server::start_sensor_server,
             commands::sensor_server::stop_sensor_server,
+            commands::sensor_server::list_local_ips,
             commands::streaming::start_stream,
             commands::streaming::write_stream_chunk,
             commands::streaming::stop_stream,
@@ -61,6 +63,8 @@ pub fn run() {
         commands::library::save_thumbnail,
         commands::sensor_server::start_sensor_server,
         commands::sensor_server::stop_sensor_server,
+        commands::sensor_server::list_local_ips,
+        commands::system_vitals::get_system_vitals,
     ]);
 
     builder

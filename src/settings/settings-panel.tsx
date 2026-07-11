@@ -1,6 +1,8 @@
 // Settings modal. Edits a working copy of AppConfig; Save persists + applies.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { isIOS } from "../platform/platform";
 import { ChangePinFlow } from "../auth/change-pin-flow";
 import { generateToken, type AppConfig } from "./config-store";
 import { rtmpUrlWarning } from "./rtmp-url";
@@ -21,17 +23,42 @@ export function SettingsPanel(p: Props) {
   const [changingPin, setChangingPin] = useState(false);
   const [pinMsg, setPinMsg] = useState("");
   const [showKey, setShowKey] = useState(false); // reveal the masked stream key
+  // Addresses the Sensor API can bind to (loopback + wildcards + detected LAN
+  // IPs), fetched from the backend so the user can pick where to expose it.
+  const [bindHosts, setBindHosts] = useState<string[]>([]);
   // Confirm dialog for network-facing / destructive API Service actions.
   const [confirm, setConfirm] = useState<
     null | { title: string; body: string; onYes: () => void }
   >(null);
+
+  useEffect(() => {
+    let alive = true;
+    void invoke<string[]>("list_local_ips")
+      .then((ips) => alive && setBindHosts(ips))
+      .catch(() => alive && setBindHosts(["127.0.0.1", "0.0.0.0"]));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Ensure the currently-saved host is selectable even if it's no longer a live
+  // interface (e.g. a LAN IP from a previous network).
+  const hostOptions = bindHosts.includes(c.sensorApiBindHost)
+    ? bindHosts
+    : [c.sensorApiBindHost, ...bindHosts];
+
+  function hostLabel(host: string): string {
+    if (host === "127.0.0.1") return "127.0.0.1 (this device only)";
+    if (host === "0.0.0.0") return "0.0.0.0 (all interfaces · LAN)";
+    return `${host} (LAN)`;
+  }
 
   // Enabling/disabling the API Service opens a network endpoint — warn first.
   function askToggleApi(on: boolean) {
     setConfirm({
       title: on ? "ENABLE API SERVICE?" : "DISABLE API SERVICE?",
       body: on
-        ? "Opens a local HTTP service so other apps or devices can push readings, sparklines and captions onto the HUD. With “Allow LAN devices” on, anyone on your network who has the token can reach it. Applies when you press SAVE."
+        ? "Opens a local HTTP service so other apps or devices can push readings, sparklines and captions onto the HUD. Bound to a network host (0.0.0.0 or a LAN IP), anyone on your network who has the token can reach it. Applies when you press SAVE."
         : "Stops the API Service; externally‑pushed sensor data will no longer appear on the HUD. Applies when you press SAVE.",
       onYes: () => {
         p.setField("sensorApiEnabled", on);
@@ -194,26 +221,33 @@ export function SettingsPanel(p: Props) {
 
         {c.sensorApiEnabled && (
           <>
-            <label className="settings-field">
-              PORT
-              <input
-                type="number"
-                min={1}
-                max={65535}
-                value={c.sensorApiPort}
-                onChange={(e) =>
-                  p.setField("sensorApiPort", Math.min(65535, Math.max(1, Number(e.target.value) || 1)))
-                }
-              />
-            </label>
-            <label className="settings-check">
-              <input
-                type="checkbox"
-                checked={c.sensorApiLan}
-                onChange={(e) => p.setField("sensorApiLan", e.target.checked)}
-              />
-              Allow LAN devices
-            </label>
+            <div className="settings-api-row">
+              <label className="settings-field settings-api-port">
+                PORT
+                <input
+                  type="number"
+                  min={1}
+                  max={65535}
+                  value={c.sensorApiPort}
+                  onChange={(e) =>
+                    p.setField("sensorApiPort", Math.min(65535, Math.max(1, Number(e.target.value) || 1)))
+                  }
+                />
+              </label>
+              <label className="settings-field settings-api-host">
+                BIND HOST
+                <select
+                  value={c.sensorApiBindHost}
+                  onChange={(e) => p.setField("sensorApiBindHost", e.target.value)}
+                >
+                  {hostOptions.map((h) => (
+                    <option key={h} value={h}>
+                      {hostLabel(h)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
             <div className="settings-field">
               TOKEN (Bearer)
@@ -226,6 +260,11 @@ export function SettingsPanel(p: Props) {
           </>
         )}
 
+        {/* Go Live / streaming is desktop-only (iOS can't spawn the ffmpeg the
+            RTMP path needs), so hide the whole section — including the shared
+            encoder selector — on iOS. */}
+        {!isIOS && (
+        <>
         <div className="settings-field">
           STREAMING (Go Live · RTMP)
           <input
@@ -309,6 +348,8 @@ export function SettingsPanel(p: Props) {
           if the stream stutters. Match bitrate to your upload speed (720p≈4500,
           1080p≈6000). The local copy stays full quality.
         </div>
+        </>
+        )}
 
         <div className="settings-field">
           SECURITY

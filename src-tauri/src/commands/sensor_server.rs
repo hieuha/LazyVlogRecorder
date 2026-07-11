@@ -86,23 +86,26 @@ struct Running {
 // Single running instance; replaced when settings change.
 static SERVER: Mutex<Option<Running>> = Mutex::new(None);
 
-/// Start (or restart) the sensor server. Binds `0.0.0.0` when `bind_lan`, else
-/// `127.0.0.1`. When `token` is non-empty it is required on every request.
+/// Start (or restart) the sensor server, bound to `bind_host:port`. `127.0.0.1`
+/// keeps it on the loopback (this device only); any other host (`0.0.0.0` or a
+/// specific LAN IP) exposes it on the network and therefore requires a token.
+/// When `token` is non-empty it is required on every request.
 #[tauri::command]
 pub fn start_sensor_server(
     app: AppHandle,
     port: u16,
-    bind_lan: bool,
+    bind_host: String,
     token: String,
 ) -> Result<(), String> {
     stop_sensor_server(); // enforce a single instance
 
+    let host = if bind_host.trim().is_empty() { "127.0.0.1".to_string() } else { bind_host };
+    let network_facing = host != "127.0.0.1" && host != "::1";
     // Defense in depth: never expose an unauthenticated endpoint to the network.
-    if bind_lan && token.is_empty() {
-        return Err("LAN mode requires a token".into());
+    if network_facing && token.is_empty() {
+        return Err("Binding to a network address requires a token".into());
     }
 
-    let host = if bind_lan { "0.0.0.0" } else { "127.0.0.1" };
     let addr = format!("{host}:{port}");
     let server = Server::http(&addr).map_err(|e| format!("cannot bind {addr}: {e}"))?;
     let server = Arc::new(server);
@@ -127,6 +130,25 @@ pub fn start_sensor_server(
 
     *SERVER.lock().unwrap() = Some(Running { server, alive, handle });
     Ok(())
+}
+
+/// Addresses the sensor server can bind to: the wildcards (`127.0.0.1` loopback,
+/// `0.0.0.0` all interfaces) plus each detected IPv4 interface address (e.g. the
+/// Wi‑Fi LAN IP). Shown next to the port so you know where to POST readings from.
+#[tauri::command]
+pub fn list_local_ips() -> Vec<String> {
+    let mut out = vec!["127.0.0.1".to_string(), "0.0.0.0".to_string()];
+    if let Ok(ifaces) = local_ip_address::list_afinet_netifas() {
+        for (_name, ip) in ifaces {
+            if let std::net::IpAddr::V4(v4) = ip {
+                let s = v4.to_string();
+                if !v4.is_loopback() && !out.contains(&s) {
+                    out.push(s);
+                }
+            }
+        }
+    }
+    out
 }
 
 /// Stop the server if one is running (no-op otherwise).

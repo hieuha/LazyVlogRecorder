@@ -4,6 +4,7 @@
 // LIVE/REC badges live in the top-right (see App).
 
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { isIOS } from "../platform/platform";
 import type { RecMode } from "./use-recorder";
 import type { SavedFile } from "./save-client";
 
@@ -40,7 +41,9 @@ export function RecordingControls(p: Props) {
   return (
     <div className="rec-panel">
       <div className="rec-row">
-        {idle && (
+        {/* Go Live is desktop-only, so on iOS there's no LOCAL/LIVE choice —
+            hide the toggle (destination stays "local"). */}
+        {idle && !isIOS && (
           <div className="rec-toggle dest-toggle" data-dest={p.destination}>
             <button
               className={`seg ${p.destination === "local" ? "active" : ""}`}

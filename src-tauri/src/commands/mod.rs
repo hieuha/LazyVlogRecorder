@@ -14,9 +14,7 @@ pub mod recording_fs;
 pub mod sensor_server;
 #[cfg(desktop)]
 pub mod streaming;
-// system_vitals reads battery via starship-battery, whose darwin backend links
-// IOKit (IOMasterPort/IOServiceMatching) — available on macOS but not iOS, where
-// it fails at link time. Ship Vitals is desktop-only; iOS hides the UI toggle.
-#[cfg(desktop)]
+// Ship Vitals (CPU/RAM/uptime via sysinfo — cross-platform; battery via
+// starship-battery — non-iOS only, see system_vitals::read_battery).
 pub mod system_vitals;
 pub mod weather;
