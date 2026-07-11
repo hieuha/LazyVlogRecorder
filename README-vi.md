@@ -1,133 +1,76 @@
 # LazyCamHUD
 
-> 🇬🇧 [English version](./README.md)
+> 🇬🇧 [English](./README.md)
 
-**LazyCamHUD** (tên hiển thị: *Lazy Camera HUD*) là ứng dụng desktop quay vlog bằng webcam, **đốt (burn) HUD sci‑fi kiểu phim *The Martian* thẳng vào video** — mission day, gauge thời tiết trực tiếp, vị trí, soundwave mic realtime và lớp CRT. Viết bằng **Tauri 2 + React/TypeScript**.
+_Một cuốn nhật ký video mỗi ngày — một gương mặt, một giọng nói, một ngày tháng — được burn lớp HUD phi thuyền và truyền đi từ một nơi rất xa._
 
-**Phiên bản:** 0.6.1 · **Nền tảng:** macOS + Windows (Linux hoãn sau)
+## Log entry
 
-## Ảnh chụp màn hình
+Có những ngày mình thấy như đang ở nơi rất xa, trôi giữa các vì sao trong một trạm nghiên cứu bỏ hoang, còn những người mình thương vẫn ở lại Trái Đất.
 
-| Khoá PIN | Đang quay |
+LazyCamHUD là cách mình ghi lại tín hiệu ấy. Mỗi đoạn clip là một bản log trong ngày, với lớp HUD kiểu bảng điều khiển tàu vũ trụ burn thẳng vào khung hình — mission day, thời tiết nơi mình đang đứng, một soundwave nhấp nhô mỗi khi mình cất tiếng. Tín hiệu nhiễu, hơi trễ, không hoàn hảo. Nhưng là thật.
+
+Một ngày nào đó, nhiều năm sau, con gái mình sẽ mở những đoạn này ra và biết chính xác bố đã ở đâu — và rằng suốt thời gian đó, bố vẫn luôn nghĩ về con.
+
+> Câu chuyện đằng sau: [**Tôi đang mắc kẹt ở Sao Hỏa**](https://hatrunghieu.com/posts/lazycamhud-toi-dang-mac-ket-o-sao-hoa)
+
+Và đây — công cụ để làm ra cuốn nhật ký đó. Xây bằng **Tauri 2 + React/TypeScript**.
+
+**Phiên bản:** 0.6.5 · **Nền tảng:** macOS (Windows đã code nhưng chưa kiểm chứng · Linux tạm hoãn)
+
+## Ảnh chụp
+
+| Khóa PIN | Đang quay |
 | --- | --- |
-| ![Màn khoá PIN](./docs/screenshot/1-lockscreen.webp) | ![Đang quay với HUD burned‑in](./docs/screenshot/2-video-recorder.webp) |
+| ![Màn khóa PIN](./docs/screenshot/1-lockscreen.webp) | ![Quay với HUD burn-in](./docs/screenshot/2-video-recorder.webp) |
 | **Xử lý → MP4** | **Thư viện log** |
-| ![Overlay tiến trình transcode](./docs/screenshot/3-processing-video.webp) | ![Lưới thư viện log](./docs/screenshot/4-logs-library.webp) |
+| ![Overlay xử lý](./docs/screenshot/3-processing-video.webp) | ![Thư viện log](./docs/screenshot/4-logs-library.webp) |
 
-Sensor API — số liệu ngoài + biểu đồ sparkline đẩy qua HTTP:
+![Sensor + sparkline trên HUD](./docs/screenshot/5-sensor-series-chart.webp)
 
-![Số liệu sensor và biểu đồ sparkline trên HUD](./docs/screenshot/5-sensor-series-chart.webp)
+## Nó làm được gì
 
-## Tính năng
+- **HUD burn-in** — webcam + HUD trên cùng một `<canvas>`, quay chung (không phải track overlay riêng).
+- **Dữ liệu trực tiếp** — thời tiết (độ ẩm / mưa / nhiệt độ / điều kiện) + vị trí từ Open‑Meteo + IP geo; ghi đè thành phố.
+- **Quay** — chế độ `FIXED` (tự dừng) / `FREE`, pause/resume, đổi camera giữa chừng với hiệu ứng mất tín hiệu. Cố định **720p/1080p**. Quay **H.264 phần cứng → remux ra MP4** (lưu gần như tức thì); dự phòng VP8 + transcode.
+- **Go Live (RTMP/RTMPS)** — phát canvas burn-in + mic (YouTube/Facebook/Twitch) qua ffmpeg bundled, tùy chọn **lưu MP4 local song song** mà mạng lag không làm hỏng được. Chỉnh FPS/bitrate; độ phân giải stream = độ phân giải record; tự dừng khi mạng chậm kéo dài. Stream key lưu cục bộ, không log.
+- **Layout / Theme** — data-driven; `Martian`, `Minimal`, `Recon` × `Teal`, `Amber`, `Green`, `Crypt`. Thêm 1 cái = 1 file/entry.
+- **Hiệu ứng** — lớp phủ lưới + hạt CRT, color grade điện ảnh, lật gương camera.
+- **Sensor API** — đẩy readout, sparkline, caption của bạn lên HUD qua HTTP cục bộ ([bên dưới](#sensor-api)).
+- **Ship Vitals** — dải pin/CPU/RAM/uptime (tùy chọn) · **Thư viện** — lưới thumbnail, player trong app, xóa · **Khóa PIN** — cổng 4 số.
+- **Phím tắt** — `Space` bật/tắt quay · `1`–`4` đổi camera.
 
-- **HUD burned‑in** — webcam + HUD vẽ chung trên một `<canvas>` rồi ghi cùng nhau (không phải track overlay riêng).
-- **HUD dữ liệu thật** — độ ẩm, khả năng mưa, nhiệt độ, tình trạng thời tiết, vị trí lấy từ Open‑Meteo + IP geolocation; có thể override city (geocode để thời tiết theo đúng nơi đó).
-- **Chế độ quay** — `FIXED` (đếm ngược tự dừng) và `FREE` (dừng thủ công); pause/resume; đổi camera giữa chừng vẫn giữ recording, chèn hiệu ứng nhiễu + thu tròn về tâm.
-- **Xuất MP4** — quay hardware H.264 (nếu hỗ trợ, capped 12 Mbps) rồi remux sang MP4 (faststart) — "processing" khi save gần như tức thì. Fallback sang VP8/WebM quay + transcode đầy đủ sang H.264 (CRF‑26, faststart) trên trình duyệt cũ hoặc khi buộc software encode. Cố định **720p hoặc 1080p** (16:9); ghi stream ra file tạm (RAM phẳng) kèm overlay tiến trình.
-- **Layout** — registry data‑driven; có sẵn `Martian` và `Minimal` (thêm layout = thêm 1 file).
-- **Hiệu ứng** — lớp grain CRT, color grade điện ảnh, lật gương camera — bật/tắt được.
-- **Ship Vitals** — dải nhỏ (opt‑in) đốt telemetry máy thật (pin, CPU, RAM, uptime) vào HUD dạng icon dưới soundwave; poll ~2s/lần, có ở mọi layout, mặc định tắt. Máy bàn không pin thì ẩn icon pin.
-- **Khoá PIN** — mã 4 số khi mở app, luồng đổi PIN, nút lock.
-- **Library** — mỗi bản quay được index kèm thumbnail; xem dạng lưới, player trong app, mở thư mục, xoá.
-- **Settings bền** — tên, số log (tự tăng), thư mục lưu, thời lượng, độ phân giải (720p/1080p), layout, audio, mirror, CRT, Ship Vitals, city, tuỳ chỉnh MISSION DAY.
-
-## Chạy nhanh (dev)
+## Bắt đầu nhanh
 
 ```bash
 npm install
-./scripts/fetch-ffmpeg.sh   # macOS: tải ffmpeg bundle theo arch
-npm run tauri dev
+./scripts/fetch-ffmpeg.sh          # Windows: scripts\fetch-ffmpeg.ps1
+npm run tauri dev                  # hoặc: npm run tauri build
 ```
 
-Trên **Windows**, tải ffmpeg bằng script PowerShell:
-
-```powershell
-npm install
-powershell -ExecutionPolicy Bypass -File scripts\fetch-ffmpeg.ps1
-npm run tauri dev
-```
-
-> Linux tạm hoãn — WebKitGTK hỗ trợ `MediaRecorder`/`captureStream` không ổn định nên việc quay không đáng tin cậy.
-
-## Build
-
-```bash
-npm run tauri build
-```
-
-Kết quả ở `src-tauri/target/release/bundle/` (`.app` + `.dmg` trên macOS). Xem [docs/deployment-guide.md](./docs/deployment-guide.md).
+`build` xuất ra `src-tauri/target/release/bundle/` (`.app` + `.dmg` trên macOS).
 
 ## Sensor API
 
-Bật **Settings → API Service** để đẩy dữ liệu cảm biến của bạn lên góc phải HUD (burn vào video). App chạy một endpoint HTTP nhỏ:
+Bật **Settings → API Service**, rồi đẩy text hiển thị lên HUD (burn vào video):
 
 ```bash
-curl -X POST http://<host>:1337/sensors \
-  -H "Authorization: Bearer <token>" \
-  -d '{"items":[{"label":"CO2","value":"812","unit":"ppm"},{"label":"HR","value":"78","unit":"bpm"}]}'
+curl -X POST http://<host>:1337/sensors -H "Authorization: Bearer <token>" \
+  -d '{"items":[{"label":"CO2","value":"812","unit":"ppm"}]}'
 ```
 
-- Phản hồi: `200 {"ok":true,"count":N}` khi thành công; `401` sai token, `400` JSON lỗi, `413` quá lớn (đều kèm `error` JSON). Thêm `-i` vào `curl` để thấy status.
-- Port, cho phép LAN, và token đều chỉnh trong Settings.
-- Chế độ LAN bind `0.0.0.0` và **bắt buộc** token; nếu không thì bind `127.0.0.1`.
-- Giới hạn: ≤ 6 dòng; `label`/`value`/`unit` cắt còn 12/10/6 ký tự; body ≤ 8 KB.
-- Dòng mờ đi sau ~10s không cập nhật. Chỉ nhận text hiển thị — không thực thi gì.
-- `GET /healthz` (không cần token) → `{"ok":true,...}` để kiểm tra kết nối/sống.
+- `POST /sensors` readout · `POST /series` điểm sparkline · `POST /text` caption typewriter · `GET /healthz` kiểm tra sống.
+- Token + port + LAN trong Settings (LAN bind `0.0.0.0` và **bắt buộc** token). Giới hạn: ≤6 item, body ≤8 KB, chỉ nhận text hiển thị.
+- Thử: `node scripts/mock-sonde.mjs <token>`. Tham khảo đầy đủ: **[docs/sensor-api.md](./docs/sensor-api.md)**.
 
-### Chuỗi thời gian (sparkline)
+## Lưu trữ & bảo mật (macOS)
 
-`POST /series` mỗi lần một điểm số; app giữ ~120 điểm gần nhất theo `label` và vẽ đường mini (tự co giãn, x = thời gian, y = giá trị):
-
-```bash
-curl -X POST http://<host>:1337/series \
-  -H "Authorization: Bearer <token>" \
-  -d '{"label":"ALT","value":12345,"unit":"m"}'
-```
-
-### Caption (typewriter)
-
-`POST /text` hiện một dòng text tự do gần đáy, gõ ra kiểu typewriter:
-
-```bash
-curl -X POST http://<host>:1337/text \
-  -H "Authorization: Bearer <token>" \
-  -d '{"text":"RS41 · Y0532363"}'
-```
-
-### Thử nhanh bằng script mock
-
-Mô phỏng bóng thám không (lat/lon, sparkline độ cao, khoảng cách, pin, caption tên):
-
-```bash
-node scripts/mock-sonde.mjs <token>   # chuyến bay tổng hợp
-# phát lại log RS41 thật (đã kèm sẵn):
-node scripts/replay-sonde-log.mjs scripts/20260708-115249_Y0532363_RS41_403000_sonde.log <token>
-```
-
-Tài liệu đầy đủ: **[docs/vi/sensor-api.md](./docs/vi/sensor-api.md)**.
-
-## Nơi lưu dữ liệu (macOS)
-
-Theo bundle identifier `com.hatrunghieu.lazycamhud`:
-
-- `~/Library/Application Support/com.hatrunghieu.lazycamhud/` — `config.json`, `entries.json`, `auth.json` (PIN)
-- `~/Library/Caches/com.hatrunghieu.lazycamhud/thumbs/` — thumbnail
-- `~/Movies/LazyCamHUD/` — video (hoặc thư mục bạn chọn)
-
-## Lưu ý bảo mật
-
-PIN chỉ là **khoá UX**, không phải mã hoá — video lưu **không mã hoá** trên disk. Ai truy cập được ổ đĩa vẫn đọc được.
+Dưới `com.hatrunghieu.lazycamhud`: config/entries/PIN trong Application Support, thumbnail trong Caches, video trong `~/Movies/LazyCamHUD/` (hoặc thư mục bạn chọn). PIN là **khóa UX, không phải mã hóa** — video lưu **không mã hóa**.
 
 ## Tài liệu
 
-- [Tổng quan dự án](./docs/vi/project-overview.md)
-- [Kiến trúc hệ thống](./docs/vi/system-architecture.md)
-- [Tóm tắt codebase](./docs/vi/codebase-summary.md)
-- [Hướng dẫn sử dụng](./docs/vi/usage-guide.md)
-- [Sensor API](./docs/vi/sensor-api.md)
-- [Hướng dẫn triển khai](./docs/vi/deployment-guide.md)
-- English: [docs/](./docs/)
+[Tổng quan](./docs/vi/project-overview.md) · [Kiến trúc](./docs/vi/system-architecture.md) · [Codebase](./docs/vi/codebase-summary.md) · [Hướng dẫn dùng](./docs/vi/usage-guide.md) · [Sensor API](./docs/sensor-api.md) · [English](./README.md)
 
 ## Công nghệ
 
-Tauri 2 (Rust) · React 19 + TypeScript + Vite · Canvas2D HUD · Web Audio · Open‑Meteo · ffmpeg bundle.
+Tauri 2 (Rust) · React 19 + TypeScript + Vite · Canvas2D HUD · Web Audio · Open‑Meteo · ffmpeg bundled.

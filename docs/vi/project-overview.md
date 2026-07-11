@@ -4,7 +4,7 @@
 
 - **Tên hiển thị:** Lazy Camera HUD
 - **Bundle id:** `com.hatrunghieu.lazycamhud`
-- **Phiên bản:** 0.6.1
+- **Phiên bản:** 0.6.5
 - **Nền tảng:** macOS + Windows (Linux hoãn sau)
 - **Công nghệ:** Tauri 2 (Rust) + React 19 + TypeScript + Vite
 
@@ -18,12 +18,12 @@
 
 | Mảng | Làm gì |
 |------|--------|
-| Quay | Chế độ FIXED (tự dừng) / FREE, pause/resume, đổi camera giữa chừng kèm hiệu ứng nhiễu/thu tròn |
+| Quay | Chế độ FIXED (tự dừng) / FREE, pause/resume, đổi camera giữa chừng via **phím 1–4** hoặc dropdown kèm hiệu ứng nhiễu/thu tròn |
 | Xuất | Hardware H.264 (nếu hỗ trợ, capped 12 Mbps) → remux nhanh sang MP4 (faststart); fallback VP8/WebM → transcode H.264 (CRF‑26, faststart) trên browser cũ; cố định 720p hoặc 1080p 16:9; stream ra file tạm; overlay tiến trình |
-| HUD | Layout registry data‑driven (Martian, Minimal, Recon) + theme đổi được (Teal, Amber, Green, Crypt); gauge (độ ẩm, mưa, nhiệt độ), environment, vị trí, ngày SOL, đồng hồ, log entry, soundwave mic; tuỳ chọn Ship Vitals strip (pin, CPU, RAM, uptime) |
-| Hiệu ứng | Grain CRT, color grade, mirror — bật/tắt |
+| HUD | Layout registry data‑driven (Martian, Minimal, Recon) + theme đổi được (Teal, Amber, Green, Crypt); gauge (độ ẩm có ring đơn vị trên cơ sở chung, mưa, nhiệt độ), environment, vị trí, ngày SOL, đồng hồ, log entry, soundwave mic; lưới toàn khung; tuỳ chọn Ship Vitals strip (pin, CPU, RAM, uptime) |
+| Hiệu ứng | Grain CRT, color grade, mirror, lưới — bật/tắt |
 | Dữ liệu | IP geolocation + Open‑Meteo; override city được geocode |
-| Sensor API | Endpoint HTTP nội bộ (`/sensors`, `/series`, `/text`) đẩy readouts, biểu đồ sparkline, và caption typewriter lên HUD; token + bind LAN; kèm script mô phỏng bóng thám không |
+| Sensor API | Endpoint HTTP nội bộ (`/sensors`, `/series`, `/text`) đẩy readouts, biểu đồ sparkline, và caption typewriter lên HUD; token + bind LAN; kèm script mô phỏng bóng thám không; auto-start ổn định |
 | Auth | Khoá PIN 4 số, đổi PIN, nút lock |
 | Library | Bản quay được index kèm thumbnail; lưới, player trong app, mở thư mục, xoá |
 | Settings | Lưu qua Tauri Store (tên, số log, thư mục, thời lượng, độ phân giải, layout, theme, Ship Vitals toggle, audio, mirror, CRT, city) |

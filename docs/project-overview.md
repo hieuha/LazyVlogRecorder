@@ -4,7 +4,7 @@
 
 - **Display name:** Lazy Camera HUD
 - **Bundle id:** `com.hatrunghieu.lazycamhud`
-- **Version:** 0.6.1
+- **Version:** 0.6.5
 - **Targets:** macOS + Windows (Linux deferred)
 - **Stack:** Tauri 2 (Rust) + React 19 + TypeScript + Vite
 
@@ -18,12 +18,12 @@
 
 | Area | What it does |
 |------|--------------|
-| Recording | FIXED (auto‑stop) / FREE modes, pause/resume, mid‑recording camera switch with a static/collapse transition |
+| Recording | FIXED (auto‑stop) / FREE modes, pause/resume, mid‑recording camera switch via **1–4 hotkeys** or dropdown with a static/collapse transition |
 | Export | Hardware H.264 (when available, capped 12 Mbps) → fast remux to MP4 (faststart); fallback to VP8/WebM → H.264 transcode (CRF‑26, faststart) on older browsers; fixed 720p or 1080p 16:9; streamed to temp file; progress overlay |
-| HUD | Data‑driven layout registry (Martian, Minimal, Recon) + swappable themes (Teal, Amber, Green, Crypt); gauges (humidity, rain, temp), environment, location, SOL date, clock, log entry, live mic soundwave; opt‑in Ship Vitals strip (battery, CPU, RAM, uptime) |
-| Effects | CRT grain, color grade, mirror — toggleable |
+| HUD | Data‑driven layout registry (Martian, Minimal, Recon) + swappable themes (Teal, Amber, Green, Crypt); gauges (humidity with unit ring on shared baseline, rain, temp), environment, location, SOL date, clock, log entry, live mic soundwave; full‑frame grid mesh overlay; opt‑in Ship Vitals strip (battery, CPU, RAM, uptime) |
+| Effects | CRT grain, color grade, mirror, grid overlay — toggleable |
 | Data | IP geolocation + Open‑Meteo weather; city override is forward‑geocoded |
-| Sensor API | Local HTTP endpoint (`/sensors`, `/series`, `/text`) pushes custom readouts, sparkline charts, and a typewriter caption onto the HUD; token + LAN bind; weather‑balloon simulators bundled |
+| Sensor API | Local HTTP endpoint (`/sensors`, `/series`, `/text`) pushes custom readouts, sparkline charts, and a typewriter caption onto the HUD; token + LAN bind; weather‑balloon simulators bundled; auto-starts reliably |
 | Auth | 4‑digit PIN gate, change PIN, lock button |
 | Library | Indexed recordings with thumbnails; grid, in‑app player, reveal, delete |
 | Settings | Persisted via Tauri Store (name, log #, folder, duration, resolution, layout, theme, audio, mirror, CRT, city, Ship Vitals toggle) |

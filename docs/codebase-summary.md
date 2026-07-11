@@ -10,7 +10,7 @@
 | `hud/layout-engine.ts` | Resolves widget anchors → canvas points (incl. top/bottom‑center), dispatches to widgets |
 | `hud/layouts/*.layout.ts` | Declarative layouts (`martian`, `minimal`, `recon`) + `layout-registry.ts` |
 | `hud/theme.ts` · `hud/theme-registry.ts` | HUD palettes (`martianTheme` teal, `marsAmberTheme`, `greenHackerTheme`, `cryptTheme` crimson) + selectable-theme registry; a theme restyles any layout |
-| `hud/widgets/*` | Canvas2D widgets: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, and the sensor API widgets (`sensor-panel`, `series-panel` sparklines, `caption` typewriter + idle hex); `vitals-strip-widget` (battery, CPU, RAM, uptime icons) |
+| `hud/widgets/*` | Canvas2D widgets: gauge‑arc (number + ring + unit on shared baseline), readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/grid‑mesh/color‑grade, CRT (`signal-noise`), text primitives, and the sensor API widgets (`sensor-panel`, `series-panel` sparklines, `caption` typewriter + idle hex); `vitals-strip-widget` (battery, CPU, RAM, uptime icons) |
 | `hud/audio-analyser.ts` | Web Audio analyser → rolling amplitude for the soundwave |
 | `data/*` | `geolocation-client`, `weather-client`, `metric-mapping`, `hud-data-source` (fetch + cache + geocode override) |
 | `recording/*` | `recorder` (MediaRecorder + chunk streaming, `timesliceMs`), `use-capture-timer` (shared elapsed/pause/FIXED-auto-stop), `use-recorder` (modes, remux or transcode + progress), `recording-controls` (LOCAL/LIVE toggle + REC/GO LIVE), `save-client`, `output-naming` |
@@ -49,3 +49,7 @@
 - `scripts/fetch-ffmpeg.ps1` — fetch the ffmpeg sidecar (Windows)
 - `scripts/mock-sonde.mjs`, `scripts/replay-sonde-log.mjs` — feed the sensor API with weather‑balloon telemetry (synthetic / replay a bundled RS41 log); see `docs/sensor-api.md`
 - `scripts/make_icon.py` — regenerate the app icon source (Pillow)
+
+## Testing
+
+- ~100 unit tests (Vitest) covering recorder durability, config, naming, weather codes, layout anchors, PIN flow, settings panel, HUD select, library view, RTMP URL validation, and keyboard shortcuts.

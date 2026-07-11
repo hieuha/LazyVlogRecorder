@@ -63,7 +63,7 @@
 
 ## Sensor API
 
-- `sensor_server.rs` runs a small `tiny_http` server (background thread) started/stopped by `App` from settings. Bind is `127.0.0.1` or `0.0.0.0` (LAN); a bearer token is required in LAN mode.
+- `sensor_server.rs` runs a small `tiny_http` server (background thread) started/stopped by `App` from settings. Bind is `127.0.0.1` or `0.0.0.0` (LAN); a bearer token is required in LAN mode. The server auto-starts reliably — `stop_sensor_server` joins the accept thread so the port is released before any restart/rebind, preventing "server didn't start" errors on settings change or relaunch.
 - `POST /sensors` (scalar readouts), `POST /series` (numeric points → sparkline buffer), `POST /text` (typewriter caption). Each validated + clamped, then forwarded to the frontend via Tauri events (`sensors`/`series`/`text`).
 - The frontend injects these into `HudState` each frame, so they render as HUD widgets and are **burned into the recording** like everything else.
 

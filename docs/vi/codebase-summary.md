@@ -10,7 +10,7 @@
 | `hud/layout-engine.ts` | Giải anchor widget → điểm canvas (gồm top/bottom‑center), gọi widget |
 | `hud/layouts/*.layout.ts` | Layout khai báo (`martian`, `minimal`, `recon`) + `layout-registry.ts` |
 | `hud/theme.ts` · `hud/theme-registry.ts` | Bảng màu HUD (`martianTheme` teal, `marsAmberTheme`, `greenHackerTheme`, `cryptTheme` đỏ huyết) + registry theme chọn được; theme restyle mọi layout |
-| `hud/widgets/*` | Widget Canvas2D: gauge‑arc, readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/scanline/color‑grade, CRT (`signal-noise`), text primitives, và các widget sensor API (`sensor-panel`, `series-panel` sparkline, `caption` typewriter + idle hex); `vitals-strip-widget` (icon pin, CPU, RAM, uptime) |
+| `hud/widgets/*` | Widget Canvas2D: gauge‑arc (số + ring + đơn vị trên cơ sở chung), readouts (clock, mission‑day, location, environment, log‑entry), soundwave, frame/grid‑mesh/color‑grade, CRT (`signal-noise`), text primitives, và các widget sensor API (`sensor-panel`, `series-panel` sparkline, `caption` typewriter + idle hex); `vitals-strip-widget` (icon pin, CPU, RAM, uptime) |
 | `hud/audio-analyser.ts` | Web Audio analyser → biên độ cuộn cho soundwave |
 | `data/*` | `geolocation-client`, `weather-client`, `metric-mapping`, `hud-data-source` (fetch + cache + geocode override) |
 | `recording/*` | `recorder` (MediaRecorder + stream chunk), `use-recorder` (mode, timer, pause/resume, remux hoặc transcode + progress), `recording-controls`, `save-client`, `output-naming` |
@@ -47,3 +47,7 @@
 - `scripts/fetch-ffmpeg.ps1` — tải ffmpeg sidecar (Windows)
 - `scripts/mock-sonde.mjs`, `scripts/replay-sonde-log.mjs` — bơm telemetry bóng thám không vào sensor API (tổng hợp / phát lại log RS41 kèm sẵn); xem `docs/sensor-api.md`
 - `scripts/make_icon.py` — tạo lại ảnh nguồn icon (Pillow)
+
+## Kiểm thử
+
+- ~100 unit test (Vitest) bao phủ tính ổn định recorder, cấu hình, đặt tên, mã thời tiết, anchor layout, PIN flow, settings panel, HUD select, library view, RTMP URL validation, và keyboard shortcuts.

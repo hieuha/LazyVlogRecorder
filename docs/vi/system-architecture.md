@@ -74,7 +74,7 @@
 
 ## Sensor API
 
-- `sensor_server.rs` chạy server `tiny_http` nhỏ (thread nền), được `App` bật/tắt theo settings. Bind `127.0.0.1` hoặc `0.0.0.0` (LAN); chế độ LAN bắt buộc bearer token.
+- `sensor_server.rs` chạy server `tiny_http` nhỏ (thread nền), được `App` bật/tắt theo settings. Bind `127.0.0.1` hoặc `0.0.0.0` (LAN); chế độ LAN bắt buộc bearer token. Server auto-start ổn định — `stop_sensor_server` join accept thread nên port được nhả trước khi restart/rebind, tránh lỗi "server didn't start" khi đổi settings hay relaunch.
 - `POST /sensors` (readouts vô hướng), `POST /series` (điểm số → buffer sparkline), `POST /text` (caption typewriter). Mỗi cái được validate + clamp rồi forward lên frontend qua Tauri events (`sensors`/`series`/`text`).
 - Frontend đưa vào `HudState` mỗi frame → vẽ thành widget HUD và **burn vào bản ghi** như mọi thứ khác.
 
