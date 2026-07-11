@@ -281,13 +281,18 @@ export default function App() {
   // Receive sensor readings / series points pushed to the local HTTP API.
   useEffect(() => {
     if (!unlocked) return;
+    // Guard against the async listen() resolving AFTER cleanup: without this,
+    // StrictMode's mount→cleanup→mount (and every lock/unlock) leaks listeners,
+    // so each sensor event fires more and more handlers over time → growing jank.
+    let disposed = false;
     const unlisteners: Array<() => void> = [];
+    const track = (fn: () => void) => (disposed ? fn() : unlisteners.push(fn));
     void listen<SensorItem[]>("sensors", (e) => {
       const items = e.payload ?? [];
       sensorsRef.current = { items, at: performance.now() };
       // Rebuild the render array here (on push, ~1×/s) not per frame.
       sensorsRenderRef.current = items.map((it) => ({ ...it }));
-    }).then((fn) => unlisteners.push(fn));
+    }).then(track);
     void listen<{ label: string; value: number; unit: string }>("series", (e) => {
       const p = e.payload;
       if (!p || !Number.isFinite(p.value)) return;
@@ -308,13 +313,16 @@ export default function App() {
         }
       });
       seriesRenderRef.current = render;
-    }).then((fn) => unlisteners.push(fn));
+    }).then(track);
     void listen<{ text: string; typing: boolean }>("text", (e) => {
       const p = e.payload;
       if (!p) return;
       captionRef.current = { text: p.text ?? "", at: performance.now(), typing: p.typing !== false };
-    }).then((fn) => unlisteners.push(fn));
-    return () => unlisteners.forEach((fn) => fn());
+    }).then(track);
+    return () => {
+      disposed = true;
+      unlisteners.forEach((fn) => fn());
+    };
   }, [unlocked]);
 
   // Keep the HUD camera label in sync with the selected camera device.
