@@ -21,6 +21,7 @@ import {
 } from "./save-client";
 import { extForMime, makeRecordingName } from "./output-naming";
 import { pickStreamH264Mime } from "./capability";
+import { acquireWakeLock, releaseWakeLock } from "./screen-wake-lock";
 import type { StreamEncoderPref } from "../settings/config-store";
 
 // Cap the hardware H.264 recorder's bitrate so chunks stay small. Uncapped, the
@@ -122,6 +123,7 @@ export function useRecorder(refs: UseRecorderRefs) {
     } catch (err) {
       setError(String(err));
     } finally {
+      void releaseWakeLock();
       unlisten();
       setSaving(false);
     }
@@ -190,6 +192,7 @@ export function useRecorder(refs: UseRecorderRefs) {
     recRef.current.start();
     setRecording(true);
     timer.start();
+    void acquireWakeLock(); // keep the screen on so iOS doesn't auto-lock + suspend
   }
 
   return {
