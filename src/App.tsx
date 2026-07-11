@@ -608,7 +608,7 @@ export default function App() {
             {rec.mode === "fixed" ? "-" : ""}
             {fmtClock(rec.mode === "fixed" ? Math.max(0, rec.durationSec - rec.elapsedSec) : rec.elapsedSec)}
             <span className="live-spec">
-              {` · ${renderFps} fps · ${renderMs}ms · ${config.streamEncoder === "software" ? "sw" : "hw"}`}
+              {` · ${config.recordHeight}p · ${renderFps} fps · ${renderMs}ms · ${config.streamEncoder === "software" ? "sw" : "hw"}`}
             </span>
           </span>
         ) : streaming.state !== "idle" ? (
