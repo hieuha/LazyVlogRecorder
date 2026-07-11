@@ -1,6 +1,6 @@
 [package]
 name = "lazycamhud"
-version = "0.6.4"
+version = "0.6.5"
 description = "Martian-style vlog recorder"
 authors = ["harry"]
 edition = "2021"
