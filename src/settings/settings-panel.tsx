@@ -19,6 +19,7 @@ export function SettingsPanel(p: Props) {
   const c = p.config;
   const [changingPin, setChangingPin] = useState(false);
   const [pinMsg, setPinMsg] = useState("");
+  const [showKey, setShowKey] = useState(false); // reveal the masked stream key
   // Confirm dialog for network-facing / destructive API Service actions.
   const [confirm, setConfirm] = useState<
     null | { title: string; body: string; onYes: () => void }
@@ -223,6 +224,96 @@ export function SettingsPanel(p: Props) {
 
           </>
         )}
+
+        <div className="settings-field">
+          STREAMING (Go Live · RTMP)
+          <input
+            value={c.rtmpUrl}
+            placeholder="rtmp://a.rtmp.youtube.com/live2"
+            onChange={(e) => p.setField("rtmpUrl", e.target.value.trim())}
+          />
+        </div>
+
+        <div className="settings-field">
+          STREAM KEY (secret)
+          <div className="settings-folder">
+            <input
+              className="settings-folder-path"
+              type={showKey ? "text" : "password"}
+              value={c.streamKey}
+              placeholder="paste stream key"
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(e) => p.setField("streamKey", e.target.value.trim())}
+            />
+            <button onClick={() => setShowKey((v) => !v)}>{showKey ? "Hide" : "Show"}</button>
+          </div>
+        </div>
+
+        <label className="settings-check">
+          <input
+            type="checkbox"
+            checked={c.saveLocalWhileLive}
+            onChange={(e) => p.setField("saveLocalWhileLive", e.target.checked)}
+          />
+          Save copy locally while live
+        </label>
+
+        <div className="settings-row">
+          <label className="settings-field">
+            STREAM RES
+            <select
+              value={c.streamHeight}
+              onChange={(e) => p.setField("streamHeight", Number(e.target.value))}
+            >
+              <option value={720}>720p (smoother)</option>
+              <option value={1080}>1080p (heavier)</option>
+            </select>
+          </label>
+          <label className="settings-field">
+            STREAM FPS
+            <select
+              value={c.streamFps}
+              onChange={(e) => p.setField("streamFps", Number(e.target.value))}
+            >
+              <option value={24}>24</option>
+              <option value={30}>30</option>
+              <option value={60}>60</option>
+            </select>
+          </label>
+          <label className="settings-field">
+            BITRATE (kbps)
+            <input
+              type="number"
+              min={500}
+              max={12000}
+              step={500}
+              value={c.streamBitrateKbps}
+              onChange={(e) =>
+                p.setField(
+                  "streamBitrateKbps",
+                  Math.min(12000, Math.max(500, Number(e.target.value) || 4500)),
+                )
+              }
+            />
+          </label>
+        </div>
+
+        <label className="settings-field">
+          ENCODER (stream + record)
+          <select
+            value={c.streamEncoder}
+            onChange={(e) => p.setField("streamEncoder", e.target.value as AppConfig["streamEncoder"])}
+          >
+            <option value="auto">Auto — hardware if available (recommended)</option>
+            <option value="hardware">Hardware — VideoToolbox (low CPU)</option>
+            <option value="software">Software — libx264 / VP8 (compatible)</option>
+          </select>
+        </label>
+        <div className="settings-hint">
+          Lower resolution / FPS / bitrate if the stream stutters. Match bitrate to your
+          upload speed (720p≈4500, 1080p≈6000). The local copy stays full quality.
+        </div>
 
         <div className="settings-field">
           SECURITY

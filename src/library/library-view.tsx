@@ -8,10 +8,13 @@ import { listEntries, removeEntry, type Entry } from "./entries-store";
 import { deleteFiles } from "./library-client";
 import "./library-view.css";
 
+const PAGE_SIZE = 6; // entries per page (3×2 grid)
+
 export function LibraryView({ onClose }: { onClose: () => void }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [playing, setPlaying] = useState<Entry | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
 
   async function refresh() {
     setEntries(await listEntries());
@@ -19,6 +22,14 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     void refresh();
   }, []);
+
+  const pageCount = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
+  // Clamp when the count shrinks (e.g. deleting the last item on the last page).
+  useEffect(() => {
+    if (page > pageCount - 1) setPage(pageCount - 1);
+  }, [page, pageCount]);
+  const safePage = Math.min(page, pageCount - 1);
+  const visible = entries.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   async function doDelete(e: Entry) {
     await deleteFiles([e.path, e.thumbPath].filter(Boolean));
@@ -42,7 +53,7 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
           <div className="lib-empty">No recordings yet.</div>
         ) : (
           <div className="lib-grid">
-            {entries.map((e) => (
+            {visible.map((e) => (
               <div className="lib-card" key={e.id}>
                 <div className="lib-thumb" onClick={() => setPlaying(e)}>
                   {e.thumbPath ? (
@@ -73,6 +84,20 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {pageCount > 1 && (
+          <div className="lib-pager">
+            <button disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>
+              ‹ PREV
+            </button>
+            <span className="lib-pager-info">
+              PAGE {safePage + 1} / {pageCount}
+            </span>
+            <button disabled={safePage >= pageCount - 1} onClick={() => setPage(safePage + 1)}>
+              NEXT ›
+            </button>
           </div>
         )}
       </div>

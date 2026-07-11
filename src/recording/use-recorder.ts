@@ -3,10 +3,14 @@
 //  - "free":  counts up, stops only on Stop
 // Chunks stream to a temp file during recording (flat memory), then transcode to
 // MP4 on stop, falling back to the raw file if ffmpeg fails.
+//
+// The elapsed clock / pause accounting / FIXED auto-stop live in useCaptureTimer,
+// shared with the live-streaming path so the two can't drift.
 
 import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { createRecorder, type Recorder } from "./recorder";
+import { useCaptureTimer, type RecMode } from "./use-capture-timer";
 import {
   startTempRecording,
   appendTempChunk,
@@ -15,8 +19,9 @@ import {
   type SavedFile,
 } from "./save-client";
 import { extForMime, makeRecordingName } from "./output-naming";
+import type { StreamEncoderPref } from "../settings/config-store";
 
-export type RecMode = "fixed" | "free";
+export type { RecMode };
 
 export interface UseRecorderRefs {
   canvasRef: RefObject<HTMLCanvasElement | null>;
@@ -25,6 +30,9 @@ export interface UseRecorderRefs {
   personNameRef: MutableRefObject<string>;
   logNoRef: MutableRefObject<number>;
   outDirRef: MutableRefObject<string>;
+  /** Encoder preference (shared with streaming): "software" forces libx264,
+   *  otherwise the MP4 transcode uses hardware VideoToolbox. */
+  encoderPrefRef: MutableRefObject<StreamEncoderPref>;
   /** Called after a successful save: advance the log number + index the entry. */
   onSaved: (file: SavedFile, durationSec: number) => void;
 }
@@ -33,32 +41,16 @@ export function useRecorder(refs: UseRecorderRefs) {
   const [mode, setMode] = useState<RecMode>("fixed");
   const [durationSec, setDurationSec] = useState(900); // 15 min default
   const [recording, setRecording] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [elapsedSec, setElapsedSec] = useState(0);
   const [savedFile, setSavedFile] = useState<SavedFile | null>(null);
   const [saving, setSaving] = useState(false);
   const [transcodeProgress, setTranscodeProgress] = useState(0); // 0..1
   const [error, setError] = useState<string | null>(null);
 
+  const timer = useCaptureTimer({ mode, durationSec, onAutoStop: () => void stop() });
+
   const recRef = useRef<Recorder | null>(null);
-  const timerRef = useRef<number | null>(null);
-  const startedAtRef = useRef<number>(0);
-  const pausedRef = useRef(false);
-  const pauseStartRef = useRef(0);
-  const pausedAccumRef = useRef(0); // total paused time (ms), excluded from elapsed
   const tempPathRef = useRef<string>("");
   const extRef = useRef<string>("webm");
-  const modeRef = useRef(mode);
-  modeRef.current = mode;
-  const durRef = useRef(durationSec);
-  durRef.current = durationSec;
-
-  useEffect(
-    () => () => {
-      if (timerRef.current !== null) clearInterval(timerRef.current);
-    },
-    [],
-  );
 
   // Auto-dismiss the "saved" notice after 10s.
   useEffect(() => {
@@ -69,20 +61,11 @@ export function useRecorder(refs: UseRecorderRefs) {
 
   async function stop(): Promise<void> {
     if (!recRef.current) return;
-    if (timerRef.current !== null) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
+    const durationSec = timer.stop();
     setRecording(false);
-    setPaused(false);
-    pausedRef.current = false;
     setSaving(true);
     setTranscodeProgress(0);
     setError(null);
-
-    const now = performance.now();
-    const pausedTotal = pausedAccumRef.current + (pausedRef.current ? now - pauseStartRef.current : 0);
-    const durationSec = Math.max(0, Math.round((now - startedAtRef.current - pausedTotal) / 1000));
 
     const unlisten = await listen<number>("transcode-progress", (e) => setTranscodeProgress(e.payload));
     try {
@@ -97,7 +80,8 @@ export function useRecorder(refs: UseRecorderRefs) {
       let saved: SavedFile;
       try {
         const outName = makeRecordingName(person, logNo, "mp4");
-        saved = await transcodeToMp4(tempPath, outName, outDir, durationSec);
+        const hardware = refs.encoderPrefRef.current !== "software";
+        saved = await transcodeToMp4(tempPath, outName, outDir, durationSec, hardware);
       } catch (transcodeErr) {
         const rawName = makeRecordingName(person, logNo, srcExt);
         saved = await moveTemp(tempPath, rawName, outDir);
@@ -114,19 +98,15 @@ export function useRecorder(refs: UseRecorderRefs) {
   }
 
   function pause(): void {
-    if (!recRef.current || pausedRef.current) return;
+    if (!recRef.current || timer.paused) return;
     recRef.current.pause();
-    pauseStartRef.current = performance.now();
-    pausedRef.current = true;
-    setPaused(true);
+    timer.pause();
   }
 
   function resume(): void {
-    if (!recRef.current || !pausedRef.current) return;
-    pausedAccumRef.current += performance.now() - pauseStartRef.current;
+    if (!recRef.current || !timer.paused) return;
     recRef.current.resume();
-    pausedRef.current = false;
-    setPaused(false);
+    timer.resume();
   }
 
   async function start(): Promise<void> {
@@ -158,20 +138,7 @@ export function useRecorder(refs: UseRecorderRefs) {
     });
     recRef.current.start();
     setRecording(true);
-    setPaused(false);
-    setElapsedSec(0);
-    const startedAt = performance.now();
-    startedAtRef.current = startedAt;
-    pausedRef.current = false;
-    pausedAccumRef.current = 0;
-    timerRef.current = window.setInterval(() => {
-      const t = performance.now();
-      const pausedNow = pausedRef.current ? t - pauseStartRef.current : 0;
-      const e = Math.floor((t - startedAt - pausedAccumRef.current - pausedNow) / 1000);
-      setElapsedSec(e);
-      // Auto-stop counts active (unpaused) time only.
-      if (modeRef.current === "fixed" && !pausedRef.current && e >= durRef.current) void stop();
-    }, 250);
+    timer.start();
   }
 
   return {
@@ -180,8 +147,8 @@ export function useRecorder(refs: UseRecorderRefs) {
     durationSec,
     setDurationSec,
     recording,
-    paused,
-    elapsedSec,
+    paused: timer.paused,
+    elapsedSec: timer.elapsedSec,
     savedFile,
     saving,
     transcodeProgress,

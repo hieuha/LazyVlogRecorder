@@ -22,6 +22,27 @@ const CANDIDATE_MIME_TYPES = [
   "video/mp4",
 ];
 
+// H.264 mimes preferred FOR STREAMING (not local recording). If the webview can
+// encode H.264 directly (VideoToolbox HW on macOS), ffmpeg can `-c copy` the
+// stream — no VP8 encode + no decode + no re-encode, i.e. a single hardware
+// encode instead of the double software encode that stutters/freezes capture.
+const STREAM_H264_CANDIDATES = [
+  "video/mp4;codecs=avc1.42E01E,mp4a.40.2", // H.264 baseline + AAC
+  "video/mp4;codecs=h264,aac",
+  "video/mp4;codecs=avc1,mp4a.40.2",
+  "video/mp4;codecs=avc1",
+  "video/mp4",
+];
+
+/** Best H.264 MediaRecorder mime for streaming, or null if none is supported
+ *  (then streaming falls back to the VP8 re-encode path). */
+export function pickStreamH264Mime(): string | null {
+  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") {
+    return null;
+  }
+  return STREAM_H264_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t)) ?? null;
+}
+
 export function probeRecordingCapability(): RecordingCapability {
   const captureStream =
     typeof HTMLCanvasElement !== "undefined" &&

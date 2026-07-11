@@ -61,7 +61,8 @@ body,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  flex-wrap: wrap; /* never clip: groups drop to a second row on narrow widths */
+  gap: 12px 16px;
   padding: 14px 22px;
   background: #000;
   border-top: 1px solid rgba(126, 224, 233, 0.22);
@@ -128,6 +129,7 @@ body,
 .controls {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -314,6 +316,13 @@ body,
   margin-top: 4px;
 }
 
+.settings-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #7f97a0;
+}
+
 .settings-check {
   display: flex;
   align-items: center;
@@ -407,12 +416,13 @@ body,
   z-index: 1;
   background: transparent;
   border: none;
-  padding: 6px 16px;
+  padding: 6px 13px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   color: #9fb6bd;
+  white-space: nowrap;
   transition: color 0.2s ease;
 }
 
@@ -442,6 +452,7 @@ body,
 .rec-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -471,12 +482,13 @@ body,
 .rec-btn {
   border: none;
   border-radius: 3px;
-  padding: 8px 18px;
+  padding: 8px 15px;
   cursor: pointer;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.1em;
   font-size: 12px;
   font-weight: 700;
   color: #fff;
+  white-space: nowrap; /* keep "GO LIVE" on one line */
 }
 
 .rec-btn.start {
@@ -502,6 +514,88 @@ body,
 }
 .rec-btn.stop:hover {
   background: #f05c49;
+}
+
+/* Go Live: purple/magenta broadcast button; "gated" (unconfigured) reads dim
+   but stays clickable so the hint can open Settings. */
+.rec-btn.go-live {
+  background: #9a3cff;
+}
+.rec-btn.go-live:hover {
+  background: #ac57ff;
+}
+.rec-btn.go-live.gated {
+  background: rgba(6, 10, 14, 0.9);
+  color: #b58cff;
+  border: 1px solid rgba(154, 60, 255, 0.5);
+  letter-spacing: 0.1em;
+}
+.rec-btn.go-live.gated:hover {
+  border-color: #b58cff;
+}
+
+/* LOCAL/LIVE destination toggle: reuse the segmented slider, key it on data-dest. */
+.dest-toggle[data-dest="live"]::before {
+  transform: translateX(100%);
+  background: #b58cff;
+}
+
+/* Top-right badge shown when the LIVE tab is selected but not yet broadcasting —
+   the live settings read-out (magenta, matching the LIVE badge family). */
+.cap-badge.live-ready {
+  color: #b58cff;
+  border-color: rgba(181, 140, 255, 0.6);
+}
+
+/* "Save copy locally while live" inline checkbox in the control bar. */
+.rec-save-local {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #cfe6ea;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* LIVE badge: magenta box, with connecting/unstable/error variants. */
+.cap-badge.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  background: #9a3cff;
+  border-color: #9a3cff;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+}
+.cap-badge.live .rec-dot {
+  background: #fff;
+}
+
+/* Stream spec (res/fps/bitrate/drops) — smaller + slightly dimmed vs the label. */
+.live-spec {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+.cap-badge.live.connecting {
+  background: #6b5cff;
+  border-color: #6b5cff;
+}
+.cap-badge.live.unstable {
+  background: #e0a857;
+  border-color: #e0a857;
+  color: #1a1206;
+}
+.cap-badge.live.unstable .rec-dot {
+  background: #1a1206;
+}
+.cap-badge.live.error {
+  background: #e24e3c;
+  border-color: #e24e3c;
 }
 
 /* Centered processing overlay (transcode) */
@@ -575,7 +669,8 @@ body,
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  max-width: 320px;
+  max-width: 230px;
+  min-width: 0;
   background: rgba(6, 10, 14, 0.9);
   border: 1px solid rgba(126, 224, 233, 0.4);
   border-radius: 3px;
@@ -597,6 +692,7 @@ body,
 }
 
 .rec-saved-name {
+  min-width: 0;
   color: #cfe6ea;
   font-size: 12px;
   letter-spacing: 0.02em;

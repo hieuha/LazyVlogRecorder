@@ -10,6 +10,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        // Single live-stream session, guarded so only one runs at a time.
+        .manage(commands::streaming::StreamState::default())
         .invoke_handler(tauri::generate_handler![
             commands::auth::has_pin,
             commands::auth::set_pin,
@@ -23,9 +25,13 @@ pub fn run() {
             commands::recording_fs::move_temp,
             commands::recording_fs::delete_files,
             commands::ffmpeg::transcode_to_mp4,
+            commands::ffmpeg::remux_to_mp4,
             commands::ffmpeg::generate_thumbnail,
             commands::sensor_server::start_sensor_server,
             commands::sensor_server::stop_sensor_server,
+            commands::streaming::start_stream,
+            commands::streaming::write_stream_chunk,
+            commands::streaming::stop_stream,
             commands::system_vitals::get_system_vitals,
         ])
         .run(tauri::generate_context!())

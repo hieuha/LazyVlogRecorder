@@ -22,7 +22,22 @@ export interface AppConfig {
   sensorApiPort: number;
   sensorApiLan: boolean; // true = bind 0.0.0.0 (LAN), false = 127.0.0.1 only
   sensorApiToken: string; // required when LAN; auto-generated
+  // Go Live — RTMP(S) streaming (FB/YouTube/Twitch).
+  rtmpUrl: string; // base publish URL, e.g. rtmp://a.rtmp.youtube.com/live2
+  streamKey: string; // secret; composed onto rtmpUrl in the backend, never logged
+  saveLocalWhileLive: boolean; // also save a local MP4 while streaming
+  // Stream quality (OBS-style knobs; tune to your machine + upload speed).
+  streamHeight: number; // broadcast height (720/1080); downscaled from the canvas
+  streamFps: number; // broadcast frame rate (24/30/60)
+  streamBitrateKbps: number; // video bitrate — match your upload speed
+  // Encoder preference for BOTH streaming and local recording. "auto"/"hardware"
+  // use Apple VideoToolbox (stream: webview H.264 + `-c copy`; record: hardware
+  // transcode). "software" forces libx264 / VP8 re-encode. (Key kept as
+  // `streamEncoder` for config back-compat; it now applies to record too.)
+  streamEncoder: StreamEncoderPref;
 }
+
+export type StreamEncoderPref = "auto" | "hardware" | "software";
 
 export const DEFAULT_CONFIG: AppConfig = {
   personName: "Harry",
@@ -42,6 +57,13 @@ export const DEFAULT_CONFIG: AppConfig = {
   sensorApiPort: 1337,
   sensorApiLan: true,
   sensorApiToken: "",
+  rtmpUrl: "",
+  streamKey: "",
+  saveLocalWhileLive: true,
+  streamHeight: 720, // 720p streams far smoother than 1080p; local save can still be 1080p
+  streamFps: 30,
+  streamBitrateKbps: 4500,
+  streamEncoder: "auto",
 };
 
 /** Random hex token for the sensor API (used as a bearer token). */
