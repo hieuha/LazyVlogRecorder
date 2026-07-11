@@ -32,22 +32,36 @@ impl SavedFile {
 }
 
 /// Resolve (and create) the output directory: a user override when non-empty,
-/// otherwise Movies/LazyCamHUD (or Downloads fallback).
+/// otherwise the platform default base dir + `LazyCamHUD`. Videos are app-owned
+/// on both platforms (the library gates them behind the PIN + in-app player), so
+/// the only per-platform difference is the base dir (see `default_base_dir`).
 pub fn resolve_out_dir(
     app: &tauri::AppHandle,
     out_dir: Option<String>,
 ) -> Result<std::path::PathBuf, String> {
     let dir = match out_dir {
         Some(d) if !d.trim().is_empty() => std::path::PathBuf::from(d),
-        _ => app
-            .path()
-            .video_dir()
-            .or_else(|_| app.path().download_dir())
-            .map_err(|e| e.to_string())?
-            .join("LazyCamHUD"),
+        _ => default_base_dir(app)?.join("LazyCamHUD"),
     };
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir)
+}
+
+/// Default base dir for recordings. macOS: `~/Movies` (Downloads fallback) so
+/// clips sit with the user's other videos. iOS: the app's Documents sandbox —
+/// `~/Movies` isn't writable under the iOS sandbox (EPERM), and app-owned content
+/// belongs in Documents (optionally surfaced via Files with UIFileSharingEnabled).
+#[cfg(target_os = "ios")]
+fn default_base_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    app.path().document_dir().map_err(|e| e.to_string())
+}
+
+#[cfg(not(target_os = "ios"))]
+fn default_base_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    app.path()
+        .video_dir()
+        .or_else(|_| app.path().download_dir())
+        .map_err(|e| e.to_string())
 }
 
 /// Create an empty temp file for a new recording; returns its path.

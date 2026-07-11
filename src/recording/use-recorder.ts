@@ -16,7 +16,6 @@ import {
   appendTempChunk,
   closeTempRecording,
   transcodeToMp4,
-  remuxToMp4,
   moveTemp,
   type SavedFile,
 } from "./save-client";
@@ -91,17 +90,26 @@ export function useRecorder(refs: UseRecorderRefs) {
       const outDir = refs.outDirRef.current;
       let saved: SavedFile;
       const copy = copyRef.current;
-      try {
+      if (copy) {
+        // Copy path (the norm on macOS + iOS WebKit): the webview already recorded
+        // a fragmented H.264/AAC MP4 with the moov box at the front — a valid,
+        // seekable, faststart MP4 as-is. Just move it into place. No ffmpeg remux
+        // (iOS can't spawn subprocesses), so the record path is a single
+        // subprocess-free flow shared by both platforms.
         const outName = makeRecordingName(person, logNo, "mp4");
-        // Copy path: recorded H.264 already → remux (fast, no VP8 decode/re-encode).
-        // Else transcode the VP8 temp (hardware unless the encoder is forced software).
-        saved = copy
-          ? await remuxToMp4(tempPath, outName, outDir)
-          : await transcodeToMp4(tempPath, outName, outDir, durationSec, refs.encoderPrefRef.current !== "software");
-      } catch (finalizeErr) {
-        const rawName = makeRecordingName(person, logNo, srcExt);
-        saved = await moveTemp(tempPath, rawName, outDir);
-        setError(`MP4 finalize failed; saved ${srcExt.toUpperCase()}. ${finalizeErr}`);
+        saved = await moveTemp(tempPath, outName, outDir);
+      } else {
+        // VP8 fallback (only when H.264 recording is unavailable or the encoder is
+        // forced to software — effectively desktop-only): transcode to MP4 via
+        // ffmpeg, else keep the raw WebM so a take is never lost.
+        try {
+          const outName = makeRecordingName(person, logNo, "mp4");
+          saved = await transcodeToMp4(tempPath, outName, outDir, durationSec, refs.encoderPrefRef.current !== "software");
+        } catch (finalizeErr) {
+          const rawName = makeRecordingName(person, logNo, srcExt);
+          saved = await moveTemp(tempPath, rawName, outDir);
+          setError(`MP4 finalize failed; saved ${srcExt.toUpperCase()}. ${finalizeErr}`);
+        }
       }
       setSavedFile(saved);
       // A write failure/overflow means the take may be truncated — warn rather
