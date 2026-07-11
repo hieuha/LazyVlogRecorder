@@ -131,6 +131,10 @@ export function useRecorder(refs: UseRecorderRefs) {
       canvas,
       micStream: refs.micStreamRef.current,
       mimeType: mime,
+      // Smaller, more frequent chunks: each temp-file write is ~1/4 the size, so
+      // its main-thread cost is a tiny hitch instead of one big write every second
+      // that lands in-phase with the ~1s sensor pushes and visibly stutters.
+      timesliceMs: 250,
       onChunk: async (blob) => {
         const bytes = new Uint8Array(await blob.arrayBuffer());
         await appendTempChunk(tempPath, bytes);
