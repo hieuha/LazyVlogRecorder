@@ -482,8 +482,17 @@ pub async fn start_stream(
 pub async fn write_stream_chunk(
     app: AppHandle,
     state: State<'_, StreamState>,
-    bytes: Vec<u8>,
+    request: tauri::ipc::Request<'_>,
 ) -> Result<(), String> {
+    // Chunk arrives as the raw IPC body (octet-stream), not a JSON number array:
+    // a nested typed array would be ~4× the bytes and encoded on the main thread
+    // every ~500ms — the same thread as the compositor capture this pipeline
+    // works to keep smooth.
+    let bytes = match request.body() {
+        tauri::ipc::InvokeBody::Raw(data) => data.clone(),
+        _ => return Err("expected raw chunk body".into()),
+    };
+    drop(request); // release the borrow before locking / any await
     let mut guard = state.session.lock().unwrap();
     let Some(session) = guard.as_mut() else {
         return Err("no active stream".into());

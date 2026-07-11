@@ -12,6 +12,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         // Single live-stream session, guarded so only one runs at a time.
         .manage(commands::streaming::StreamState::default())
+        // Open append handles for in-progress recordings (one per temp file).
+        .manage(commands::recording_fs::TempWriters::default())
         .invoke_handler(tauri::generate_handler![
             commands::auth::has_pin,
             commands::auth::set_pin,
@@ -22,6 +24,7 @@ pub fn run() {
             commands::weather::get_weather,
             commands::recording_fs::start_temp_recording,
             commands::recording_fs::append_temp_chunk,
+            commands::recording_fs::close_temp_recording,
             commands::recording_fs::move_temp,
             commands::recording_fs::delete_files,
             commands::ffmpeg::transcode_to_mp4,

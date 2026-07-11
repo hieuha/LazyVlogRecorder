@@ -16,6 +16,7 @@ import { makeRecordingName } from "../recording/output-naming";
 import {
   startTempRecording,
   appendTempChunk,
+  closeTempRecording,
   transcodeToMp4,
   remuxToMp4,
   moveTemp,
@@ -137,6 +138,7 @@ export function useStreaming(refs: UseStreamingRefs) {
 
     setSaving(true);
     setTranscodeProgress(0);
+    await closeTempRecording(temp).catch(() => {}); // close the append handle before remux/transcode
     const unlisten = await listen<number>("transcode-progress", (e) => setTranscodeProgress(e.payload));
     try {
       const person = refs.personNameRef.current;

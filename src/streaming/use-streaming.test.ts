@@ -30,12 +30,14 @@ vi.mock("../recording/recorder", () => ({
 // Local-save pipeline (temp WebM → transcode); default: not saving locally.
 const startTempRecording = vi.fn(() => Promise.resolve("/tmp/live.webm"));
 const appendTempChunk = vi.fn(() => Promise.resolve());
+const closeTempRecording = vi.fn(() => Promise.resolve());
 const transcodeToMp4 = vi.fn(() => Promise.resolve({ path: "/out/live.mp4", size: 123 }));
 const remuxToMp4 = vi.fn(() => Promise.resolve({ path: "/out/live.mp4", size: 123 }));
 const moveTemp = vi.fn(() => Promise.resolve({ path: "/out/live.webm", size: 123 }));
 vi.mock("../recording/save-client", () => ({
   startTempRecording: (...a: unknown[]) => startTempRecording(...(a as [])),
   appendTempChunk: (...a: unknown[]) => appendTempChunk(...(a as [])),
+  closeTempRecording: (...a: unknown[]) => closeTempRecording(...(a as [])),
   transcodeToMp4: (...a: unknown[]) => transcodeToMp4(...(a as [])),
   remuxToMp4: (...a: unknown[]) => remuxToMp4(...(a as [])),
   moveTemp: (...a: unknown[]) => moveTemp(...(a as [])),

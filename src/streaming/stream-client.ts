@@ -28,9 +28,13 @@ export function startStream(a: StartStreamArgs): Promise<void> {
   });
 }
 
-/** Feed one MediaRecorder chunk to the live ffmpeg (bytes as raw ArrayBuffer). */
+/** Feed one MediaRecorder chunk to the live ffmpeg. The bytes are sent as the
+ *  raw IPC body, not a nested `{ bytes }` prop — Tauri only uses the binary
+ *  octet-stream path when the payload itself is the buffer; a nested typed array
+ *  is JSON-inflated to a number array (~4×) and encoded on the same main thread
+ *  that runs the compositor capture, which is exactly the stutter to avoid. */
 export function writeStreamChunk(bytes: Uint8Array): Promise<void> {
-  return invoke("write_stream_chunk", { bytes });
+  return invoke("write_stream_chunk", bytes);
 }
 
 /** Flush + close the live stream (no-op if nothing is running). */

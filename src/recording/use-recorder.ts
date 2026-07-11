@@ -14,6 +14,7 @@ import { useCaptureTimer, type RecMode } from "./use-capture-timer";
 import {
   startTempRecording,
   appendTempChunk,
+  closeTempRecording,
   transcodeToMp4,
   moveTemp,
   type SavedFile,
@@ -69,10 +70,13 @@ export function useRecorder(refs: UseRecorderRefs) {
 
     const unlisten = await listen<number>("transcode-progress", (e) => setTranscodeProgress(e.payload));
     try {
-      await recRef.current.stop(); // flush all chunks to the temp file
+      const rec = recRef.current;
+      await rec.stop(); // flush all chunks to the temp file
+      const writeErr = rec.getWriteError(); // disk-full / overflow → warn, don't claim success
       recRef.current = null;
 
       const tempPath = tempPathRef.current;
+      await closeTempRecording(tempPath).catch(() => {}); // close the append handle before transcode/move
       const srcExt = extRef.current;
       const person = refs.personNameRef.current;
       const logNo = refs.logNoRef.current;
@@ -88,6 +92,12 @@ export function useRecorder(refs: UseRecorderRefs) {
         setError(`MP4 transcode failed; saved ${srcExt.toUpperCase()}. ${transcodeErr}`);
       }
       setSavedFile(saved);
+      // A write failure/overflow means the take may be truncated — warn rather
+      // than report a clean save (this is the root cause, so it wins over any
+      // transcode-fallback message set above).
+      if (writeErr != null) {
+        setError(`Some recording data failed to write; the saved take may be incomplete. ${writeErr}`);
+      }
       refs.onSaved(saved, durationSec); // advance log number + index the entry
     } catch (err) {
       setError(String(err));
@@ -135,6 +145,11 @@ export function useRecorder(refs: UseRecorderRefs) {
       // its main-thread cost is a tiny hitch instead of one big write every second
       // that lands in-phase with the ~1s sensor pushes and visibly stutters.
       timesliceMs: 250,
+      // Bound memory if the disk can't keep up: stop the take once too many
+      // chunk writes are backed up rather than letting the queue grow forever.
+      // ~40 chunks ≈ 10s at the 250ms timeslice.
+      maxPendingChunks: 40,
+      onOverflow: () => void stop(),
       onChunk: async (blob) => {
         const bytes = new Uint8Array(await blob.arrayBuffer());
         await appendTempChunk(tempPath, bytes);

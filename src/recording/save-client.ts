@@ -13,9 +13,21 @@ export function startTempRecording(ext: string): Promise<string> {
   return invoke<string>("start_temp_recording", { ext });
 }
 
-/** Append a recorded chunk to the temp file. Bytes go over as raw ArrayBuffer. */
+/** Append a recorded chunk to the temp file. The bytes are sent as the raw IPC
+ *  body (Tauri only takes the octet-stream fast path when the payload IS the
+ *  buffer — a nested `{ bytes }` prop would be JSON-inflated to a number array,
+ *  ~4× the size, encoded on the main thread every chunk). The temp path rides
+ *  along in a header (percent-encoded so non-ASCII paths survive transport). */
 export function appendTempChunk(path: string, bytes: Uint8Array): Promise<void> {
-  return invoke("append_temp_chunk", { path, bytes });
+  return invoke("append_temp_chunk", bytes, {
+    headers: { "x-temp-path": encodeURIComponent(path) },
+  });
+}
+
+/** Close the append handle for a temp recording (flush) before transcode/move.
+ *  Best-effort: safe to call with an already-closed or unknown path. */
+export function closeTempRecording(path: string): Promise<void> {
+  return invoke("close_temp_recording", { path });
 }
 
 /** Transcode a temp WebM to MP4 (emits "transcode-progress" 0..1 events).
