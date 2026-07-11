@@ -28,6 +28,8 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 sha2 = "0.10"
 getrandom = "0.2"
 tiny_http = "0.12"
+# PIN hash+salt in the Keychain (macOS + iOS) via the Apple Security framework.
+keyring = { version = "3", default-features = false, features = ["apple-native"] }
 
 # Ship Vitals (battery/CPU/RAM/uptime). starship-battery's darwin backend links
 # IOKit, which is unavailable on iOS (fails at link time), so these are built for
