@@ -1,11 +1,12 @@
 // Log Library: grid of recorded entries with thumbnails, in-app playback,
 // reveal-in-folder, and delete (file + thumbnail + index record).
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { listEntries, removeEntry, type Entry } from "./entries-store";
+import { listEntries, removeEntry, updateEntry, type Entry } from "./entries-store";
 import { deleteFiles } from "./library-client";
+import { generateThumbnail } from "./thumbnail";
 import "./library-view.css";
 
 const PAGE_SIZE = 6; // entries per page (3×2 grid)
@@ -16,12 +17,29 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
+  // Ids we've already tried to (re)build a thumbnail for this session, so a
+  // permanently un-decodable clip can't loop.
+  const regenTried = useRef<Set<string>>(new Set());
+
   async function refresh() {
     setEntries(await listEntries());
   }
   useEffect(() => {
     void refresh();
   }, []);
+
+  // Rebuild a missing thumbnail from the video (in the webview). Covers clips
+  // whose cached thumbnail was purged (older builds stored them in Caches) and
+  // entries that never got one. Best-effort + once per id.
+  async function regenThumb(e: Entry) {
+    if (regenTried.current.has(e.id)) return;
+    regenTried.current.add(e.id);
+    const thumb = await generateThumbnail(e.path, e.id);
+    if (thumb) {
+      await updateEntry(e.id, { thumbPath: thumb });
+      void refresh();
+    }
+  }
 
   const pageCount = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
   // Clamp when the count shrinks (e.g. deleting the last item on the last page).
@@ -30,6 +48,14 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
   }, [page, pageCount]);
   const safePage = Math.min(page, pageCount - 1);
   const visible = entries.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+
+  // Rebuild thumbnails only for visible entries that have none (never generated).
+  // Ones that exist are reused from disk — no regeneration. The `onError` on the
+  // <img> covers the other case: a thumbnail whose file was purged.
+  useEffect(() => {
+    for (const e of visible) if (!e.thumbPath) void regenThumb(e);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, page]);
 
   async function doDelete(e: Entry) {
     await deleteFiles([e.path, e.thumbPath].filter(Boolean));
@@ -57,7 +83,11 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
               <div className="lib-card" key={e.id}>
                 <div className="lib-thumb" onClick={() => setPlaying(e)}>
                   {e.thumbPath ? (
-                    <img src={convertFileSrc(e.thumbPath)} alt="" />
+                    <img
+                      src={convertFileSrc(e.thumbPath)}
+                      alt=""
+                      onError={() => void regenThumb(e)}
+                    />
                   ) : (
                     <div className="lib-thumb-ph">▶</div>
                   )}
