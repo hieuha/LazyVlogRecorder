@@ -54,10 +54,7 @@ export function drawMissionDay(c: WidgetRenderContext): void {
   ctx.stroke();
   ctx.restore();
 
-  // Panel border (theme-overridable; defaults to the film's light border).
-  ctx.strokeStyle = theme.panelBorder ?? theme.text;
-  ctx.lineWidth = 0.22 * u;
-  ctx.strokeRect(origin.x, boxY, w, h);
+  // (No outer border — the panel reads as a borderless backlit LCD.)
   ctx.restore();
 
   // Panel digits (dark on the film's light panel; lit amber on the CRT panel).

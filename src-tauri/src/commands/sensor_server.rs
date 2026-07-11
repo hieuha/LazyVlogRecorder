@@ -76,6 +76,11 @@ struct Caption {
 struct Running {
     server: Arc<Server>,
     alive: Arc<AtomicBool>,
+    // Kept so stop can JOIN the accept thread before returning — otherwise the
+    // listening socket may still hold the port when start() immediately rebinds
+    // (stop→start on a settings change / HMR reload), so the bind intermittently
+    // fails with "address already in use" and the server silently doesn't start.
+    handle: thread::JoinHandle<()>,
 }
 
 // Single running instance; replaced when settings change.
@@ -111,7 +116,7 @@ pub fn start_sensor_server(
         Some(format!("Bearer {token}"))
     };
 
-    thread::spawn(move || {
+    let handle = thread::spawn(move || {
         for request in srv.incoming_requests() {
             if !alive2.load(Ordering::Relaxed) {
                 break;
@@ -120,16 +125,20 @@ pub fn start_sensor_server(
         }
     });
 
-    *SERVER.lock().unwrap() = Some(Running { server, alive });
+    *SERVER.lock().unwrap() = Some(Running { server, alive, handle });
     Ok(())
 }
 
 /// Stop the server if one is running (no-op otherwise).
 #[tauri::command]
 pub fn stop_sensor_server() {
-    if let Some(r) = SERVER.lock().unwrap().take() {
+    // Take + release the lock BEFORE joining, so the accept thread (and anything
+    // else touching SERVER) is never blocked on the mutex while we wait.
+    let running = SERVER.lock().unwrap().take();
+    if let Some(r) = running {
         r.alive.store(false, Ordering::Relaxed);
         r.server.unblock(); // break incoming_requests()
+        let _ = r.handle.join(); // accept thread exits → port released before any rebind
     }
 }
 

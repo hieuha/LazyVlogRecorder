@@ -383,6 +383,26 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlocked, status, settingsOpen, libraryOpen, rec.recording, rec.saving, destination, streaming.live]);
 
+  // Keys 1–4 switch to the 1st–4th camera in the device list (same order as the
+  // camera dropdown). Ignored while typing or a modal is open. Works mid-recording
+  // — onCameraChange runs the switch transition and keeps the take alive.
+  useEffect(() => {
+    if (!unlocked || status !== "ready" || settingsOpen || libraryOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      const m = /^(?:Digit|Numpad)([1-4])$/.exec(e.code);
+      if (!m) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(tag)) return;
+      const cam = cameras[Number(m[1]) - 1];
+      if (!cam) return;
+      e.preventDefault();
+      void onCameraChange(cam.deviceId);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlocked, status, settingsOpen, libraryOpen, cameras, cameraId]);
+
   function applyConfigToRefs(cfg: AppConfig) {
     personNameRef.current = cfg.personName;
     logNoRef.current = cfg.logNo;

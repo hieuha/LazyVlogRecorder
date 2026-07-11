@@ -233,10 +233,6 @@ export function useStreaming(refs: UseStreamingRefs) {
       timesliceMs: LIVE_TIMESLICE_MS,
       // Cap the throwaway VP8 near the target so it isn't over-encoded (CPU).
       videoBitsPerSecond: bitrateKbps * 1000,
-      // Constant bitrate: the hardware H.264 encoder otherwise runs VBR and
-      // undershoots the target on low-motion footage, so RTMP platforms (YouTube)
-      // see a bitrate far below the setting. CBR holds the target.
-      bitrateMode: "constant",
       onChunk: async (blob) => {
         const bytes = new Uint8Array(await blob.arrayBuffer());
         // RTMP write is FIRE-AND-FORGET: never await it here, so a stalled/dropped

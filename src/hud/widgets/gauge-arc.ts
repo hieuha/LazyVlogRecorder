@@ -30,36 +30,39 @@ export function drawGaugeArc(
     baseline: "top",
   });
 
-  // Value (large, holographic vertical gradient) + gold unit
+  // The number, ring, and unit all sit on ONE shared horizontal center line,
+  // drawn with a "middle" baseline so they line up exactly regardless of the
+  // font's ascent/descent metrics. The label sits just above that line.
+  const cy = oy + 4.5 * u; // center line for value + ring; label is above at oy
   const valueText = g.value == null ? "--" : Math.round(g.value).toString();
-  const valueY = oy + 2.6 * u;
-  drawText(ctx, valueText, ox, valueY, {
+  drawText(ctx, valueText, ox, cy, {
     font: theme.fontCondensed,
     size: 5.4 * u,
     color: theme.text,
     gradient: [theme.accentBright, theme.textDim],
     weight: 500,
-    baseline: "top",
+    baseline: "middle",
     glow: 0.7 * u,
     glowColor: theme.accent, // halo matches the number's tone, not the base text color
   });
   const valueW = measure(ctx, valueText, `500 ${5.4 * u}px ${theme.fontCondensed}`);
-  const unitX = ox + valueW + 0.8 * u;
-  drawText(ctx, g.unit, unitX, valueY + 0.6 * u, {
-    font: theme.fontMono,
-    size: 1.6 * u,
-    color: theme.gold,
-    weight: 600,
-    baseline: "top",
-  });
-  const unitW = measure(ctx, g.unit, `600 ${1.6 * u}px ${theme.fontMono}`);
 
-  // Arc dial follows the value + unit width so the gap stays constant
-  const r = 2.6 * u;
-  const cx = unitX + unitW + 0.6 * u + r;
-  const cy = valueY + 2.7 * u;
+  // Ring to the right, on the same center line, sized to match the number's
+  // height (diameter ≈ the 5.4u value); unit centered inside it.
+  const r = 2.3 * u;
+  const cx = ox + valueW + 1.4 * u + r; // gap between the value and the ring
   const frac = fraction(g.value, g.min, g.max);
   drawDial(c, cx, cy, r, frac, 0.5 * u);
+  drawText(ctx, g.unit, cx, cy, {
+    font: theme.fontMono,
+    size: 2.0 * u, // fills the ring (r = 2.3u)
+    color: theme.accent,
+    weight: 600,
+    align: "center",
+    baseline: "middle",
+    glow: 0.3 * u,
+    glowColor: theme.accent,
+  });
 }
 
 function drawDial(

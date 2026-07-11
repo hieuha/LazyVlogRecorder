@@ -21,21 +21,23 @@ export function drawCornerFrame(c: WidgetRenderContext, anchor: string): void {
   ctx.restore();
 }
 
-// Full-canvas horizontal scanlines (very subtle). Cached as a small repeating
-// tile + one pattern fill instead of ~height/gap `fillRect` calls per frame.
+// Full-canvas grid mesh (very subtle) — a fine woven texture over the whole
+// frame. Cached as a small square repeating tile (a 1px line on the top + left
+// edges → a grid when tiled) + one pattern fill, instead of many per-frame draws.
 let scanTile: HTMLCanvasElement | null = null;
 let scanGap = 0;
 let scanColor = "";
-function scanlineTile(gap: number, color: string): HTMLCanvasElement {
-  if (!scanTile || scanGap !== gap || scanColor !== color) {
+function gridTile(cell: number, color: string): HTMLCanvasElement {
+  if (!scanTile || scanGap !== cell || scanColor !== color) {
     scanTile = scanTile ?? document.createElement("canvas");
-    scanTile.width = 1;
-    scanTile.height = gap * 2;
+    scanTile.width = cell;
+    scanTile.height = cell;
     const t = scanTile.getContext("2d")!;
-    t.clearRect(0, 0, 1, gap * 2);
+    t.clearRect(0, 0, cell, cell);
     t.fillStyle = color;
-    t.fillRect(0, 0, 1, gap); // line on the top half, gap on the bottom
-    scanGap = gap;
+    t.fillRect(0, 0, cell, 1); // top edge → horizontal grid lines
+    t.fillRect(0, 0, 1, cell); // left edge → vertical grid lines
+    scanGap = cell;
     scanColor = color;
   }
   return scanTile;
@@ -43,11 +45,11 @@ function scanlineTile(gap: number, color: string): HTMLCanvasElement {
 
 export function drawScanline(c: WidgetRenderContext): void {
   const { ctx, width, height, u, theme } = c;
-  const gap = Math.max(2, Math.round(0.35 * u));
-  const pattern = ctx.createPattern(scanlineTile(gap, theme.scanline ?? "#bfe9ee"), "repeat");
+  const cell = Math.max(3, Math.round(0.5 * u)); // grid cell size
+  const pattern = ctx.createPattern(gridTile(cell, theme.scanline ?? "#bfe9ee"), "repeat");
   if (!pattern) return;
   ctx.save();
-  ctx.globalAlpha = 0.05;
+  ctx.globalAlpha = 0.06;
   ctx.fillStyle = pattern;
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
