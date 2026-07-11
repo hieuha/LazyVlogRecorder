@@ -19,6 +19,7 @@ import { createHudDataSource, type HudDataSource } from "./data/hud-data-source"
 import { createSystemVitalsSource, type SystemVitalsSource } from "./data/system-vitals-client";
 import { createAudioAnalyser, type AudioAnalyser } from "./hud/audio-analyser";
 import { useRecorder } from "./recording/use-recorder";
+import { isEditableTarget, cameraDeviceIdForKey } from "./recording/keyboard-shortcuts";
 import { RecordingControls, type Destination } from "./recording/recording-controls";
 import { useStreaming } from "./streaming/use-streaming";
 import { SettingsPanel } from "./settings/settings-panel";
@@ -369,8 +370,7 @@ export default function App() {
     if (!unlocked || status !== "ready" || settingsOpen || libraryOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "Space") return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(tag)) return;
+      if (isEditableTarget(e.target)) return;
       e.preventDefault();
       // Space toggles LOCAL recording only; live is button-only (avoids an
       // accidental broadcast) and never mixes with a local take.
@@ -389,14 +389,11 @@ export default function App() {
   useEffect(() => {
     if (!unlocked || status !== "ready" || settingsOpen || libraryOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      const m = /^(?:Digit|Numpad)([1-4])$/.exec(e.code);
-      if (!m) return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(tag)) return;
-      const cam = cameras[Number(m[1]) - 1];
-      if (!cam) return;
+      const id = cameraDeviceIdForKey(e.code, cameras);
+      if (!id) return; // not a 1–4 key, or no camera at that slot
+      if (isEditableTarget(e.target)) return; // don't hijack typing
       e.preventDefault();
-      void onCameraChange(cam.deviceId);
+      void onCameraChange(id);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

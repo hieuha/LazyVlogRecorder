@@ -103,7 +103,7 @@ function drawDial(
   ctx.restore();
 }
 
-function fraction(value: number | null, min: number, max: number): number {
+export function fraction(value: number | null, min: number, max: number): number {
   if (value == null || max <= min) return 0;
   return Math.max(0, Math.min(1, (value - min) / (max - min)));
 }
