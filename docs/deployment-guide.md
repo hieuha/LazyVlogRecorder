@@ -63,14 +63,14 @@ Unsigned/ad-hoc builds run locally but Gatekeeper will warn on other machines.
 
 ## Known advisories
 
-- **RUSTSEC glib < 0.20** (medium, `VariantStrIter` iterator unsoundness):
+- **RUSTSEC glib < 0.20** (medium, VariantStrIter iterator unsoundness):
   transitive dependency of the **WebKitGTK (Linux)** stack, pinned to 0.18 by
   upstream Tauri Linux deps. Not compiled on macOS/Windows, so it does not
   affect the MVP targets. Revisit when Linux support is added.
 
 ## Linux (deferred)
 
-WebKitGTK's `MediaRecorder`/`captureStream` support is inconsistent. When adding
+WebKitGTK's MediaRecorder/`captureStream` support is inconsistent. When adding
 Linux, verify the recording path and add a frames→ffmpeg fallback if needed
 (see `plans/.../phase-07-cross-platform-hardening.md`), and fetch a Linux ffmpeg
 sidecar (`ffmpeg-x86_64-unknown-linux-gnu`).

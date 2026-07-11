@@ -36,7 +36,7 @@
 
 ## Key decisions
 
-- **Single‑canvas HUD** so `canvas.captureStream()` + `MediaRecorder` record webcam + HUD burned in together.
+- **Single‑canvas HUD** so `canvas.captureStream()` + MediaRecorder record webcam + HUD burned in together.
 - **Bundled ffmpeg run as a child process** (path self‑resolved for dev vs bundle) rather than a webview codec, for reliable MP4.
 - **Separate mic (audio) and camera (video) streams** so switching camera mid‑recording keeps audio continuous.
 

@@ -42,7 +42,7 @@
 ## Pipeline quay → xuất
 
 1. `start_temp_recording(ext)` → path tạm.
-2. Chunk `MediaRecorder` → `append_temp_chunk(path, bytes)`.
+2. Chunk MediaRecorder → `append_temp_chunk(path, bytes)`.
 3. Khi stop: `transcode_to_mp4(temp, name, outDir, durationSec)` chạy ffmpeg bundle trên thread nền với `-progress pipe:1`, emit `transcode-progress` (0..1).
 4. Thành công → xoá temp, MP4 vào thư mục lưu. Lỗi → `move_temp` giữ WebM thô (không mất bản quay).
 5. Index entry (`entries.json`) + tạo thumbnail (`generate_thumbnail`).
@@ -53,17 +53,17 @@
 - `get_weather` (Open‑Meteo) → nhiệt độ, độ ẩm, khả năng mưa giờ hiện tại, weather code.
 - `geocode_city` (Open‑Meteo geocoding) → toạ độ cho city override để thời tiết theo đúng nơi đó.
 - `get_system_vitals` (Rust: `sysinfo` + `starship-battery`) → % pin, trạng thái sạc, CPU %, RAM %, uptime máy (giây). Poll ~2s (không phải per-frame) và cache với timeout stale ~6s; tắt khi `showVitals` false.
-- Refresh ~10 phút (thời tiết); cache last‑good; offline lần đầu hiện `UNKNOWN` / `--`.
+- Refresh ~10 phút (thời tiết); cache last‑good; offline lần đầu hiện UNKNOWN / `--`.
 
 ## Độ phân giải & codec
 
 - Backing store của canvas là **khung 16:9 cố định** (720p hoặc 1080p theo settings), không theo kích thước cửa sổ — nên output ổn định và nhẹ. Preview letterbox cho vừa.
-- **Đường dẫn quay (auto):** nếu webview hỗ trợ hardware H.264 codec, `MediaRecorder` phát H.264 (capped 12 Mbps) và export là remux nhanh sang MP4 (faststart) — không transcode. Fallback sang VP8/WebM quay trên trình duyệt cũ hoặc khi buộc software encode, rồi transcode sang **H.264 CRF‑26 (preset medium)** cho MP4 nhỏ.
+- **Đường dẫn quay (auto):** nếu webview hỗ trợ hardware H.264 codec, MediaRecorder phát H.264 (capped 12 Mbps) và export là remux nhanh sang MP4 (faststart) — không transcode. Fallback sang VP8/WebM quay trên trình duyệt cũ hoặc khi buộc software encode, rồi transcode sang **H.264 CRF‑26 (preset medium)** cho MP4 nhỏ.
 - Vòng vẽ compositor giới hạn ~60fps để màn ProMotion 120Hz không vẽ HUD gấp đôi mỗi frame quay.
 
 ## Go Live (RTMP/RTMPS)
 
-- `streaming.rs` spawn ONE long-lived **RTMP-only** ffmpeg mỗi session (Tauri managed state `Mutex<Option<StreamSession>>`, single-session). **Cùng** compositor canvas + mic `MediaRecorder` dùng cho quay local được tái sử dụng (500ms timeslice) — không recorder riêng.
+- `streaming.rs` spawn ONE long-lived **RTMP-only** ffmpeg mỗi session (Tauri managed state `Mutex<Option<StreamSession>>`, single-session). **Cùng** compositor canvas + mic MediaRecorder dùng cho quay local được tái sử dụng (500ms timeslice) — không recorder riêng.
 - **Đường dẫn encode (auto):** nếu webview record **H.264 trực tiếp** (`pickStreamH264Mime` — VideoToolbox macOS), recorder phát H.264 (capped 12 Mbps) và ffmpeg làm **`-c copy`** (remux chỉ, không decode/encode) — một encode hardware tránh đôi encode nặng (VP8 encode → decode → H.264) gây giật/đông capture. Nếu không fallback đọc WebM rồi **re-encode** sang H.264. Chế độ copy: stream là canvas resolution (không ffmpeg scale); local save là remux nhanh (`remux_to_mp4`) thay vì transcode. Phát **FLV trên RTMP(S)**. Xây arg là pure, unit-tested fn (`build_ffmpeg_stream_args`).
 - **Chất lượng user-tunable (OBS-style):** **FPS** (default 30, buộc bằng `-r`) và **video bitrate** (default 4500k) trong Settings → Streaming. Stream resolution theo record resolution (không separate stream resolution, vì đường `–c copy` remux không downscale được). Encode **constant bitrate (CBR)** (`-b:v` = `-maxrate`, 2s `-bufsize`) kèm `-realtime 1` (VideoToolbox) / `-tune zerolatency` (x264) cho live low-latency mượt, nên broadcaster thấy bitrate ổn định thay VBR tụt. GOP = `2×fps`. Machine software-encoder **clamp to 720p** (status flag `clamped`). Để giảm chi phí VP8 trung gian (browser software encode), live recorder cũng capture tại stream FPS và cap `videoBitsPerSecond` gần target.
 - **Save-local tách khỏi mạng.** Mỗi recorder chunk ghi hai cách độc lập trong `use-streaming.ts`: `append_temp_chunk` → file tạm local (full quality, mỗi chunk), và `write_stream_chunk` → RTMP ffmpeg (dropped dưới backpressure). Khi stop file tạm được remux hoặc transcode sang MP4 qua **cùng `transcode_to_mp4` / `remux_to_mp4` pipeline như quay local** và index trong library. Nên mạng lag/drop chỉ ảnh hưởng broadcast — không bao giờ bản lưu — và hai cái không chia encode nào throttled. (Thiết kế single-ffmpeg `tee` trước bị drop: nó corrupt H.264 extradata MP4 và làm file local bị mạng làm con tin.)

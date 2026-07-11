@@ -42,7 +42,7 @@
 ## Recording → export pipeline
 
 1. `start_temp_recording(ext)` → temp path.
-2. `MediaRecorder` chunks → `append_temp_chunk(path, bytes)`.
+2. MediaRecorder chunks → `append_temp_chunk(path, bytes)`.
 3. On stop: `transcode_to_mp4(temp, name, outDir, durationSec)` runs bundled ffmpeg on a blocking thread with `-progress pipe:1`, emitting `transcode-progress` (0..1).
 4. Success → temp removed, MP4 in output folder. Failure → `move_temp` keeps the raw WebM (never lose a take).
 5. Entry indexed (`entries.json`) + thumbnail generated (`generate_thumbnail`).
@@ -53,12 +53,12 @@
 - `get_weather` (Open‑Meteo) → temperature, humidity, current‑hour precipitation probability, weather code.
 - `geocode_city` (Open‑Meteo geocoding) → coordinates for a city override so weather follows the chosen place.
 - `get_system_vitals` (Rust: `sysinfo` + `starship-battery`) → battery %, charging state, CPU %, memory %, machine uptime (seconds). Polled every ~2s (not per-frame) and cached with a ~6s stale timeout; disabled when `showVitals` is false.
-- Refreshes every ~10 min (weather); caches last‑good; offline first‑launch shows `UNKNOWN` / `--`.
+- Refreshes every ~10 min (weather); caches last‑good; offline first‑launch shows UNKNOWN / `--`.
 
 ## Recording resolution & codec
 
 - The canvas backing store is a **fixed 16:9 frame** (720p or 1080p from settings), not the window size — so output is deterministic and reasonably sized. The preview letterboxes to fit.
-- **Capture path (auto):** if the webview supports hardware H.264 codec, `MediaRecorder` emits H.264 (capped 12 Mbps) and the export is a fast remux to MP4 (faststart) — no transcode. Falls back to VP8/WebM capture on older browsers or when software encoding is forced, then transcodes to **H.264 CRF‑26 (preset medium)** for small MP4s.
+- **Capture path (auto):** if the webview supports hardware H.264 codec, MediaRecorder emits H.264 (capped 12 Mbps) and the export is a fast remux to MP4 (faststart) — no transcode. Falls back to VP8/WebM capture on older browsers or when software encoding is forced, then transcodes to **H.264 CRF‑26 (preset medium)** for small MP4s.
 - The compositor draw loop is capped at ~60fps so ProMotion 120Hz displays don't render the HUD twice per captured frame.
 
 ## Sensor API
@@ -69,7 +69,7 @@
 
 ## Go Live (RTMP/RTMPS streaming)
 
-- `streaming.rs` spawns ONE long-lived **RTMP-only** ffmpeg per session (Tauri managed state `Mutex<Option<StreamSession>>`, single-session). The **same** compositor canvas + mic `MediaRecorder` used for local recording is reused (500ms timeslice) — no second recorder.
+- `streaming.rs` spawns ONE long-lived **RTMP-only** ffmpeg per session (Tauri managed state `Mutex<Option<StreamSession>>`, single-session). The **same** compositor canvas + mic MediaRecorder used for local recording is reused (500ms timeslice) — no second recorder.
 - **Encode path (auto):** if the webview can record **H.264 directly** (`pickStreamH264Mime` — VideoToolbox HW on macOS), the recorder emits H.264 (capped 12 Mbps) and ffmpeg does **`-c copy`** (remux only, no decode/encode) — a single hardware encode that avoids the CPU-heavy double-encode (VP8 encode → decode → H.264) that stuttered/froze capture. Else it falls back to reading WebM and **re-encoding** to H.264. In copy mode the stream is the canvas resolution (no ffmpeg scale); the local save is a fast **remux** (`remux_to_mp4`) instead of a transcode. Publishes **FLV over RTMP(S)**. Arg building is a pure, unit-tested fn (`build_ffmpeg_stream_args`).
 - **Quality is user-tunable (OBS-style):** **FPS** (default 30, forced with `-r`) and **video bitrate** (default 4500k) live in Settings → Streaming. Stream resolution follows the record resolution (no separate stream resolution, since the `–c copy` remux path cannot downscale). Encoding is **constant bitrate (CBR)** (`-b:v` = `-maxrate`, 2s `-bufsize`) with `-realtime 1` (VideoToolbox) / `-tune zerolatency` (x264) for smooth low-latency live, so the broadcaster sees steady bitrate instead of VBR undershooting. GOP = `2×fps`. Software-encoder machines **clamp to 720p** (status flag `clamped`). To cut the capture-side cost of the intermediate VP8 (browser software encode), the live recorder also captures at the stream FPS and caps `videoBitsPerSecond` near the target.
 - **Save-local is decoupled from the network.** Each recorder chunk is written two independent ways in `use-streaming.ts`: `append_temp_chunk` → a local temp file (full quality, every chunk), and `write_stream_chunk` → the RTMP ffmpeg (droppable under backpressure). On stop the temp file is remuxed or transcoded to MP4 via the **same `transcode_to_mp4` / `remux_to_mp4` pipeline as local recording** and indexed in the library. So a laggy/dropping network degrades only the broadcast — never the saved local take — and the two never share one throttled encode. (An earlier single-ffmpeg `tee` design was dropped: it corrupted the MP4's H.264 extradata and made the local file hostage to network backpressure.)

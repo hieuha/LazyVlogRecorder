@@ -55,7 +55,7 @@ Bản chưa ký/ad‑hoc chạy được ở máy local nhưng Gatekeeper cảnh
 
 ## Cảnh báo đã biết
 
-- **RUSTSEC glib < 0.20** (medium, unsoundness iterator `VariantStrIter`): dep transitive của stack **WebKitGTK (Linux)**, bị pin 0.18 bởi dep Linux của Tauri. Không compile trên macOS/Windows nên **không ảnh hưởng** MVP mac/win. Xem lại khi thêm Linux.
+- **RUSTSEC glib < 0.20** (medium, unsoundness iterator VariantStrIter): dep transitive của stack **WebKitGTK (Linux)**, bị pin 0.18 bởi dep Linux của Tauri. Không compile trên macOS/Windows nên **không ảnh hưởng** MVP mac/win. Xem lại khi thêm Linux.
 
 ## Linux (hoãn)
 

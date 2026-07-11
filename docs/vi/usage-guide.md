@@ -7,7 +7,7 @@
 
 ## Quay
 
-- **Chế độ:** chuyển `FIXED` (tự dừng sau `MIN` phút) hoặc `FREE` (dừng thủ công).
+- **Chế độ:** chuyển FIXED (tự dừng sau MIN phút) hoặc FREE (dừng thủ công).
 - **Record / Stop:** bấm `● REC` / `■ STOP`, hoặc nhấn **Space**.
 - **Pause / Resume:** `❚❚ PAUSE` / `▶ RESUME` khi đang quay (thời gian pause bị trừ khỏi đồng hồ và khỏi auto‑stop của FIXED).
 - **Đổi camera khi đang quay:** nhấn **1**–**4** (ánh xạ tới camera thứ 1–4 trong dropdown, cùng thứ tự) — recording vẫn tiếp tục; một đoạn nhiễu + thu tròn được chèn vào. Hoặc chọn camera khác ở dropdown. (Không đổi mic khi đang quay.)
@@ -21,11 +21,11 @@
 
 ## Thanh điều khiển (bên dưới video)
 
-Tất cả nút nằm trong thanh đen dưới video (không đè lên camera). Nút quay (chế độ, `MIN`, `● REC`) ở bên trái; bên phải: **▤ Library** · **⚙ Settings** · dropdown **Camera** / **Mic** · **⏻ Lock**.
+Tất cả nút nằm trong thanh đen dưới video (không đè lên camera). Nút quay (chế độ, MIN, `● REC`) ở bên trái; bên phải: **▤ Library** · **⚙ Settings** · dropdown **Camera** / **Mic** · **⏻ Lock**.
 
 ## Settings (⚙)
 
-- Tên log entry, số log (tự tăng), city override, **MISSION DAY** (để trống = auto Y.M.D; text tuỳ chỉnh tự co dãn panel), thời lượng FIXED, **Record resolution** (720p = file nhỏ / 1080p = chất lượng cao), **HUD layout** (`Martian` / `Minimal` / `Recon`), **HUD theme** (`Teal` / `Amber` / `Green` / `Crypt`), **Ship Vitals** (strip pin, CPU, RAM, uptime), thư mục lưu (mặc định: `Movies/LazyCamHUD`), **Record audio**, **Mirror camera**, **CRT effect**, và **Change PIN**.
+- Tên log entry, số log (tự tăng), city override, **MISSION DAY** (để trống = auto Y.M.D; text tuỳ chỉnh tự co dãn panel), thời lượng FIXED, **Record resolution** (720p = file nhỏ / 1080p = chất lượng cao), **HUD layout** (Martian / Minimal / Recon), **HUD theme** (Teal / Amber / Green / Crypt), **Ship Vitals** (strip pin, CPU, RAM, uptime), thư mục lưu (mặc định: `Movies/LazyCamHUD`), **Record audio**, **Mirror camera**, **CRT effect**, và **Change PIN**.
 - Layout và theme áp **live** ngay khi chọn — không cần Save (lưu tức thì); các cài đặt khác áp khi Save.
 - Quay ưu tiên hardware H.264 (remux nhanh sang MP4) khi hỗ trợ; fallback VP8/WebM transcode sang H.264 (CRF‑26) trên browser cũ hoặc encode software. Cả hai ở độ phân giải 16:9 đã chọn. Muốn quay mượt hơn / file nhỏ hơn: chọn 720p hoặc tắt **CRT effect**.
 - **Streaming tab (cài đặt stream):** FPS (default 30) và video bitrate (default 4500k); stream resolution giờ theo record resolution (không separate stream height, vì remux hardware không downscale). Constant bitrate cho RTMP mượt. Machine software-encoder clamp to 720p. Một gợi ý cảnh báo hiện lên nếu **Go-Live URL** không bắt đầu bằng `rtmp://` hoặc `rtmps://`, hoặc nếu URL đã chứa stream key (app sẽ thêm key vào — key ở URL sẽ bị lặp lại và gây ffmpeg 404).

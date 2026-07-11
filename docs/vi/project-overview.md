@@ -36,7 +36,7 @@
 
 ## Quyết định then chốt
 
-- **HUD trên một canvas** để `canvas.captureStream()` + `MediaRecorder` ghi webcam + HUD burned‑in cùng lúc.
+- **HUD trên một canvas** để `canvas.captureStream()` + MediaRecorder ghi webcam + HUD burned‑in cùng lúc.
 - **ffmpeg bundle chạy như tiến trình con** (tự tìm path dev vs bundle) thay vì codec webview, để MP4 ổn định.
 - **Tách stream mic (audio) và camera (video)** để đổi camera giữa chừng vẫn giữ audio liên tục.
 

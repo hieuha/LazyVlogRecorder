@@ -147,8 +147,8 @@ SONDE_URL=http://192.168.1.20:1337 SONDE_INTERVAL=1000 \
 
 Pushes a name caption once (`/text` → "MOCK SONDE · HANOI"), then each second:
 
-- `/sensors`: `LAT`, `LON`, `DIST` (km from launch), `BATT` (%).
-- `/series`: `ALT` (m), `SPD` (horizontal m/s).
+- `/sensors`: LAT, LON, DIST (km from launch), BATT (%).
+- `/series`: ALT (m), SPD (horizontal m/s).
 
 ### `scripts/replay-sonde-log.mjs` — replay a real log
 
@@ -168,12 +168,12 @@ SONDE_LOOP=1  node scripts/replay-sonde-log.mjs <logfile> <token>    # repeat
 Pushes the sonde name once (`/text` → `<type> · <serial>`, e.g. "RS41 · Y0532363"),
 then per row:
 
-- `/sensors`: `LAT`, `LON`, `DIST` (from the first row = launch site), `TEMP`
-  (`--` until the RS41 sensor boom deploys, i.e. while `temp` reads `-273`), `BATT`
-  (V), `SATS`.
-- `/series`: `ALT` (m), `CLIMB` (`vel_v`, m/s).
+- `/sensors`: LAT, LON, DIST (from the first row = launch site), TEMP
+  (`--` until the RS41 sensor boom deploys, i.e. while `temp` reads `-273`), BATT
+  (V), SATS.
+- `/series`: ALT (m), CLIMB (`vel_v`, m/s).
 
-**Env vars:** `SONDE_TOKEN`, `SONDE_URL`, `SONDE_INTERVAL` (mock), `SONDE_SPEED`
+**Env vars:** SONDE_TOKEN, SONDE_URL, SONDE_INTERVAL (mock), SONDE_SPEED
 (replay time multiplier), `SONDE_LOOP=1` (replay).
 
 ## Security notes
