@@ -258,6 +258,10 @@ export default function App() {
     return () => {
       cancelled = true;
       genRef.current++;
+      // Finalize an in-progress LOCAL recording BEFORE tearing down the streams,
+      // so locking/unmounting saves + indexes the take (from the temp file) instead
+      // of orphaning it. No-op if not recording (rec.stop guards on its own ref).
+      void rec.stop();
       hudUnsubRef.current?.();
       hudUnsubRef.current = null;
       compositorRef.current?.stop();

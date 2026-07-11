@@ -68,6 +68,7 @@ export function useStreaming(refs: UseStreamingRefs) {
   const tempPathRef = useRef<string>(""); // local temp (WebM or, in copy mode, MP4)
   const sessionSaveLocalRef = useRef<boolean>(false); // snapshot for this session
   const sessionCopyRef = useRef<boolean>(false); // H.264 copy path → local remux, not transcode
+  const savingRef = useRef<boolean>(false); // guards saveLocalTake against overlapping calls
   const live = state !== "idle" && state !== "error";
 
   // Backend status → UI state. Single source of truth for the badge. A terminal
@@ -129,7 +130,10 @@ export function useStreaming(refs: UseStreamingRefs) {
   async function saveLocalTake(durationSec: number): Promise<void> {
     const temp = tempPathRef.current;
     tempPathRef.current = "";
-    if (!sessionSaveLocalRef.current || !temp) return;
+    // Re-entrancy guard: an "error" event and a user stop() can both drive a save;
+    // without this the second one duplicates the transcode + leaks its listener.
+    if (!sessionSaveLocalRef.current || !temp || savingRef.current) return;
+    savingRef.current = true;
 
     setSaving(true);
     setTranscodeProgress(0);
@@ -159,6 +163,7 @@ export function useStreaming(refs: UseStreamingRefs) {
     } finally {
       unlisten();
       setSaving(false);
+      savingRef.current = false;
     }
   }
 
@@ -245,10 +250,14 @@ export function useStreaming(refs: UseStreamingRefs) {
   }
 
   async function stop(): Promise<void> {
+    // Never overwrite a terminal error with idle — if the backend errored while we
+    // were stopping, the LIVE ERROR + its reason must stay until the user switches
+    // tabs (reset). A clean stop with no error goes to idle.
+    const toRest = () => setState((prev) => (prev === "error" ? "error" : "idle"));
     const rec = recRef.current;
     if (!rec) {
       await stopStream().catch(() => {});
-      setState("idle");
+      toRest();
       return;
     }
     recRef.current = null;
@@ -259,7 +268,7 @@ export function useStreaming(refs: UseStreamingRefs) {
       /* ignore */
     }
     await stopStream().catch((err) => setError(String(err))); // end the broadcast promptly
-    setState("idle");
+    toRest();
     await saveLocalTake(duration); // transcode the local take (shows the saving overlay)
   }
 

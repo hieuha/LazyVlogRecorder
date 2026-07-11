@@ -23,7 +23,7 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 use super::ffmpeg::ffmpeg_path;
 
@@ -302,7 +302,16 @@ fn request_graceful_exit(_child: &Child) {
     // No SIGTERM on Windows; shutdown() falls through to kill() (TerminateProcess).
 }
 
-pub type StreamState = Mutex<Option<StreamSession>>;
+/// Managed live-stream state: the single session plus a `tearing_down` flag set
+/// while a previous session's ffmpeg is still being killed off-thread. Without the
+/// flag, a GO LIVE right after a backpressure auto-stop would pass the "is running"
+/// check (the session was already taken) and spawn a 2nd ffmpeg publishing to the
+/// same URL while the old one is still dying.
+#[derive(Default)]
+pub struct StreamState {
+    session: Mutex<Option<StreamSession>>,
+    tearing_down: AtomicBool,
+}
 
 /// Start a live stream. Spawns ffmpeg, wires stdin writer + stderr parser, and
 /// stores the session. Errors if a session is already running or ffmpeg is
@@ -319,8 +328,8 @@ pub async fn start_stream(
     copy: bool,
 ) -> Result<(), String> {
     {
-        let guard = state.lock().unwrap();
-        if guard.is_some() {
+        let guard = state.session.lock().unwrap();
+        if guard.is_some() || state.tearing_down.load(Ordering::Relaxed) {
             return Err("a stream is already running".into());
         }
     }
@@ -448,7 +457,7 @@ pub async fn start_stream(
         },
     );
 
-    *state.lock().unwrap() = Some(StreamSession {
+    *state.session.lock().unwrap() = Some(StreamSession {
         tx: Some(tx),
         child,
         alive,
@@ -475,7 +484,7 @@ pub async fn write_stream_chunk(
     state: State<'_, StreamState>,
     bytes: Vec<u8>,
 ) -> Result<(), String> {
-    let mut guard = state.lock().unwrap();
+    let mut guard = state.session.lock().unwrap();
     let Some(session) = guard.as_mut() else {
         return Err("no active stream".into());
     };
@@ -519,7 +528,14 @@ pub async fn write_stream_chunk(
                 let session = guard.take();
                 drop(guard);
                 if let Some(session) = session {
-                    thread::spawn(move || drop(session)); // Drop::shutdown()
+                    // Mark teardown so a re-start can't spawn a 2nd ffmpeg while the
+                    // old one is still dying; clear it once the drop completes.
+                    state.tearing_down.store(true, Ordering::Relaxed);
+                    let app2 = app.clone();
+                    thread::spawn(move || {
+                        drop(session); // Drop::shutdown()
+                        app2.state::<StreamState>().tearing_down.store(false, Ordering::Relaxed);
+                    });
                 }
                 let _ = app.emit(
                     "stream-status",
@@ -542,11 +558,13 @@ pub async fn write_stream_chunk(
 /// END LIVE never blocks the main thread (shutdown can take up to STOP_TIMEOUT).
 #[tauri::command]
 pub async fn stop_stream(app: AppHandle, state: State<'_, StreamState>) -> Result<(), String> {
-    let session = state.lock().unwrap().take();
+    let session = state.session.lock().unwrap().take();
     if let Some(session) = session {
+        state.tearing_down.store(true, Ordering::Relaxed); // block re-start until fully dropped
         let dropped = session.dropped.load(Ordering::Relaxed);
         // Drop::shutdown() closes stdin, waits, kills on timeout — off the main thread.
         let _ = tauri::async_runtime::spawn_blocking(move || drop(session)).await;
+        state.tearing_down.store(false, Ordering::Relaxed);
         let _ = app.emit(
             "stream-status",
             StreamStatus { state: "ended", dropped, clamped: false, message: None },
