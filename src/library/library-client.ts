@@ -1,10 +1,7 @@
-// Frontend wrappers for library backend commands (thumbnail + delete).
+// Frontend wrappers for library backend commands. Thumbnails are rendered in the
+// webview (see ./thumbnail.ts) — no ffmpeg — so only file deletion lives here.
 
 import { invoke } from "@tauri-apps/api/core";
-
-export function generateThumbnail(videoPath: string, id: string): Promise<string> {
-  return invoke<string>("generate_thumbnail", { videoPath, id });
-}
 
 export function deleteFiles(paths: string[]): Promise<void> {
   return invoke("delete_files", { paths });

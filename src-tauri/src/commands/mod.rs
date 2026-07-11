@@ -9,6 +9,7 @@ pub mod auth;
 #[cfg(desktop)]
 pub mod ffmpeg;
 pub mod geo;
+pub mod library;
 pub mod recording_fs;
 pub mod sensor_server;
 #[cfg(desktop)]

@@ -33,9 +33,9 @@ pub fn run() {
             commands::recording_fs::close_temp_recording,
             commands::recording_fs::move_temp,
             commands::recording_fs::delete_files,
+            commands::library::save_thumbnail,
             commands::ffmpeg::transcode_to_mp4,
             commands::ffmpeg::remux_to_mp4,
-            commands::ffmpeg::generate_thumbnail,
             commands::sensor_server::start_sensor_server,
             commands::sensor_server::stop_sensor_server,
             commands::streaming::start_stream,
@@ -58,6 +58,7 @@ pub fn run() {
         commands::recording_fs::close_temp_recording,
         commands::recording_fs::move_temp,
         commands::recording_fs::delete_files,
+        commands::library::save_thumbnail,
         commands::sensor_server::start_sensor_server,
         commands::sensor_server::stop_sensor_server,
     ]);

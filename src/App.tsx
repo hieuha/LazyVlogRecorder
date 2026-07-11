@@ -29,7 +29,7 @@ import { PinGate } from "./auth/pin-gate";
 import { hasPin } from "./auth/auth-client";
 import { LibraryView } from "./library/library-view";
 import { addEntry, updateEntry } from "./library/entries-store";
-import { generateThumbnail } from "./library/library-client";
+import { generateThumbnail } from "./library/thumbnail";
 import type { SavedFile } from "./recording/save-client";
 import type { SensorItem, SeriesItem } from "./hud/types";
 import { HudSelect } from "./components/hud-select";
