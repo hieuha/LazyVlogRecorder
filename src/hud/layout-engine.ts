@@ -84,7 +84,7 @@ function dispatch(c: WidgetRenderContext, spec: LayoutConfig["widgets"][number])
   }
 }
 
-function resolveAnchor(
+export function resolveAnchor(
   anchor: Anchor,
   offset: Vec2,
   width: number,
