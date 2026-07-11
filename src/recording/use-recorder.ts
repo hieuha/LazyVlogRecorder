@@ -16,11 +16,18 @@ import {
   appendTempChunk,
   closeTempRecording,
   transcodeToMp4,
+  remuxToMp4,
   moveTemp,
   type SavedFile,
 } from "./save-client";
 import { extForMime, makeRecordingName } from "./output-naming";
+import { pickStreamH264Mime } from "./capability";
 import type { StreamEncoderPref } from "../settings/config-store";
+
+// Cap the hardware H.264 recorder's bitrate so chunks stay small. Uncapped, the
+// webview picks a very high rate; 12 Mbps is visually lossless at 1080p and keeps
+// the temp writes cheap. VP8 keeps its default (unset).
+const RECORD_H264_BPS = 12_000_000;
 
 export type { RecMode };
 
@@ -52,6 +59,7 @@ export function useRecorder(refs: UseRecorderRefs) {
   const recRef = useRef<Recorder | null>(null);
   const tempPathRef = useRef<string>("");
   const extRef = useRef<string>("webm");
+  const copyRef = useRef<boolean>(false); // recorded H.264 directly → remux on save, not transcode
 
   // Auto-dismiss the "saved" notice after 10s.
   useEffect(() => {
@@ -82,14 +90,18 @@ export function useRecorder(refs: UseRecorderRefs) {
       const logNo = refs.logNoRef.current;
       const outDir = refs.outDirRef.current;
       let saved: SavedFile;
+      const copy = copyRef.current;
       try {
         const outName = makeRecordingName(person, logNo, "mp4");
-        const hardware = refs.encoderPrefRef.current !== "software";
-        saved = await transcodeToMp4(tempPath, outName, outDir, durationSec, hardware);
-      } catch (transcodeErr) {
+        // Copy path: recorded H.264 already → remux (fast, no VP8 decode/re-encode).
+        // Else transcode the VP8 temp (hardware unless the encoder is forced software).
+        saved = copy
+          ? await remuxToMp4(tempPath, outName, outDir)
+          : await transcodeToMp4(tempPath, outName, outDir, durationSec, refs.encoderPrefRef.current !== "software");
+      } catch (finalizeErr) {
         const rawName = makeRecordingName(person, logNo, srcExt);
         saved = await moveTemp(tempPath, rawName, outDir);
-        setError(`MP4 transcode failed; saved ${srcExt.toUpperCase()}. ${transcodeErr}`);
+        setError(`MP4 finalize failed; saved ${srcExt.toUpperCase()}. ${finalizeErr}`);
       }
       setSavedFile(saved);
       // A write failure/overflow means the take may be truncated — warn rather
@@ -121,12 +133,21 @@ export function useRecorder(refs: UseRecorderRefs) {
 
   async function start(): Promise<void> {
     const canvas = refs.canvasRef.current;
-    const mime = refs.mimeTypeRef.current;
-    if (!canvas || !mime || recRef.current) return;
+    if (!canvas || recRef.current) return;
+
+    // Prefer a hardware H.264 recorder (VideoToolbox) → the browser encodes on the
+    // Media Engine, freeing the CPU (smoother capture) AND making save a fast remux
+    // instead of a slow VP8 decode + re-encode. Falls back to VP8 when H.264 isn't
+    // available or the encoder is forced to software.
+    const h264 = refs.encoderPrefRef.current === "software" ? null : pickStreamH264Mime();
+    const copy = h264 !== null;
+    const mime = h264 ?? refs.mimeTypeRef.current;
+    if (!mime) return;
+    copyRef.current = copy;
     setSavedFile(null);
     setError(null);
 
-    const srcExt = extForMime(mime);
+    const srcExt = copy ? "mp4" : extForMime(mime);
     extRef.current = srcExt;
     let tempPath: string;
     try {
@@ -145,6 +166,9 @@ export function useRecorder(refs: UseRecorderRefs) {
       // its main-thread cost is a tiny hitch instead of one big write every second
       // that lands in-phase with the ~1s sensor pushes and visibly stutters.
       timesliceMs: 250,
+      // Cap the hardware H.264 bitrate so per-chunk temp writes stay small; VP8
+      // keeps its default (full quality).
+      videoBitsPerSecond: copy ? RECORD_H264_BPS : undefined,
       // Bound memory if the disk can't keep up: stop the take once too many
       // chunk writes are backed up rather than letting the queue grow forever.
       // ~40 chunks ≈ 10s at the 250ms timeslice.

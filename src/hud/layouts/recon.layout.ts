@@ -35,12 +35,12 @@ export const reconLayout: LayoutConfig = {
     { type: "corner-frame", anchor: "bottom-right", offset: { x: -2, y: -2 } },
 
     // Top-left header: mission day (SOL + date panel).
-    { type: "mission-day", anchor: "top-left", offset: { x: 4, y: 4.5 } },
+    { type: "mission-day", anchor: "top-left", offset: { x: 4, y: 3.2 } },
 
     // Right rail: clock + log entry header, then the external-API panels
     // (sensor readings under the log, series sparklines mid-right).
-    { type: "clock", anchor: "top-right", offset: { x: -4, y: 5 } },
-    { type: "log-entry", anchor: "top-right", offset: { x: -4, y: 7.4 } },
+    { type: "clock", anchor: "top-right", offset: { x: -4, y: 3.7 } },
+    { type: "log-entry", anchor: "top-right", offset: { x: -4, y: 6.1 } },
     { type: "sensor-panel", anchor: "top-right", offset: { x: -4, y: 12 } },
     { type: "series-panel", anchor: "mid-right", offset: { x: -4, y: -4 } },
 

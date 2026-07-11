@@ -84,7 +84,7 @@ export const cryptTheme: HudTheme = {
   accent: "rgba(242, 54, 44, 0.98)", // primary crimson lines / brackets (punchier)
   accentBright: "rgba(255, 134, 110, 1)", // glow core / gradient top (bright red)
   accentDeep: "rgba(158, 26, 20, 0.96)", // gradient tail / dial track (blood red, lifted for bright footage)
-  text: "rgba(255, 158, 140, 1)", // vivid coral-red readouts (matches the red palette)
+  text: "rgba(255, 244, 240, 0.98)", // bright near-white readouts, only a whisper of warmth (was a salmon tint that read too red on dark footage)
   textDim: "rgba(240, 92, 74, 0.97)", // deep-red gradient bottom for big numbers
   muted: "rgba(236, 108, 92, 0.96)", // secondary labels — saturated so they read on bright footage
   warn: "rgba(255, 190, 60, 0.98)", // hazard amber — distinct from the ambient red

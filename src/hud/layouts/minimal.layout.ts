@@ -19,7 +19,7 @@ export const minimalLayout: LayoutConfig = {
     { type: "color-grade", anchor: "top-left", offset: { x: 0, y: 0 } },
     { type: "scanline", anchor: "top-left", offset: { x: 0, y: 0 } },
 
-    { type: "clock", anchor: "top-right", offset: { x: -4, y: 5 } },
+    { type: "clock", anchor: "top-right", offset: { x: -4, y: 3.7 } },
 
     // External-API panels (right side; sensor/series draw right-aligned).
     { type: "sensor-panel", anchor: "top-right", offset: { x: -4, y: 8.5 } },

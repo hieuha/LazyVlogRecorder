@@ -23,7 +23,7 @@ export const martianLayout: LayoutConfig = {
 
     // Left column, top-anchored so vertical spacing is fixed regardless of
     // window aspect (SOL → gauges → ENVIRONMENT), mirroring the film order.
-    { type: "mission-day", anchor: "top-left", offset: { x: 4, y: 4.5 } },
+    { type: "mission-day", anchor: "top-left", offset: { x: 4, y: 3.2 } },
     { type: "gauge-arc", anchor: "top-left", offset: { x: 4, y: 14 }, metric: "humidity", label: "Humidity" },
     { type: "gauge-arc", anchor: "top-left", offset: { x: 4, y: 24 }, metric: "precip", label: "Rain" },
     { type: "gauge-arc", anchor: "top-left", offset: { x: 4, y: 34 }, metric: "temp", label: "Temp" },
@@ -37,8 +37,8 @@ export const martianLayout: LayoutConfig = {
     { type: "caption", anchor: "bottom-left", offset: { x: 4, y: -3.5 } },
 
     // Top-right clock (TIME + DATE) + log entry
-    { type: "clock", anchor: "top-right", offset: { x: -4, y: 5 } },
-    { type: "log-entry", anchor: "top-right", offset: { x: -4, y: 7.4 } },
+    { type: "clock", anchor: "top-right", offset: { x: -4, y: 3.7 } },
+    { type: "log-entry", anchor: "top-right", offset: { x: -4, y: 6.1 } },
 
     // External sensor readings (POST /sensors), right side under the log entry.
     { type: "sensor-panel", anchor: "top-right", offset: { x: -4, y: 12 } },
