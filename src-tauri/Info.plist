@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>LazyVlogRecorder needs camera access to record your vlog log entries.</string>
+	<string>LazyCamHUD needs camera access to record your video log entries.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>LazyVlogRecorder needs microphone access to record audio for your vlog log entries.</string>
+	<string>LazyCamHUD needs microphone access to record audio for your video log entries.</string>
 </dict>
 </plist>
