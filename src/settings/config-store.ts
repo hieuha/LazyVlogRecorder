@@ -20,8 +20,11 @@ export interface AppConfig {
   // External sensor HTTP API (right-side HUD panel).
   sensorApiEnabled: boolean;
   sensorApiPort: number;
-  sensorApiLan: boolean; // true = bind 0.0.0.0 (LAN), false = 127.0.0.1 only
-  sensorApiToken: string; // required when LAN; auto-generated
+  // Bind address for the Sensor API server: "127.0.0.1" (this device only),
+  // "0.0.0.0" (all interfaces), or a specific LAN IP. Anything other than
+  // loopback is network-facing and requires a token.
+  sensorApiBindHost: string;
+  sensorApiToken: string; // required when network-facing; auto-generated
   // Go Live — RTMP(S) streaming (FB/YouTube/Twitch).
   rtmpUrl: string; // base publish URL, e.g. rtmp://a.rtmp.youtube.com/live2
   streamKey: string; // secret; composed onto rtmpUrl in the backend, never logged
@@ -56,7 +59,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   cityOverride: "",
   sensorApiEnabled: false,
   sensorApiPort: 1337,
-  sensorApiLan: true,
+  sensorApiBindHost: "127.0.0.1",
   sensorApiToken: "",
   rtmpUrl: "",
   streamKey: "",
@@ -77,8 +80,13 @@ const store = new LazyStore("config.json");
 
 export async function loadConfig(): Promise<AppConfig> {
   try {
-    const saved = (await store.get<Partial<AppConfig>>("config")) ?? {};
-    return { ...DEFAULT_CONFIG, ...saved };
+    const saved = (await store.get<Record<string, unknown>>("config")) ?? {};
+    const merged = { ...DEFAULT_CONFIG, ...(saved as Partial<AppConfig>) };
+    // Migrate the old `sensorApiLan` boolean to an explicit bind host.
+    if (saved.sensorApiBindHost === undefined) {
+      merged.sensorApiBindHost = saved.sensorApiLan === true ? "0.0.0.0" : "127.0.0.1";
+    }
+    return merged;
   } catch {
     return { ...DEFAULT_CONFIG };
   }

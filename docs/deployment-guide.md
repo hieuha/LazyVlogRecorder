@@ -1,57 +1,85 @@
 # Deployment Guide
 
-Build + package **LazyCamHUD** (Tauri 2 + React). MVP targets **macOS + Windows**; Linux is deferred.
+Build + package **LazyCamHUD** (Tauri 2 + React) for **macOS + iOS/iPadOS** (Apple platforms only).
 
 ## Prerequisites
 
+### macOS
 - Node 20+, Rust stable, Tauri CLI (via `npm run tauri`).
-- macOS: Xcode command line tools.
-- Windows: WebView2 runtime (bundled by the NSIS installer).
+- Xcode command line tools.
 
-## 1. Fetch the ffmpeg sidecar
+### iOS/iPadOS
+- Node 20+, Rust stable, Tauri CLI (via `npm run tauri`).
+- Xcode (full IDE, not just command-line tools) — required for iOS build & signing.
+- CocoaPods (`sudo gem install cocoapods`).
+- Rust iOS targets: `rustup target add aarch64-apple-ios aarch64-apple-ios-sim`.
+- iOS platform runtime installed in Xcode (Xcode → Settings → Components → add iOS platform).
 
-The MP4 export uses a bundled static ffmpeg (gitignored). Fetch it for the current host before building:
+## 1. Fetch the ffmpeg sidecar (macOS only)
+
+The macOS MP4 export uses a bundled static ffmpeg (gitignored). **iOS does not use ffmpeg**; recording is subprocess-free and native on both platforms.
+
+Fetch ffmpeg for the current macOS host before building:
 
 ```bash
-# macOS
-./scripts/fetch-ffmpeg.sh            # current arch
+./scripts/fetch-ffmpeg.sh            # current arch (arm64 or x86_64)
 ./scripts/fetch-ffmpeg.sh macos-arm64
 ./scripts/fetch-ffmpeg.sh macos-x64
 ```
 
-```powershell
-# Windows (fetches a static build from gyan.dev)
-powershell -ExecutionPolicy Bypass -File scripts\fetch-ffmpeg.ps1
-```
-
-Binaries land in `src-tauri/binaries/ffmpeg-<target-triple>` (Windows: `…-x86_64-pc-windows-msvc.exe`)
-and are bundled via `externalBin` in `tauri.conf.json`. At runtime the app resolves
-the sidecar with the correct `.exe` suffix per OS (`src-tauri/src/commands/ffmpeg.rs`).
+Binaries land in `src-tauri/binaries/ffmpeg-<target-triple>` and are bundled via `externalBin` in `src-tauri/tauri.macos.conf.json` (macOS-specific overrides). At runtime the app resolves the sidecar with the correct suffix per architecture.
 
 ## 2. Build
+
+### macOS
 
 ```bash
 npm install
 npm run tauri build
 ```
 
+Outputs: `src-tauri/target/release/bundle/{macos/*.app,dmg/*.dmg}`
+
+### iOS/iPadOS
+
+First time only: generate the Xcode project into `src-tauri/gen/apple/`:
+
+```bash
+npm install
+npm run tauri ios init
+```
+
+Build for device or simulator:
+
+```bash
+# Device build (must be provisioned in Xcode)
+npm run tauri ios build
+
+# Simulator build (arm64 or x86_64; for M1+ use arm64-sim)
+npm run tauri ios build -- --target aarch64-sim
+```
+
 Outputs:
-- macOS: `src-tauri/target/release/bundle/{macos/*.app,dmg/*.dmg}`
-- Windows: `src-tauri/target/release/bundle/nsis/*-setup.exe`
+- Device: `src-tauri/gen/apple/build/release/LazyCamHUD.ipa` (ready for TestFlight / App Store).
+- Simulator: `src-tauri/gen/apple/build/arm64-sim/LazyCamHUD.app/` (run in Xcode simulator).
 
-## 3. macOS camera/mic permissions
+## 3. Permissions & entitlements
 
-- Usage strings live in `src-tauri/Info.plist` (`NSCameraUsageDescription`,
-  `NSMicrophoneUsageDescription`) and are merged into the built app.
-- Hardened-runtime entitlements (`src-tauri/entitlements.plist`) grant
-  `com.apple.security.device.camera` + `audio-input`, referenced from
-  `bundle.macOS.entitlements`. Required once you enable notarization.
-- **Dev note:** `tauri dev` does not always merge `Info.plist`; verify the
-  camera path from a real `tauri build` bundle.
+### macOS
+- Usage strings (`NSCameraUsageDescription`, `NSMicrophoneUsageDescription`) live in `src-tauri/Info.plist`.
+- Hardened-runtime entitlements (`src-tauri/entitlements.plist`) grant `com.apple.security.device.camera` + `audio-input`, referenced from `bundle.macOS.entitlements`.
+- **Dev note:** `tauri dev` may not always merge `Info.plist`; verify from a real `tauri build` bundle.
 
-## 4. Signing / notarization (macOS, for distribution)
+### iOS
+- **Camera + Microphone:** Usage strings in `src-tauri/gen/apple/lazycamhud_iOS/Info.plist` (`NSCameraUsageDescription`, `NSMicrophoneUsageDescription`). Prompted at first use.
+- **Local Network:** `NSLocalNetworkUsageDescription` in the same plist. Required when Sensor API binds to non-loopback addresses (LAN mode). Prompted at first use.
+- **Data Protection:** `src-tauri/gen/apple/lazycamhud_iOS/lazycamhud_iOS.entitlements` sets `com.apple.developer.default-data-protection` to `NSFileProtectionComplete`, encrypting app files at rest (when device has a passcode).
 
-Set a signing identity and Apple notarization credentials, then `tauri build`:
+## 4. Code signing
+
+### macOS (for distribution)
+
+Set a signing identity and Apple notarization credentials, then build:
 
 ```bash
 export APPLE_SIGNING_IDENTITY="Developer ID Application: <name> (<team>)"
@@ -61,16 +89,26 @@ npm run tauri build
 
 Unsigned/ad-hoc builds run locally but Gatekeeper will warn on other machines.
 
-## Known advisories
+### iOS (for device & App Store)
 
-- **RUSTSEC glib < 0.20** (medium, VariantStrIter iterator unsoundness):
-  transitive dependency of the **WebKitGTK (Linux)** stack, pinned to 0.18 by
-  upstream Tauri Linux deps. Not compiled on macOS/Windows, so it does not
-  affect the MVP targets. Revisit when Linux support is added.
+Signing is automatic in Xcode after setting **Team ID** in your development provisioning profile. For CI:
 
-## Linux (deferred)
+```bash
+export APPLE_DEVELOPMENT_TEAM="<team-id>"
+npm run tauri ios build
+```
 
-WebKitGTK's MediaRecorder/`captureStream` support is inconsistent. When adding
-Linux, verify the recording path and add a frames→ffmpeg fallback if needed
-(see `plans/.../phase-07-cross-platform-hardening.md`), and fetch a Linux ffmpeg
-sidecar (`ffmpeg-x86_64-unknown-linux-gnu`).
+A Personal (free) Team works for development. Device must have Developer Mode enabled, and the developer certificate must be trusted in Settings → General → VPN & Device Management.
+
+For App Store distribution, add an App Store Distribution certificate in Xcode and select it in the build settings.
+
+## Storage paths
+
+### macOS
+- Videos: `~/Movies/LazyCamHUD/` (user-selectable in Settings).
+- Config/PIN/library/thumbnails: `~/Library/Application Support/com.hatrunghieu.lazycamhud/`.
+
+### iOS
+- All data (config, PIN, videos, thumbnails): app's Documents sandbox (`/var/mobile/Containers/Data/uscData/com.hatrunghieu.lazycamhud/Documents/`).
+- PIN stored in OS Keychain (salt + SHA-256 hash).
+- At-rest encryption via iOS Data Protection (when device has a passcode); see entitlements above.

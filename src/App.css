@@ -21,7 +21,13 @@ body,
   display: flex;
   flex-direction: column;
   width: 100vw;
+  /* Use the dynamic viewport height on mobile WebKit: a plain 100vh resolves to
+     the *large* viewport (taller than the visible area under iOS standalone),
+     which pushed the control bar below the fold where `overflow: hidden` clipped
+     it. 100dvh tracks the actually-visible height so the control bar always fits.
+     100vh stays as the fallback for engines without dvh. */
   height: 100vh;
+  height: 100dvh;
   background: #05070a;
 }
 
@@ -56,6 +62,23 @@ body,
 
 /* Dedicated black strip below the video that holds all function buttons,
    so nothing overlays the camera view. */
+/* Sensor API: port + bind-host dropdown side by side. */
+.settings-api-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+.settings-api-port {
+  flex: 0 0 96px;
+}
+.settings-api-host {
+  flex: 1;
+  min-width: 0;
+}
+.settings-api-host select {
+  width: 100%;
+}
+
 .control-bar {
   flex-shrink: 0;
   display: flex;
@@ -64,6 +87,9 @@ body,
   flex-wrap: wrap; /* never clip: groups drop to a second row on narrow widths */
   gap: 12px 16px;
   padding: 14px 22px;
+  /* Keep the buttons clear of the iOS home indicator (safe-area inset is 0 on
+     desktop, so this is a no-op there). */
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
   background: #000;
   border-top: 1px solid rgba(126, 224, 233, 0.22);
 }
@@ -107,6 +133,38 @@ body,
 
 .cap-badge.warn {
   color: #e0a857;
+}
+
+/* Sensor API endpoint appended inside the capture badge. */
+.api-inline {
+  font-variant-numeric: tabular-nums;
+}
+.api-inline.off {
+  opacity: 0.55;
+}
+.api-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 3px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: #57e0c4;
+}
+.api-inline.off .api-dot {
+  background: #777;
+}
+.api-inline.active .api-dot {
+  animation: api-pulse 0.7s ease-in-out infinite;
+}
+@keyframes api-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
 }
 
 /* Recording state: solid red box with the timer inside */

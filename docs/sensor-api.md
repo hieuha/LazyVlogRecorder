@@ -16,11 +16,13 @@ Three endpoints:
 
 | Setting | Meaning |
 |---|---|
+| **Bind Host** | Dropdown listing `127.0.0.1` (this device only), `0.0.0.0` (all interfaces/LAN), and detected LAN IPs (e.g., `192.168.1.20`). Non-loopback bindings **require a token**. |
 | **Port** | TCP port (default `1337`). |
-| **Allow LAN devices** | On → bind `0.0.0.0` (reachable from other devices on the network). Off → bind `127.0.0.1` (this machine only). |
-| **Token** | Bearer token, auto‑generated; **Regenerate** makes a new one. |
+| **Token** | Bearer token, auto‑generated; **Regenerate** makes a new one. Required when binding to non-loopback addresses. |
 
-Enabling or disabling the service, and regenerating the token, show a confirmation modal first. The server starts when enabled, restarts when port or LAN access changes, and stops when the app is locked or closed. **Regenerate token** persists and restarts the service immediately (no Save needed).
+Enabling or disabling the service, and regenerating the token, show a confirmation modal first. The server starts when enabled, restarts when port or bind host changes, and stops when the app is locked or closed. **Regenerate token** persists and restarts the service immediately (no Save needed).
+
+**iOS note:** The Sensor API is foreground-only. When the app is backgrounded, the server stops (no drain from a listening socket). When the app returns to foreground, the server auto-restarts if enabled, without manual re-enabling. On first LAN access, iOS prompts for the Local Network permission (NSLocalNetworkUsageDescription).
 
 ## Authentication
 
@@ -30,18 +32,25 @@ Send the token as a bearer header:
 Authorization: Bearer <token>
 ```
 
-- **LAN mode requires** a non‑empty token — every request is checked.
-- Localhost mode: if the token is empty the check is skipped; otherwise it is required.
+- **Non-loopback binding (0.0.0.0, LAN IPs) requires** a non‑empty token — every request is checked. The server refuses to start on a network address without a token.
+- **Loopback binding (127.0.0.1):** if the token is empty the check is skipped; otherwise it is required.
 
 ## `POST /sensors` — scalar readouts
 
 ```bash
+# Example: localhost on this device
 curl -X POST http://127.0.0.1:1337/sensors \
   -H "Authorization: Bearer <token>" \
   -d '{"items":[
         {"label":"CO2","value":"812","unit":"ppm"},
         {"label":"HR","value":"78","unit":"bpm"}
       ]}'
+
+# Example: LAN IP (e.g., device on same WiFi)
+# Pick the Bind Host IP from Settings, e.g., 192.168.1.20:
+curl -X POST http://192.168.1.20:1337/sensors \
+  -H "Authorization: Bearer <token>" \
+  -d '{"items":[{"label":"CO2","value":"812","unit":"ppm"}]}'
 ```
 
 - Body: `{ "items": [ { "label": string, "value": string, "unit"?: string } ] }`
@@ -51,7 +60,13 @@ curl -X POST http://127.0.0.1:1337/sensors \
 ## `POST /series` — time series (sparkline)
 
 ```bash
+# Example: localhost
 curl -X POST http://127.0.0.1:1337/series \
+  -H "Authorization: Bearer <token>" \
+  -d '{"label":"ALT","value":12345,"unit":"m"}'
+
+# Example: LAN IP
+curl -X POST http://192.168.1.20:1337/series \
   -H "Authorization: Bearer <token>" \
   -d '{"label":"ALT","value":12345,"unit":"m"}'
 ```
@@ -65,7 +80,13 @@ curl -X POST http://127.0.0.1:1337/series \
 ## `POST /text` — caption (typewriter)
 
 ```bash
+# Example: localhost
 curl -X POST http://127.0.0.1:1337/text \
+  -H "Authorization: Bearer <token>" \
+  -d '{"text":"RS41 · Y0532363","typing":true}'
+
+# Example: LAN IP
+curl -X POST http://192.168.1.20:1337/text \
   -H "Authorization: Bearer <token>" \
   -d '{"text":"RS41 · Y0532363","typing":true}'
 ```
@@ -180,5 +201,7 @@ then per row:
 
 - The endpoint accepts **display text only**; there is no code path that executes it.
 - Size/count/length are clamped so a device cannot overflow the HUD or memory.
-- LAN binding **requires** a token — the server refuses to start on `0.0.0.0` without one — and the token is compared in constant time. Treat it like a shared password on your network.
-- The token lives in `config.json` alongside other settings (not a secret store).
+- Non-loopback binding (0.0.0.0, LAN IPs) **requires a token** — the server refuses to start on a network address without one. Token is compared in constant time. Treat it like a shared password on your network.
+- The token lives in `config.json` alongside other settings (not a secret store). On iOS, the entire sandbox is encrypted at rest if the device has a passcode.
+- **iOS foreground-only:** when the app is backgrounded, the listening socket closes, preventing network attacks on a backgrounded instance.
+- **Local network only:** the endpoint is not exposed to the internet; it only listens on local addresses (loopback or LAN IPs). For remote access, use a VPN or local proxy.

@@ -2,6 +2,8 @@
 
 ## High level
 
+**Apple-only (macOS + iOS/iPadOS).** One Tauri codebase, two artifacts: macOS desktop app + iOS universal (iPhone + iPad).
+
 ```
 ┌────────────────── Frontend (React + TS + Vite) ─────────────────┐
 │ PIN gate ──► App                                                │
@@ -12,21 +14,28 @@
 │     ├─ draw webcam frame (cover, optional mirror)               │
 │     ├─ HUD layer  = layout-engine(layout, state)                │
 │     └─ CRT overlay + switch transition                          │
-│        │ canvas.captureStream(30).videoTrack                    │
-│        │ + mic audioTrack ─► MediaRecorder (VP8/WebM, chunked)  │
+│        │ canvas.captureStream(fps).videoTrack (H.264 on iOS)    │
+│        │ + mic audioTrack ─► MediaRecorder (H.264/AAC or VP8)   │
 │        ▼ append each chunk                                      │
-│   temp file  ─────────────invoke──────────────►                 │
+│   temp file (fragmented MP4, moov at front on iOS WebKit)       │
+│         │                                                       │
 │   sensor events (sensors/series/text) ◄── Tauri events ──┐      │
 └────────┼─────────────────────────────────────────────────┼──────┘
          ▼                                                  │
 ┌────────────────── Backend (Rust / Tauri commands) ───────┼─────┐
-│ ffmpeg (bundled): temp WebM ─► MP4 (H.264/AAC CRF‑26)     │     │
+│ [Desktop only]                                           │     │
+│  ffmpeg (bundled): temp WebM ─► MP4 (H.264/AAC)          │     │
 │   emits transcode-progress events                        │     │
-│ recording_fs: start/append/move temp, delete, save       │     │
-│ geo/weather proxies (no CORS, keyless); geocode city     │     │
-│ auth: PIN hash (SHA-256 + salt) in auth.json             │     │
-│ sensor_server (tiny_http): /sensors /series /text ───────┘     │
-│ ffmpeg thumbnail; asset protocol for local playback           │
+│  streaming: RTMP ffmpeg (H.264/AAC → FLV)                │     │
+│                                                          │     │
+│ [Both platforms]                                         │     │
+│  recording_fs: start/append/close temp, move, delete     │     │
+│  library: save_thumbnail (webview-rendered JPEG)         │     │
+│  geo/weather proxies (no CORS, keyless); geocode city    │     │
+│  auth: PIN hash (SHA-256 + salt) in OS Keychain         │     │
+│  sensor_server (tiny_http): /sensors /series /text ──────┘     │
+│  system_vitals: CPU/RAM/uptime (+ battery on macOS)            │
+│  asset protocol for local playback                            │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -38,14 +47,21 @@
 - **Audio and video streams are separate.** Switching the camera swaps only the video stream; the mic track held by MediaRecorder stays live, so recording continues (a static + collapse‑to‑center transition covers the gap).
 - **Flat memory recording.** MediaRecorder chunks (1s) stream to a temp file via `append_temp_chunk`; the whole clip is never held in RAM, and bytes cross IPC as **raw octet-stream binary** (not JSON arrays), reducing main-thread load. Local recording holds **one append file handle per take** (server-side, closed before export) instead of reopening per chunk.
 - **Chunk-write failures are surfaced.** Write failures flag the saved take as possibly-incomplete instead of being silently swallowed; the recording write queue is bounded and auto-stops the take if the disk falls behind.
+- **Screen stays awake during capture.** The Screen Wake Lock API (`navigator.wakeLock.request("screen")`) keeps the display on during recording and streaming, preventing iOS auto-lock from suspending the app. Best-effort; falls back to OS default if unsupported.
 
 ## Recording → export pipeline
 
-1. `start_temp_recording(ext)` → temp path.
-2. MediaRecorder chunks → `append_temp_chunk(path, bytes)`.
-3. On stop: `transcode_to_mp4(temp, name, outDir, durationSec)` runs bundled ffmpeg on a blocking thread with `-progress pipe:1`, emitting `transcode-progress` (0..1).
-4. Success → temp removed, MP4 in output folder. Failure → `move_temp` keeps the raw WebM (never lose a take).
-5. Entry indexed (`entries.json`) + thumbnail generated (`generate_thumbnail`).
+**iOS (copy path):** WebKit records to a fragmented MP4 with the moov box at the front (faststart) — seekable and playable as-is, already H.264/AAC.
+1. `start_temp_recording("mp4")` → temp path.
+2. MediaRecorder chunks → `append_temp_chunk(path, bytes)` (raw MP4 bytes).
+3. On stop: `moveTemp(temp, name, outDir)` renames and indexes the file (no ffmpeg).
+4. Entry indexed (`entries.json`) + thumbnail rendered in webview and persisted by `save_thumbnail`.
+
+**macOS (fallback paths):**
+- **Copy path (norm):** if webview recorded H.264, `moveTemp` is used (same as iOS).
+- **Transcode path (fallback):** if webview recorded VP8/WebM, `transcode_to_mp4(temp, name, outDir, durationSec)` runs bundled ffmpeg on a blocking thread with `-progress pipe:1`, emitting `transcode-progress` (0..1).
+
+On failure, `move_temp` keeps the raw file (never lose a take). Thumbnail is rendered in webview.
 
 ## Data layer
 
@@ -58,14 +74,17 @@
 ## Recording resolution & codec
 
 - The canvas backing store is a **fixed 16:9 frame** (720p or 1080p from settings), not the window size — so output is deterministic and reasonably sized. The preview letterboxes to fit.
-- **Capture path (auto):** if the webview supports hardware H.264 codec, MediaRecorder emits H.264 (capped 12 Mbps) and the export is a fast remux to MP4 (faststart) — no transcode. Falls back to VP8/WebM capture on older browsers or when software encoding is forced, then transcodes to **H.264 CRF‑26 (preset medium)** for small MP4s.
-- The compositor draw loop is capped at ~60fps so ProMotion 120Hz displays don't render the HUD twice per captured frame.
+- **Capture path (iOS):** WebKit (Safari) records H.264 directly via hardware VideoToolbox (capped 12 Mbps) into a fragmented MP4 with the moov box at the front. This is a fast-forward MP4 (seekable immediately, playable without re-muxing). `moveTemp` just renames it into place.
+- **Capture path (macOS):** if the webview supports hardware H.264 codec, MediaRecorder emits H.264 (capped 12 Mbps) and the export is a fast remux to MP4 (faststart) — no transcode. Falls back to VP8/WebM capture when software encoding is forced, then transcodes to **H.264 CRF‑26 (preset medium)** for smaller files.
+- The compositor draw loop is capped at the capture rate (~30fps for streaming, ~60fps for recording) so ProMotion 120Hz displays don't waste CPU on frames the recorder never samples.
 
 ## Sensor API
 
-- `sensor_server.rs` runs a small `tiny_http` server (background thread) started/stopped by `App` from settings. Bind is `127.0.0.1` or `0.0.0.0` (LAN); a bearer token is required in LAN mode. The server auto-starts reliably — `stop_sensor_server` joins the accept thread so the port is released before any restart/rebind, preventing "server didn't start" errors on settings change or relaunch.
+- `sensor_server.rs` runs a small `tiny_http` server (background thread) started/stopped by `App` from settings. Bind is configurable: `127.0.0.1` (loopback, this device only), `0.0.0.0` (all interfaces, LAN), or a specific LAN IP (e.g. `192.168.1.10`). A bearer token is required for any network-facing bind (anything other than loopback). The server auto-starts reliably — `stop_sensor_server` joins the accept thread so the port is released before any restart/rebind, preventing "address already in use" errors.
 - `POST /sensors` (scalar readouts), `POST /series` (numeric points → sparkline buffer), `POST /text` (typewriter caption). Each validated + clamped, then forwarded to the frontend via Tauri events (`sensors`/`series`/`text`).
+- `list_local_ips` returns `127.0.0.1`, `0.0.0.0`, and detected IPv4 LAN addresses so the user can see which bind options are available.
 - The frontend injects these into `HudState` each frame, so they render as HUD widgets and are **burned into the recording** like everything else.
+- **iOS:** sensor API is foreground-only (closes when the app backgrounded). `App` listens to `visibilitychange` and auto-restarts the server on foreground (requires `NSLocalNetworkUsageDescription` in the iOS capability).
 
 ## Go Live (RTMP/RTMPS streaming)
 
@@ -78,10 +97,25 @@
 - **Teardown:** `stop_stream` is async + offloads the blocking wait/signal to `spawn_blocking` (no UI freeze). `StreamSession::Drop` closes stdin (clean EOF), escalates to **SIGTERM** (graceful RTMP disconnect), then SIGKILL as a last resort — killing the child before joining the writer so a write parked under backpressure can't hang shutdown, and no zombies.
 - **Secret:** the stream key lives in `config.json` (plaintext, same posture as the sensor API token). It is composed into the RTMP URL **only inside the ffmpeg argv** — never logged, never in an event/stderr payload. Config-gated `GO LIVE` button (disabled + hint→Settings until URL+key set) + a confirm dialog guard against accidental broadcast.
 
-## Auth
+## Auth & Security
 
-- `set_pin` / `verify_pin` / `change_pin`: salted SHA‑256 stored in `auth.json` (app config dir). This is a **UX lock**, not encryption. On lock, the camera/streams are released and the app returns to the PIN screen; the compositor is nulled so it rebinds the freshly‑mounted canvas on re‑unlock.
+- **PIN storage:** `set_pin` / `verify_pin` / `change_pin`: salted SHA‑256 stored in the **OS Keychain** (macOS + iOS via the Apple Security framework, `keyring` crate). This is a **UX lock**, not encryption. On lock, the camera/streams are released and the app returns to the PIN screen; the compositor is nulled so it rebinds the freshly‑mounted canvas on re‑unlock. The Keychain item is service-scoped to `com.hatrunghieu.lazycamhud` and account-scoped to `pin`, surviving updates and reinstalls.
+- **Data protection (iOS):** Recordings created in the app sandbox (Documents) default to `NSFileProtectionComplete` (set in `lazycamhud_iOS.entitlements`), encrypting files at rest while the device is locked. On macOS, ~/Movies/LazyCamHUD recordings have no at-rest encryption (file system unencrypted by default).
+- **Screen wake lock (iOS):** `screen-wake-lock.ts` uses the Screen Wake Lock API (WKWebView iOS 16.4+, macOS WebKit) to keep the screen awake during recording and streaming. Prevents device auto-lock from suspending the app mid-take. Acquired in `use-recorder.ts` / `use-streaming.ts` start, released on stop. Best-effort, no-op on older iOS or if permission denied.
+- **Legacy migration:** Old `auth.json` is migrated to Keychain on first run; the file is cleaned up.
 
-## ffmpeg bundling
+## ffmpeg bundling & desktop-only gating
 
-Bundled as a static binary (per target triple) under `src-tauri/binaries/` (git‑ignored, fetched by `scripts/fetch-ffmpeg.sh` on macOS or `scripts/fetch-ffmpeg.ps1` on Windows). Resolved at runtime from the executable directory (bundle) or `CARGO_MANIFEST_DIR/binaries` (dev), with the `.exe` suffix on Windows. iOS is blocked because it forbids spawning subprocesses.
+**Desktop (macOS):** Bundled as a static binary under `src-tauri/binaries/` (git‑ignored, fetched by `scripts/fetch-ffmpeg.sh`). Configured in `tauri.macos.conf.json` as `externalBin: ["binaries/ffmpeg"]`. Used by `transcode_to_mp4` (fallback VP8 encode) and `streaming.rs` (RTMP).
+
+**iOS:** ffmpeg is **not available** — iOS forbids spawning subprocesses. Instead:
+- Recording export relies on the copy path (iOS WebKit delivers fast-forward MP4 as-is).
+- Go Live is disabled (no streaming).
+- Thumbnails are rendered in the webview (no `generate_thumbnail` ffmpeg call).
+
+**Code gating:** Commands that spawn ffmpeg (`transcode_to_mp4`, `remux_to_mp4`, `streaming::start_stream`) are behind `#[cfg(desktop)]` in `lib.rs` so they don't compile on iOS. The mobile invoke_handler omits them.
+
+## Features Not Yet Implemented
+
+- **iOS Go Live (RTMP):** Requires HaishinKit integration or a native WebRTC solution; streaming is macOS-only for now.
+- **Photos/Files export:** iOS UIFileSharingEnabled + Document picker integration for exporting recordings to Photos or the Files app; currently all recordings are app-sandboxed in Documents.

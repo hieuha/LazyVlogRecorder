@@ -11,7 +11,7 @@ import {
   stopStream,
   PermissionDeniedError,
 } from "./compositor/media-devices";
-import { probeRecordingCapability, type RecordingCapability } from "./recording/capability";
+import { probeRecordingCapability, pickStreamH264Mime, type RecordingCapability } from "./recording/capability";
 import { createHudLayer } from "./hud/layout-engine";
 import { getLayout, listLayouts } from "./hud/layout-registry";
 import { getTheme, listThemes } from "./hud/theme-registry";
@@ -25,11 +25,12 @@ import { useStreaming } from "./streaming/use-streaming";
 import { SettingsPanel } from "./settings/settings-panel";
 import { isStreamConfigured } from "./settings/is-stream-configured";
 import { loadConfig, saveConfig, generateToken, DEFAULT_CONFIG, type AppConfig } from "./settings/config-store";
+import { isIOS } from "./platform/platform";
 import { PinGate } from "./auth/pin-gate";
 import { hasPin } from "./auth/auth-client";
 import { LibraryView } from "./library/library-view";
 import { addEntry, updateEntry } from "./library/entries-store";
-import { generateThumbnail } from "./library/library-client";
+import { generateThumbnail } from "./library/thumbnail";
 import type { SavedFile } from "./recording/save-client";
 import type { SensorItem, SeriesItem } from "./hud/types";
 import { HudSelect } from "./components/hud-select";
@@ -118,6 +119,11 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [pinMode, setPinMode] = useState<"set" | "enter">("enter");
   const [unlocked, setUnlocked] = useState(false);
+  // Sensor API on-screen status (not burned into the recording): whether the
+  // server is bound + listening, and whether data arrived recently (dot pulse).
+  const [apiListening, setApiListening] = useState(false);
+  const [apiActive, setApiActive] = useState(false);
+  const apiLastDataRef = useRef(0);
 
   const rec = useRecorder({
     canvasRef,
@@ -148,6 +154,25 @@ export default function App() {
   });
 
   const streamConfigured = isStreamConfigured(config);
+
+  // Codec the record path will actually capture: hardware H.264 (fast remux) when
+  // the webview supports it and the encoder isn't forced to software, else the VP8
+  // fallback. The old badge showed `supportedMimeType` from a VP8-first probe, so
+  // it always read WEBM/VP8 regardless of H.264 support — misleading. Mirror the
+  // real decision in use-recorder/use-streaming here.
+  const recordCodecLabel =
+    config.streamEncoder !== "software" && pickStreamH264Mime() !== null ? "MP4/H264" : "WEBM/VP8";
+
+  // Compact Sensor API endpoint appended inside the capture badge — on-screen
+  // only, never burned into the recording. The dot shows the server is listening
+  // and pulses when a reading arrives.
+  const apiInfo = config.sensorApiEnabled ? (
+    <span className={`api-inline ${apiListening ? (apiActive ? "active" : "on") : "off"}`}>
+      {" · "}
+      <span className="api-dot" />
+      {` API ${config.sensorApiBindHost}:${config.sensorApiPort}`}
+    </span>
+  ) : null;
 
   // Stable per-frame HUD state provider (reads refs, so it never goes stale).
   const getState = useCallback(() => {
@@ -292,12 +317,14 @@ export default function App() {
     const unlisteners: Array<() => void> = [];
     const track = (fn: () => void) => (disposed ? fn() : unlisteners.push(fn));
     void listen<SensorItem[]>("sensors", (e) => {
+      apiLastDataRef.current = performance.now(); // pulse the API status dot
       const items = e.payload ?? [];
       sensorsRef.current = { items, at: performance.now() };
       // Rebuild the render array here (on push, ~1×/s) not per frame.
       sensorsRenderRef.current = items.map((it) => ({ ...it }));
     }).then(track);
     void listen<{ label: string; value: number; unit: string }>("series", (e) => {
+      apiLastDataRef.current = performance.now(); // pulse the API status dot
       const p = e.payload;
       if (!p || !Number.isFinite(p.value)) return;
       const map = seriesRef.current;
@@ -319,6 +346,7 @@ export default function App() {
       seriesRenderRef.current = render;
     }).then(track);
     void listen<{ text: string; typing: boolean }>("text", (e) => {
+      apiLastDataRef.current = performance.now(); // pulse the API status dot
       const p = e.payload;
       if (!p) return;
       captionRef.current = { text: p.text ?? "", at: performance.now(), typing: p.typing !== false };
@@ -328,6 +356,19 @@ export default function App() {
       unlisteners.forEach((fn) => fn());
     };
   }, [unlocked]);
+
+  // Pulse the API status dot for ~1.5s after each received payload (cheap 500ms
+  // poll of a ref, only while the server is listening).
+  useEffect(() => {
+    if (!apiListening) {
+      setApiActive(false);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setApiActive(performance.now() - apiLastDataRef.current < 1500);
+    }, 500);
+    return () => clearInterval(id);
+  }, [apiListening]);
 
   // Keep the HUD camera label in sync with the selected camera device.
   useEffect(() => {
@@ -345,6 +386,21 @@ export default function App() {
     void applySensorServer(config);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
+
+  // iOS suspends the process in the background, which stops the Sensor API accept
+  // loop; when the app returns to the foreground, restart the server so it
+  // resumes listening without a manual enable/disable toggle.
+  useEffect(() => {
+    if (status !== "ready" || !isIOS) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && config.sensorApiEnabled) {
+        void applySensorServer(config);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, config.sensorApiEnabled, config.sensorApiPort, config.sensorApiBindHost, config.sensorApiToken]);
 
   // Poll the actual compositor render FPS while capturing (REC/LIVE badge).
   useEffect(() => {
@@ -590,9 +646,10 @@ export default function App() {
       if (cfg.sensorApiEnabled) {
         await invoke("start_sensor_server", {
           port: cfg.sensorApiPort,
-          bindLan: cfg.sensorApiLan,
+          bindHost: cfg.sensorApiBindHost,
           token: cfg.sensorApiToken,
         });
+        setApiListening(true);
       } else {
         sensorsRef.current = { items: [], at: 0 };
         sensorsRenderRef.current = [];
@@ -600,9 +657,11 @@ export default function App() {
         seriesRenderRef.current = [];
         captionRef.current = { text: "", at: 0, typing: true };
         await invoke("stop_sensor_server");
+        setApiListening(false);
       }
     } catch (err) {
       // Surface bind failures (e.g. port in use) without breaking the app.
+      setApiListening(false);
       console.error("sensor server:", err);
     }
   }
@@ -629,6 +688,7 @@ export default function App() {
             <span className="live-spec">
               {` · ${config.recordHeight}p · ${renderFps} fps · ${renderMs}ms · ${config.streamEncoder === "software" ? "sw" : "hw"}`}
             </span>
+            {apiInfo}
           </span>
         ) : streaming.state !== "idle" ? (
           <span className={`cap-badge live ${streaming.state}`}>
@@ -641,19 +701,22 @@ export default function App() {
               {` · ${streaming.clamped ? 720 : config.recordHeight}p${config.streamFps} · ${config.streamBitrateKbps}k${streaming.copyActive ? " · hw" : ""} · ${renderFps} fps · ${renderMs}ms`}
               {streaming.dropped > 0 ? ` · drop ${streaming.dropped}` : ""}
             </span>
+            {apiInfo}
           </span>
         ) : destination === "live" ? (
           // LIVE tab selected (not yet broadcasting): show the live settings here,
           // compact, so they're easy to eyeball before going live.
           <span className="cap-badge live-ready">
             {`LIVE READY · ${config.recordHeight}p · ${config.streamFps}fps · ${config.streamBitrateKbps}k · ${config.streamEncoder === "software" ? "SW" : "HW"}`}
+            {apiInfo}
           </span>
         ) : (
           capability && (
             <span className={`cap-badge ${capability.ok ? "ok" : "warn"}`}>
               {capability.ok
-                ? `REC READY · ${config.recordHeight}p · ${shortMime(capability.supportedMimeType)} · ${config.streamEncoder === "software" ? "SW" : "HW"}`
+                ? `REC READY · ${config.recordHeight}p · ${recordCodecLabel} · ${config.streamEncoder === "software" ? "SW" : "HW"}`
                 : "REC UNSUPPORTED"}
+              {capability.ok && apiInfo}
             </span>
           )
         )}
@@ -836,12 +899,4 @@ function liveHost(url: string): string {
   } catch {
     return url || "your RTMP destination";
   }
-}
-
-function shortMime(mime: string | null): string {
-  if (!mime) return "?";
-  if (mime.includes("mp4")) return "MP4";
-  if (mime.includes("vp9")) return "WEBM/VP9";
-  if (mime.includes("vp8")) return "WEBM/VP8";
-  return "WEBM";
 }

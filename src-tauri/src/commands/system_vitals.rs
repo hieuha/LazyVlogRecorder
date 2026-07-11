@@ -32,6 +32,16 @@ fn system() -> &'static Mutex<System> {
 
 // (battery %, charging). Best-effort: a missing battery or any probe failure
 // degrades to (None, false) — never an error to the caller.
+//
+// iOS: starship-battery links IOKit (unavailable there), so battery is reported
+// as absent. CPU/RAM/uptime below still work. (A native UIDevice battery read
+// could fill this in later.)
+#[cfg(target_os = "ios")]
+fn read_battery() -> (Option<u8>, bool) {
+    (None, false)
+}
+
+#[cfg(not(target_os = "ios"))]
 fn read_battery() -> (Option<u8>, bool) {
     let manager = match starship_battery::Manager::new() {
         Ok(m) => m,

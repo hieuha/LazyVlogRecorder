@@ -23,6 +23,7 @@ import {
   type SavedFile,
 } from "../recording/save-client";
 import { pickStreamH264Mime } from "../recording/capability";
+import { acquireWakeLock, releaseWakeLock } from "../recording/screen-wake-lock";
 import type { StreamEncoderPref } from "../settings/config-store";
 import { startStream, writeStreamChunk, stopStream, type StreamStatus } from "./stream-client";
 
@@ -249,6 +250,7 @@ export function useStreaming(refs: UseStreamingRefs) {
     });
     recRef.current.start();
     timer.start();
+    void acquireWakeLock(); // hold the screen awake for the broadcast
   }
 
   async function stop(): Promise<void> {
@@ -257,6 +259,7 @@ export function useStreaming(refs: UseStreamingRefs) {
     // tabs (reset). A clean stop with no error goes to idle.
     const toRest = () => setState((prev) => (prev === "error" ? "error" : "idle"));
     const rec = recRef.current;
+    void releaseWakeLock();
     if (!rec) {
       await stopStream().catch(() => {});
       toRest();
