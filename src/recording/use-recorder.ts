@@ -15,10 +15,12 @@ import {
   startTempRecording,
   appendTempChunk,
   transcodeToMp4,
+  remuxToMp4,
   moveTemp,
   type SavedFile,
 } from "./save-client";
-import { extForMime, makeRecordingName } from "./output-naming";
+import { pickStreamH264Mime } from "./capability";
+import { makeRecordingName } from "./output-naming";
 import type { StreamEncoderPref } from "../settings/config-store";
 
 export type { RecMode };
@@ -51,6 +53,7 @@ export function useRecorder(refs: UseRecorderRefs) {
   const recRef = useRef<Recorder | null>(null);
   const tempPathRef = useRef<string>("");
   const extRef = useRef<string>("webm");
+  const copyRef = useRef<boolean>(false); // recorded H.264 directly → remux, not transcode
 
   // Auto-dismiss the "saved" notice after 10s.
   useEffect(() => {
@@ -78,14 +81,18 @@ export function useRecorder(refs: UseRecorderRefs) {
       const logNo = refs.logNoRef.current;
       const outDir = refs.outDirRef.current;
       let saved: SavedFile;
+      const copy = copyRef.current;
       try {
         const outName = makeRecordingName(person, logNo, "mp4");
-        const hardware = refs.encoderPrefRef.current !== "software";
-        saved = await transcodeToMp4(tempPath, outName, outDir, durationSec, hardware);
+        // Copy path: recorded H.264 already → remux (fast, no re-encode).
+        // Else transcode the VP8 temp to H.264 (hardware unless forced software).
+        saved = copy
+          ? await remuxToMp4(tempPath, outName, outDir)
+          : await transcodeToMp4(tempPath, outName, outDir, durationSec, refs.encoderPrefRef.current !== "software");
       } catch (transcodeErr) {
         const rawName = makeRecordingName(person, logNo, srcExt);
         saved = await moveTemp(tempPath, rawName, outDir);
-        setError(`MP4 transcode failed; saved ${srcExt.toUpperCase()}. ${transcodeErr}`);
+        setError(`MP4 finalize failed; saved ${srcExt.toUpperCase()}. ${transcodeErr}`);
       }
       setSavedFile(saved);
       refs.onSaved(saved, durationSec); // advance log number + index the entry
@@ -111,12 +118,21 @@ export function useRecorder(refs: UseRecorderRefs) {
 
   async function start(): Promise<void> {
     const canvas = refs.canvasRef.current;
-    const mime = refs.mimeTypeRef.current;
-    if (!canvas || !mime || recRef.current) return;
+    if (!canvas || recRef.current) return;
+
+    // Prefer a hardware H.264 recorder (VideoToolbox) → the browser encodes on the
+    // Media Engine, not the CPU. This avoids the VP8 software encode that loaded
+    // the main thread and hitched capture (e.g. on each sensor update). Falls back
+    // to VP8 when H.264 isn't available or the encoder is forced to software.
+    const h264 = refs.encoderPrefRef.current === "software" ? null : pickStreamH264Mime();
+    const copy = h264 !== null;
+    const mime = h264 ?? refs.mimeTypeRef.current;
+    if (!mime) return;
+    copyRef.current = copy;
     setSavedFile(null);
     setError(null);
 
-    const srcExt = extForMime(mime);
+    const srcExt = copy ? "mp4" : "webm";
     extRef.current = srcExt;
     let tempPath: string;
     try {
