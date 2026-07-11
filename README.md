@@ -16,7 +16,7 @@ Someday, years from now, my daughter will open these and know exactly where I wa
 
 So — this is the tool that makes the log. Built with **Tauri 2 + React/TypeScript**.
 
-**Version:** 0.6.5 · **Platform:** macOS + iOS/iPadOS (Apple only)
+**Version:** 0.7.0 · **Platform:** macOS + iOS/iPadOS (Apple only)
 
 ## Screenshots
 
