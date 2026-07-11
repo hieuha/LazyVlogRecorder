@@ -28,6 +28,11 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 sha2 = "0.10"
 getrandom = "0.2"
 tiny_http = "0.12"
+
+# Ship Vitals (battery/CPU/RAM/uptime). starship-battery's darwin backend links
+# IOKit, which is unavailable on iOS (fails at link time), so these are built for
+# non-iOS targets only — the system_vitals command is gated to `desktop` to match.
+[target.'cfg(not(target_os = "ios"))'.dependencies]
 sysinfo = "0.33"
 starship-battery = "0.10"
 

@@ -60,7 +60,6 @@ pub fn run() {
         commands::recording_fs::delete_files,
         commands::sensor_server::start_sensor_server,
         commands::sensor_server::stop_sensor_server,
-        commands::system_vitals::get_system_vitals,
     ]);
 
     builder
