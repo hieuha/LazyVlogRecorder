@@ -50,7 +50,10 @@ export function drawGaugeArc(
   // Ring to the right, on the same center line, sized to match the number's
   // height (diameter ≈ the 5.4u value); unit centered inside it.
   const r = 2.3 * u;
-  const cx = ox + valueW + 1.4 * u + r; // gap between the value and the ring
+  // Pin the ring to a fixed value-column so rings line up vertically across gauges
+  // regardless of digit width (60 vs 78 vs 32); only push out for unusually wide
+  // values (e.g. "100") so they never overlap the ring.
+  const cx = ox + Math.max(valueW + 1.4 * u, 8 * u) + r;
   const frac = fraction(g.value, g.min, g.max);
   drawDial(c, cx, cy, r, frac, 0.5 * u);
   // Small solid circle behind the unit — a faint filled disc inside the ring.
