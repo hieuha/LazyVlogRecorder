@@ -11,7 +11,7 @@ import {
   stopStream,
   PermissionDeniedError,
 } from "./compositor/media-devices";
-import { probeRecordingCapability, type RecordingCapability } from "./recording/capability";
+import { probeRecordingCapability, pickStreamH264Mime, type RecordingCapability } from "./recording/capability";
 import { createHudLayer } from "./hud/layout-engine";
 import { getLayout, listLayouts } from "./hud/layout-registry";
 import { getTheme, listThemes } from "./hud/theme-registry";
@@ -148,6 +148,14 @@ export default function App() {
   });
 
   const streamConfigured = isStreamConfigured(config);
+
+  // Codec the record path will actually capture: hardware H.264 (fast remux) when
+  // the webview supports it and the encoder isn't forced to software, else the VP8
+  // fallback. The old badge showed `supportedMimeType` from a VP8-first probe, so
+  // it always read WEBM/VP8 regardless of H.264 support — misleading. Mirror the
+  // real decision in use-recorder/use-streaming here.
+  const recordCodecLabel =
+    config.streamEncoder !== "software" && pickStreamH264Mime() !== null ? "MP4/H264" : "WEBM/VP8";
 
   // Stable per-frame HUD state provider (reads refs, so it never goes stale).
   const getState = useCallback(() => {
@@ -652,7 +660,7 @@ export default function App() {
           capability && (
             <span className={`cap-badge ${capability.ok ? "ok" : "warn"}`}>
               {capability.ok
-                ? `REC READY · ${config.recordHeight}p · ${shortMime(capability.supportedMimeType)} · ${config.streamEncoder === "software" ? "SW" : "HW"}`
+                ? `REC READY · ${config.recordHeight}p · ${recordCodecLabel} · ${config.streamEncoder === "software" ? "SW" : "HW"}`
                 : "REC UNSUPPORTED"}
             </span>
           )
@@ -836,12 +844,4 @@ function liveHost(url: string): string {
   } catch {
     return url || "your RTMP destination";
   }
-}
-
-function shortMime(mime: string | null): string {
-  if (!mime) return "?";
-  if (mime.includes("mp4")) return "MP4";
-  if (mime.includes("vp9")) return "WEBM/VP9";
-  if (mime.includes("vp8")) return "WEBM/VP8";
-  return "WEBM";
 }

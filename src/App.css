@@ -21,7 +21,13 @@ body,
   display: flex;
   flex-direction: column;
   width: 100vw;
+  /* Use the dynamic viewport height on mobile WebKit: a plain 100vh resolves to
+     the *large* viewport (taller than the visible area under iOS standalone),
+     which pushed the control bar below the fold where `overflow: hidden` clipped
+     it. 100dvh tracks the actually-visible height so the control bar always fits.
+     100vh stays as the fallback for engines without dvh. */
   height: 100vh;
+  height: 100dvh;
   background: #05070a;
 }
 
@@ -64,6 +70,9 @@ body,
   flex-wrap: wrap; /* never clip: groups drop to a second row on narrow widths */
   gap: 12px 16px;
   padding: 14px 22px;
+  /* Keep the buttons clear of the iOS home indicator (safe-area inset is 0 on
+     desktop, so this is a no-op there). */
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
   background: #000;
   border-top: 1px solid rgba(126, 224, 233, 0.22);
 }
