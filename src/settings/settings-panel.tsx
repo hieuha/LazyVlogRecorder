@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChangePinFlow } from "../auth/change-pin-flow";
 import { generateToken, type AppConfig } from "./config-store";
+import { rtmpUrlWarning } from "./rtmp-url";
 
 interface Props {
   config: AppConfig;
@@ -248,6 +249,9 @@ export function SettingsPanel(p: Props) {
             />
             <button onClick={() => setShowKey((v) => !v)}>{showKey ? "Hide" : "Show"}</button>
           </div>
+          {rtmpUrlWarning(c.rtmpUrl, c.streamKey) && (
+            <div className="settings-hint settings-warn">⚠ {rtmpUrlWarning(c.rtmpUrl, c.streamKey)}</div>
+          )}
         </div>
 
         <label className="settings-check">

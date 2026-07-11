@@ -323,6 +323,11 @@ body,
   color: #7f97a0;
 }
 
+/* Advisory warning (e.g. a likely-misconfigured RTMP URL). */
+.settings-warn {
+  color: #ffb454;
+}
+
 .settings-check {
   display: flex;
   align-items: center;
