@@ -26,6 +26,12 @@
 	<string>LazyCamHUD needs microphone access to record audio for your video log entries.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>LazyCamHUD runs a local Sensor API so other devices on your network can push readouts onto the HUD.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save a recorded video log to your Photos library when you export or share it.</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -35,14 +41,11 @@
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>

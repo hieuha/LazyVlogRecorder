@@ -141,3 +141,32 @@
   font-size: 20px;
   color: rgba(200, 220, 225, 0.7);
 }
+
+/* Short viewports (landscape phone): the full-size keypad overflows the height,
+   clipping the bottom row. Scale the pad + spacing down so it always fits. */
+@media (max-height: 500px) {
+  .pin-stage {
+    gap: 8px;
+  }
+  .pin-dots {
+    gap: 12px;
+    margin-top: 2px;
+  }
+  .pin-dot {
+    width: 12px;
+    height: 12px;
+  }
+  .pin-pad {
+    grid-template-columns: repeat(3, 54px);
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .pin-key {
+    height: 54px;
+    font-size: 18px;
+  }
+  .pin-corner {
+    width: 32px;
+    height: 32px;
+  }
+}
