@@ -16,7 +16,7 @@ Một ngày nào đó, nhiều năm sau, con gái mình sẽ mở những đoạ
 
 Và đây — công cụ để làm ra cuốn nhật ký đó. Xây bằng **Tauri 2 + React/TypeScript**.
 
-**Phiên bản:** 0.7.0 · **Nền tảng:** macOS + iOS/iPadOS (Apple only)
+**Phiên bản:** 0.7.1 · **Nền tảng:** macOS + iOS/iPadOS (Apple only)
 
 ## Ảnh chụp
 
