@@ -24,3 +24,15 @@ pub fn save_thumbnail(app: tauri::AppHandle, id: String, bytes: Vec<u8>) -> Resu
     std::fs::write(&path, &bytes).map_err(|e| e.to_string())?;
     Ok(path.to_string_lossy().into_owned())
 }
+
+/// Return, for each input path, whether the file still exists. Uses stat (not an
+/// open), so a present-but-locked file under Data Protection still reports true —
+/// only genuinely deleted files (e.g. after an app reinstall) report false, which
+/// the library uses to flag entries as missing.
+#[tauri::command]
+pub fn paths_exist(paths: Vec<String>) -> Vec<bool> {
+    paths
+        .into_iter()
+        .map(|p| !p.is_empty() && std::path::Path::new(&p).exists())
+        .collect()
+}

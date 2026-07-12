@@ -124,6 +124,14 @@
   color: rgba(126, 224, 233, 0.5);
   font-size: 28px;
 }
+.lib-thumb-ph.lib-missing {
+  color: #e0a857;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+}
+.lib-card.lib-gone {
+  opacity: 0.55;
+}
 .lib-thumb:hover img {
   opacity: 0.85;
 }
@@ -143,6 +151,10 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   color: #eaf7f9;
+  /* Truncate a long name instead of wrapping + shoving the card taller. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .lib-sub {
   font-size: 10px;
@@ -153,7 +165,9 @@
 .lib-actions {
   display: flex;
   gap: 6px;
-  margin-top: 4px;
+  /* Pin the action row to the bottom so cards with a wrapped name/subtitle keep
+     their buttons aligned across the row (grid stretches cards to equal height). */
+  margin-top: auto;
 }
 .lib-actions button {
   flex: 1;

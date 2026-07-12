@@ -2,11 +2,13 @@
 // reveal-in-folder, and delete (file + thumbnail + index record).
 
 import { useEffect, useRef, useState } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { listEntries, removeEntry, updateEntry, type Entry } from "./entries-store";
 import { deleteFiles } from "./library-client";
 import { generateThumbnail } from "./thumbnail";
+import { shareVideo } from "./share";
+import { isIOS } from "../platform/platform";
 import "./library-view.css";
 
 const PAGE_SIZE = 6; // entries per page (3×2 grid)
@@ -16,13 +18,24 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
   const [playing, setPlaying] = useState<Entry | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  // Ids whose video file no longer exists (e.g. deleted, or lost on an app
+  // reinstall) — shown as MISSING with playback/share disabled.
+  const [missing, setMissing] = useState<Set<string>>(new Set());
 
   // Ids we've already tried to (re)build a thumbnail for this session, so a
   // permanently un-decodable clip can't loop.
   const regenTried = useRef<Set<string>>(new Set());
 
   async function refresh() {
-    setEntries(await listEntries());
+    const list = await listEntries();
+    setEntries(list);
+    // Flag entries whose video file is gone so the library stays honest.
+    try {
+      const exist = await invoke<boolean[]>("paths_exist", { paths: list.map((e) => e.path) });
+      setMissing(new Set(list.filter((_, i) => !exist[i]).map((e) => e.id)));
+    } catch {
+      /* leave missing as-is on failure */
+    }
   }
   useEffect(() => {
     void refresh();
@@ -53,9 +66,9 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
   // Ones that exist are reused from disk — no regeneration. The `onError` on the
   // <img> covers the other case: a thumbnail whose file was purged.
   useEffect(() => {
-    for (const e of visible) if (!e.thumbPath) void regenThumb(e);
+    for (const e of visible) if (!e.thumbPath && !missing.has(e.id)) void regenThumb(e);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, page]);
+  }, [entries, page, missing]);
 
   async function doDelete(e: Entry) {
     await deleteFiles([e.path, e.thumbPath].filter(Boolean));
@@ -79,10 +92,14 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
           <div className="lib-empty">No recordings yet.</div>
         ) : (
           <div className="lib-grid">
-            {visible.map((e) => (
-              <div className="lib-card" key={e.id}>
-                <div className="lib-thumb" onClick={() => setPlaying(e)}>
-                  {e.thumbPath ? (
+            {visible.map((e) => {
+              const gone = missing.has(e.id);
+              return (
+              <div className={`lib-card${gone ? " lib-gone" : ""}`} key={e.id}>
+                <div className="lib-thumb" onClick={() => !gone && setPlaying(e)}>
+                  {gone ? (
+                    <div className="lib-thumb-ph lib-missing">⚠ MISSING</div>
+                  ) : e.thumbPath ? (
                     <img
                       src={convertFileSrc(e.thumbPath)}
                       alt=""
@@ -100,8 +117,14 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
                   {fmtDate(e.dateISO)} · {e.city} · {fmtSize(e.size)}
                 </div>
                 <div className="lib-actions">
-                  <button onClick={() => setPlaying(e)}>PLAY</button>
-                  <button onClick={() => void revealItemInDir(e.path)}>REVEAL</button>
+                  <button disabled={gone} onClick={() => setPlaying(e)}>PLAY</button>
+                  {isIOS ? (
+                    <button disabled={gone} onClick={() => void shareVideo(e.path, `${e.name} #${e.logNo}`)}>
+                      SHARE
+                    </button>
+                  ) : (
+                    <button disabled={gone} onClick={() => void revealItemInDir(e.path)}>REVEAL</button>
+                  )}
                   {confirmId === e.id ? (
                     <button className="danger" onClick={() => void doDelete(e)}>
                       CONFIRM?
@@ -113,7 +136,8 @@ export function LibraryView({ onClose }: { onClose: () => void }) {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
